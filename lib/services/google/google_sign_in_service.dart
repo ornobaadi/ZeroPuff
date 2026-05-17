@@ -13,7 +13,9 @@ class GoogleSignInService {
       return;
     }
 
-    final webClientId = config.googleWebClientId.isEmpty ? null : config.googleWebClientId;
+    final webClientId = config.googleWebClientId.isEmpty
+        ? null
+        : config.googleWebClientId;
 
     await GoogleSignIn.instance.initialize(
       clientId: kIsWeb ? webClientId : null,

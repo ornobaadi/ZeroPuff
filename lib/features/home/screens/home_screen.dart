@@ -61,7 +61,9 @@ class HomeScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.cardPadding * 1.2),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.5,
+                  ),
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Column(
@@ -69,15 +71,19 @@ class HomeScreen extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.calendar_today_rounded, 
-                             size: 18, 
-                             color: theme.colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 18,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                         const SizedBox(width: 8),
-                        Text('TODAY', 
-                             style: theme.textTheme.labelMedium?.copyWith(
-                               color: theme.colorScheme.onSurfaceVariant,
-                               letterSpacing: 0.5,
-                             )),
+                        Text(
+                          'TODAY',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -85,9 +91,7 @@ class HomeScreen extends ConsumerWidget {
                       data.honestyStreakDays > 0
                           ? 'Your baseline is set. If a craving hits, come here first.'
                           : 'Set your baseline to make the counter yours.',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        height: 1.4,
-                      ),
+                      style: theme.textTheme.bodyLarge?.copyWith(height: 1.4),
                     ),
                   ],
                 ),
@@ -96,10 +100,15 @@ class HomeScreen extends ConsumerWidget {
               FilledButton.icon(
                 onPressed: () => context.push(AppRoutes.rescue),
                 icon: const Icon(Icons.air_rounded, size: 28),
-                label: const Text("I'm craving", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                label: const Text(
+                  "I'm craving",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                 ),
               ),
             ],
@@ -143,10 +152,7 @@ class _MetricCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
