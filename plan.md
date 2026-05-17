@@ -73,9 +73,10 @@ ZeroPuff should feel like a clean room at night: calm, legible, soft, and steady
 
 ### Typography
 
-- Display and milestone numbers: `DM Serif Display`.
-- Body and UI: `DM Sans`.
+- Headings and expressive milestone moments: `Playfair Display`.
+- Body and UI: `Geist` preferred, with `Inter` as fallback if Geist support becomes awkward in Flutter.
 - Live timer digits: `Space Mono`.
+- Use dual font styling intentionally: serif for emotional weight, clean sans for usability.
 - No negative letter spacing in compact UI.
 - Use large serif numbers sparingly so they feel earned.
 
@@ -144,6 +145,7 @@ Rules:
 - Riverpod owns app state.
 - Avoid `setState` except inside tiny private UI widgets where local animation/input state is simpler and isolated.
 - Keep widget files focused and split large screens into local widgets.
+- Navigation must support Android predictive back cleanly: no broken previews, no double pops, no confusing back destinations, and no accidental app exits from primary tabs.
 
 ## Phase 0: Project Foundation
 
@@ -217,12 +219,18 @@ Tasks:
 - Add text styles for live counter and milestone numbers.
 - Define component themes for buttons, chips, cards, navigation bar, input fields, snackbars, dialogs, and bottom sheets.
 - Create a small internal design preview screen in debug mode to inspect typography, color, controls, and spacing.
+- Add navigation transition standards for Android:
+  - primary bottom tabs keep state with a shell route.
+  - detail flows use platform-friendly transitions.
+  - critical flows like active rescue confirm before leaving.
+  - predictive back previews should always reveal the real previous destination.
 
 Exit criteria:
 
 - The app has no Flutter starter purple.
 - The interface uses tonal surfaces, not gradients or shadows.
 - Text remains readable in light and dark mode.
+- Android gesture back behavior feels smooth across onboarding, tabs, rescue, and settings.
 
 ## Phase 2: Backend and Local Data Foundation
 
