@@ -13,16 +13,17 @@ class AppTheme {
 
   static ThemeData _theme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.seed,
-      brightness: brightness,
-      dynamicSchemeVariant: DynamicSchemeVariant.expressive,
-    ).copyWith(
-      primary: AppColors.primary,
-      surface: isDark ? AppColors.surfaceDark : AppColors.surface,
-      error: AppColors.error,
-      onSurface: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.seed,
+          brightness: brightness,
+          dynamicSchemeVariant: DynamicSchemeVariant.expressive,
+        ).copyWith(
+          primary: AppColors.primary,
+          surface: isDark ? AppColors.surfaceDark : AppColors.surface,
+          error: AppColors.error,
+          onSurface: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+        );
 
     return ThemeData(
       useMaterial3: true,
@@ -37,21 +38,15 @@ class AppTheme {
         elevation: 0,
         color: isDark ? AppColors.surfaceCardDark : AppColors.surfaceCard,
         margin: EdgeInsets.zero,
-        shape: const RoundedRectangleBorder(
-          borderRadius: AppShapes.card,
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: AppShapes.card),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(56),
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          shape: const RoundedRectangleBorder(
-            borderRadius: AppShapes.button,
-          ),
-          textStyle: AppTypography.textTheme.labelLarge?.copyWith(
-            fontSize: 16,
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: AppShapes.button),
+          textStyle: AppTypography.textTheme.labelLarge?.copyWith(fontSize: 16),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -59,15 +54,14 @@ class AppTheme {
           minimumSize: const Size.fromHeight(52),
           foregroundColor: scheme.onSurface,
           side: BorderSide(color: scheme.outlineVariant),
-          shape: const RoundedRectangleBorder(
-            borderRadius: AppShapes.button,
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: AppShapes.button),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor:
-            isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevated,
+        fillColor: isDark
+            ? AppColors.surfaceElevatedDark
+            : AppColors.surfaceElevated,
         border: const OutlineInputBorder(
           borderRadius: AppShapes.input,
           borderSide: BorderSide.none,
@@ -82,8 +76,9 @@ class AppTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor:
-            isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevated,
+        backgroundColor: isDark
+            ? AppColors.surfaceElevatedDark
+            : AppColors.surfaceElevated,
         selectedColor: AppColors.primaryLight,
         labelStyle: AppTypography.textTheme.labelMedium,
         side: BorderSide.none,
@@ -92,8 +87,9 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
-        backgroundColor:
-            isDark ? AppColors.surfaceCardDark : AppColors.surfaceCard,
+        backgroundColor: isDark
+            ? AppColors.surfaceCardDark
+            : AppColors.surfaceCard,
         indicatorColor: AppColors.primaryLight,
         labelTextStyle: WidgetStatePropertyAll(
           AppTypography.textTheme.labelSmall,
@@ -112,8 +108,9 @@ class AppTheme {
         thickness: 1,
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor:
-            isDark ? AppColors.surfaceCardDark : AppColors.surfaceCard,
+        backgroundColor: isDark
+            ? AppColors.surfaceCardDark
+            : AppColors.surfaceCard,
         shape: const RoundedRectangleBorder(borderRadius: AppShapes.sheet),
       ),
     );

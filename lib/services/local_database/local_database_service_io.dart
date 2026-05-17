@@ -31,6 +31,7 @@ class LocalDatabaseService {
         AchievementStateSchema,
         NotificationPreferenceSchema,
         SyncQueueItemSchema,
+        LocalAppEventSchema,
       ],
       directory: directory.path,
       name: 'zeropuff',

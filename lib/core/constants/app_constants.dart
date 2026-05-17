@@ -5,4 +5,5 @@ class AppConstants {
   static const appTagline = 'Before you smoke, give it two minutes.';
   static const supabaseUrlKey = 'SUPABASE_URL';
   static const supabaseAnonKey = 'SUPABASE_ANON_KEY';
+  static const googleWebClientIdKey = 'GOOGLE_WEB_CLIENT_ID';
 }

@@ -4,23 +4,23 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTypography {
   const AppTypography._();
 
-  static TextStyle get displayNumber => GoogleFonts.playfairDisplay(
-        fontSize: 64,
-        fontWeight: FontWeight.w600,
-        height: 1.05,
-      );
+  static TextStyle get displayNumber => GoogleFonts.outfit(
+    fontSize: 64,
+    fontWeight: FontWeight.w600,
+    height: 1.05,
+    letterSpacing: -1.5,
+  );
 
-  static TextStyle get liveCounter => GoogleFonts.spaceMono(
-        fontSize: 48,
-        fontWeight: FontWeight.w700,
-        height: 1,
-      );
+  static TextStyle get liveCounter => GoogleFonts.outfit(
+    fontSize: 48,
+    fontWeight: FontWeight.w700,
+    height: 1,
+    letterSpacing: -1.0,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
 
-  static TextStyle get liveCounterLabel => _body(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1.2,
-      );
+  static TextStyle get liveCounterLabel =>
+      _body(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.2);
 
   static TextTheme get textTheme {
     final base = Typography.material2021().black;

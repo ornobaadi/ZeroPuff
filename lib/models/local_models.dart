@@ -15,6 +15,8 @@ class LocalProfile {
   late int cigarettesPerDay;
   late double packPrice;
   late int packSize;
+  String currencyCode = 'USD';
+  String currencySymbol = r'$';
   late List<String> triggers;
   String? quitReason;
   late DateTime updatedAt;
@@ -29,6 +31,8 @@ class OnboardingDraft {
   int? cigarettesPerDay;
   double? packPrice;
   int? packSize;
+  String currencyCode = 'USD';
+  String currencySymbol = r'$';
   List<String> triggers = [];
   String? quitReason;
   int currentStep = 0;
@@ -120,4 +124,17 @@ class SyncQueueItem {
   late DateTime createdAt;
   int attemptCount = 0;
   String? lastError;
+}
+
+@collection
+class LocalAppEvent {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true, replace: true)
+  late String eventId;
+
+  late String eventName;
+  late String propertiesJson;
+  late DateTime createdAt;
+  bool synced = false;
 }

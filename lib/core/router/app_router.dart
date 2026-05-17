@@ -23,17 +23,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: AppRoutes.signIn,
-        pageBuilder: (context, state) => _materialPage(
-          state,
-          const SignInScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            _materialPage(state, const SignInScreen()),
       ),
       GoRoute(
         path: AppRoutes.onboarding,
-        pageBuilder: (context, state) => _materialPage(
-          state,
-          const OnboardingScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            _materialPage(state, const OnboardingScreen()),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -45,10 +41,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.home,
-                pageBuilder: (context, state) => _noTransitionPage(
-                  state,
-                  const HomeScreen(),
-                ),
+                pageBuilder: (context, state) =>
+                    _noTransitionPage(state, const HomeScreen()),
               ),
             ],
           ),
@@ -57,10 +51,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.progress,
-                pageBuilder: (context, state) => _noTransitionPage(
-                  state,
-                  const ProgressScreen(),
-                ),
+                pageBuilder: (context, state) =>
+                    _noTransitionPage(state, const ProgressScreen()),
               ),
             ],
           ),
@@ -69,10 +61,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.profile,
-                pageBuilder: (context, state) => _noTransitionPage(
-                  state,
-                  const ProfileScreen(),
-                ),
+                pageBuilder: (context, state) =>
+                    _noTransitionPage(state, const ProfileScreen()),
               ),
             ],
           ),
@@ -81,10 +71,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: AppRoutes.rescue,
-        pageBuilder: (context, state) => _materialPage(
-          state,
-          const RescueScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            _materialPage(state, const RescueScreen()),
       ),
     ],
   );

@@ -16,7 +16,8 @@ Target build window: 3-4 weeks.
 
 ### Included
 
-- Google Sign-In only.
+- Guest-first onboarding.
+- Google Sign-In for sync and account features.
 - New-user onboarding with 4 screens.
 - Home dashboard with live smoke-free counter.
 - Offline 2-minute craving rescue.
@@ -37,7 +38,7 @@ Target build window: 3-4 weeks.
 - AI chat, Claude, Spark, AI memory, and streaming.
 - Voice mode.
 - Quit Circle.
-- Guest mode.
+- Forced sign-in before exploring.
 - Payments, subscriptions, RevenueCat, and AdMob.
 - Bangla or Banglish UI.
 - Advanced analytics.
@@ -285,13 +286,14 @@ How to acquire:
 
 ## Phase 3: Authentication
 
-Goal: Google Sign-In only, with clean onboarding routing.
+Goal: Guest-first entry with Google Sign-In for sync/account features.
 
 Tasks:
 
 - Configure Android package name.
 - Add Google Sign-In dependency setup.
 - Configure Supabase Google OAuth provider.
+- Preserve local guest baseline and link it to Google account on sign-in.
 - Add auth repository.
 - Add Riverpod auth state provider.
 - Add routes:
@@ -338,6 +340,7 @@ Screens:
   - planning date
 - Habit:
   - cigarettes per day
+  - currency
   - pack price
   - pack size
 - Top triggers:

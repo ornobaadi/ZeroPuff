@@ -11,6 +11,8 @@ create table if not exists public.profiles (
   cigarettes_per_day integer not null default 0,
   pack_price numeric(10, 2) not null default 0,
   pack_size integer not null default 20,
+  currency_code text not null default 'USD',
+  currency_symbol text not null default '$',
   triggers text[] not null default '{}',
   quit_reason text,
   onboarding_completed boolean not null default false,
