@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../repositories/auth_repository.dart';
@@ -66,11 +68,12 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.sectionGap),
             Text('Settings', style: theme.textTheme.titleLarge),
             const SizedBox(height: AppSpacing.md),
-            const _SettingsTile(
+            _SettingsTile(
               icon: Icons.tune_rounded,
               title: 'Setup details',
               subtitle: 'Quit date, daily baseline, currency, and triggers.',
-              status: 'Phase 10',
+              status: 'Edit',
+              onTap: () => context.push(AppRoutes.setupSettings),
             ),
             const SizedBox(height: AppSpacing.componentGap),
             const _SettingsTile(
@@ -88,6 +91,21 @@ class ProfileScreen extends ConsumerWidget {
                   : 'Connected to Google.',
               status: isGuest ? 'Optional' : 'Connected',
             ),
+            if (!isGuest) ...[
+              const SizedBox(height: AppSpacing.componentGap),
+              _SettingsTile(
+                icon: Icons.logout_rounded,
+                title: 'Sign out',
+                subtitle: 'Keep local data on this device.',
+                status: '',
+                onTap: () async {
+                  await ref.read(authRepositoryProvider).signOut();
+                  if (context.mounted) {
+                    context.go(AppRoutes.signIn);
+                  }
+                },
+              ),
+            ],
             const SizedBox(height: AppSpacing.sectionGap),
             Container(
               padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -130,59 +148,65 @@ class _SettingsTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.status,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final String status;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(14),
+    return InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: theme.colorScheme.onSurfaceVariant),
             ),
-            child: Icon(icon, color: theme.colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            status,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              status,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

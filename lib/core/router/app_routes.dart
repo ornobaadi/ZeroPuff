@@ -8,4 +8,6 @@ class AppRoutes {
   static const profile = '/profile';
   static const rescue = '/rescue';
   static const logging = '/log-smoke';
+  static const checkIn = '/check-in';
+  static const setupSettings = '/setup-settings';
 }

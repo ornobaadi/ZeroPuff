@@ -24,7 +24,10 @@ Last updated: May 18, 2026.
 - Phase 5: partially complete. Home dashboard has live smoke-free counter, estimated savings, avoided cigarettes, craving CTA, and logging shortcut. Daily check-in card behavior is still pending.
 - Phase 6: partially complete. Offline craving rescue setup, two-minute timer, outcome capture, and persistence are implemented. Background survival and deeper restart handling still need QA.
 - Phase 7: started. Private smoking log exists with count, trigger, note, local save, and compassionate copy. Deterministic streak recalculation and dashboard integration remain.
-- Phases 8-12: not complete. Daily check-in, milestones, achievements, settings, notifications, sync hardening, test coverage, and beta release QA are next.
+- Phase 8: partially complete. Daily check-in route, local repository, browser fallback, mood/status/count/note UI, edit-today behavior, and Home card state are implemented. Supabase sync and notification reminder tie-in remain.
+- Phase 9: partially complete. Progress tab now calculates smoke-free duration, savings, cigarettes avoided, health milestones, next milestone progress, basic time achievements, and check-in summary. Dedicated services/tests and full achievement persistence remain.
+- Phase 10: started. Setup details can be edited from the You tab, saved locally, queued for profile sync, and reflected in Home/Progress. Notification settings, account deletion, and deeper profile controls remain.
+- Phases 11-12: not complete. Notifications, sync hardening, test coverage expansion, and beta release QA are next.
 
 ## v0.1 Scope
 
@@ -752,7 +755,9 @@ This gives enough signal for the v0.1 gate without adding another vendor.
 
 Continue the v0.1 core loop:
 
-1. Finish Phase 7 by wiring smoking logs into smoke-free streak and honesty streak calculations.
-2. Build Phase 8 daily check-in with local save, edit-today behavior, and Home card state.
-3. Build Phase 9 progress timeline and savings screen from the same calculation services.
-4. Return to Google Sign-In Android QA once the OAuth console package name and SHA fingerprints are verified on device.
+1. Finish Phase 7 streak rules by separating smoke-free streak and honesty streak from logs/check-ins.
+2. Harden Phase 8 by syncing check-ins to Supabase and tying check-in reminders into notifications.
+3. Harden Phase 9 with calculation services and tests for milestones, savings, and achievements.
+4. Finish Phase 10 notification settings, account deletion path, and setup edit QA.
+5. Start Phase 11 local notifications.
+6. Return to Google Sign-In Android QA once the OAuth console package name and SHA fingerprints are verified on device.

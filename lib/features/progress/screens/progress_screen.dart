@@ -1,9 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/calculations/progress_calculations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
+import '../../../repositories/achievement_repository.dart';
+
+final unlockedAchievementsProvider = FutureProvider<Set<String>>((ref) async {
+  final data = ref.watch(homeDashboardProvider).value;
+  if (data == null) {
+    return const {};
+  }
+  final computed = ProgressCalculations.unlockedAchievementKeys(
+    data.smokeFreeDuration,
+  );
+  final repository = ref.watch(achievementRepositoryProvider);
+  await repository.unlockAll(computed);
+  return repository.unlockedKeys();
+});
 
 class ProgressScreen extends ConsumerWidget {
   const ProgressScreen({super.key});
@@ -12,6 +27,8 @@ class ProgressScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final dashboard = ref.watch(homeDashboardProvider);
+    final recentCheckIns = ref.watch(recentCheckInsProvider);
+    final unlockedAchievements = ref.watch(unlockedAchievementsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Progress')),
@@ -19,72 +36,112 @@ class ProgressScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.pagePadding),
           children: dashboard.when(
-            data: (data) => [
-              Text('Your recovery map', style: theme.textTheme.headlineMedium),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'A quiet view of what is changing, without turning this into a game.',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+            data: (data) {
+              final next = ProgressCalculations.nextMilestone(
+                data.smokeFreeDuration,
+              );
+              final recent = recentCheckIns.value ?? const [];
+              final unlocked = unlockedAchievements.value ?? const {};
+              final smokeFreeCheckIns = recent
+                  .where((record) => record.smokeFreeToday)
+                  .length;
+
+              return [
+                Text(
+                  'Your recovery map',
+                  style: theme.textTheme.headlineMedium,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sectionGap),
-              Row(
-                children: [
-                  Expanded(
-                    child: _ProgressStat(
-                      label: 'Smoke-free',
-                      value: '${data.smokeFreeDays}d',
-                      icon: Icons.air_rounded,
-                      color: AppColors.primary,
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'A quiet view of what is changing, without turning this into a game.',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sectionGap),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ProgressStat(
+                        label: 'Smoke-free',
+                        value: '${data.smokeFreeDays}d',
+                        icon: Icons.air_rounded,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: _ProgressStat(
+                        label: 'Saved',
+                        value:
+                            '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
+                        icon: Icons.savings_rounded,
+                        color: AppColors.accentMoney,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ProgressStat(
+                        label: 'Avoided',
+                        value: '${data.cigarettesAvoided}',
+                        icon: Icons.smoke_free_rounded,
+                        color: AppColors.accentStreak,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: _ProgressStat(
+                        label: 'Check-ins',
+                        value: '${recent.length}',
+                        icon: Icons.fact_check_rounded,
+                        color: AppColors.accentCraving,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sectionGap),
+                if (next != null) _NextMilestoneCard(next: next, data: data),
+                if (next != null) const SizedBox(height: AppSpacing.sectionGap),
+                Text('Health timeline', style: theme.textTheme.titleLarge),
+                const SizedBox(height: AppSpacing.md),
+                ...ProgressCalculations.healthMilestones.map(
+                  (milestone) => Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: AppSpacing.componentGap,
+                    ),
+                    child: _PreviewMilestone(
+                      title: milestone.title,
+                      body: milestone.body,
+                      active: data.smokeFreeDuration >= milestone.duration,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: _ProgressStat(
-                      label: 'Saved',
-                      value:
-                          '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
-                      icon: Icons.savings_rounded,
-                      color: AppColors.accentMoney,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sectionGap),
-              Text('Health timeline', style: theme.textTheme.titleLarge),
-              const SizedBox(height: AppSpacing.md),
-              _PreviewMilestone(
-                title: '20 minutes',
-                body: 'Pulse and blood pressure begin to settle.',
-                active: data.smokeFreeDuration.inMinutes >= 20,
-              ),
-              const SizedBox(height: AppSpacing.componentGap),
-              _PreviewMilestone(
-                title: '8 hours',
-                body: 'Oxygen levels get more room to recover.',
-                active: data.smokeFreeDuration.inHours >= 8,
-              ),
-              const SizedBox(height: AppSpacing.componentGap),
-              _PreviewMilestone(
-                title: '24 hours',
-                body: 'The first full-day marker becomes visible.',
-                active: data.smokeFreeDuration.inHours >= 24,
-              ),
-              const SizedBox(height: AppSpacing.sectionGap),
-              Text('Achievements', style: theme.textTheme.titleLarge),
-              const SizedBox(height: AppSpacing.md),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: const [
-                  _AchievementChip(label: '1 hour', unlocked: true),
-                  _AchievementChip(label: '6 hours'),
-                  _AchievementChip(label: '1 day'),
-                  _AchievementChip(label: '1 week'),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: AppSpacing.sectionGap),
+                Text('Achievements', style: theme.textTheme.titleLarge),
+                const SizedBox(height: AppSpacing.md),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: ProgressCalculations.achievements.map((
+                    achievement,
+                  ) {
+                    return _AchievementChip(
+                      label: achievement.title,
+                      unlocked: unlocked.contains(achievement.key),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: AppSpacing.sectionGap),
+                _CheckInSummary(
+                  total: recent.length,
+                  smokeFree: smokeFreeCheckIns,
+                ),
+              ];
+            },
             loading: () => [
               const SizedBox(height: 160),
               const Center(child: CircularProgressIndicator()),
@@ -98,6 +155,68 @@ class ProgressScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+class _NextMilestoneCard extends StatelessWidget {
+  const _NextMilestoneCard({required this.next, required this.data});
+
+  final ProgressMilestone next;
+  final HomeDashboardData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final remaining = next.duration - data.smokeFreeDuration;
+    final progress = ProgressCalculations.milestoneProgress(
+      smokeFreeDuration: data.smokeFreeDuration,
+      milestone: next,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: BoxDecoration(
+        color: AppColors.accentMoney.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: AppColors.accentMoney.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Next milestone', style: theme.textTheme.labelLarge),
+          const SizedBox(height: AppSpacing.sm),
+          Text(next.title, style: theme.textTheme.headlineSmall),
+          const SizedBox(height: AppSpacing.md),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 10,
+              value: progress,
+              color: AppColors.accentMoney,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            '${_durationLabel(remaining)} left',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _durationLabel(Duration duration) {
+    if (duration.inDays > 0) {
+      return '${duration.inDays}d ${duration.inHours.remainder(24)}h';
+    }
+    if (duration.inHours > 0) {
+      return '${duration.inHours}h ${duration.inMinutes.remainder(60)}m';
+    }
+    return '${duration.inMinutes}m';
   }
 }
 
@@ -130,7 +249,11 @@ class _ProgressStat extends StatelessWidget {
         children: [
           Icon(icon, color: color),
           const SizedBox(height: AppSpacing.md),
-          Text(value, style: theme.textTheme.headlineSmall),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value, style: theme.textTheme.headlineSmall),
+          ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             label,
@@ -198,7 +321,7 @@ class _PreviewMilestone extends StatelessWidget {
 }
 
 class _AchievementChip extends StatelessWidget {
-  const _AchievementChip({required this.label, this.unlocked = false});
+  const _AchievementChip({required this.label, required this.unlocked});
 
   final String label;
   final bool unlocked;
@@ -230,6 +353,43 @@ class _AchievementChip extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(label, style: theme.textTheme.labelMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckInSummary extends StatelessWidget {
+  const _CheckInSummary({required this.total, required this.smokeFree});
+
+  final int total;
+  final int smokeFree;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.fact_check_rounded, color: AppColors.primary),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              total == 0
+                  ? 'No check-ins yet. Start with today.'
+                  : '$smokeFree of your last $total check-ins were smoke-free.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         ],
       ),
     );

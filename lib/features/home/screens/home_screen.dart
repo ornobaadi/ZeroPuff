@@ -67,12 +67,9 @@ class HomeScreen extends ConsumerWidget {
               _QuickLogCard(onTap: () => context.push(AppRoutes.logging)),
               const SizedBox(height: AppSpacing.md),
               _TodayCard(
-                title: data.lastSmokeAt == null
-                    ? 'Your baseline is ready'
-                    : 'Timer restarted honestly',
-                body: data.lastSmokeAt == null
-                    ? 'If a craving hits today, open rescue before making a decision. Logging honestly still counts as progress.'
-                    : 'Last smoke logged at ${_timeLabel(data.lastSmokeAt!)}. The clock now counts from there.',
+                checkedIn: data.todayCheckIn != null,
+                smokeFreeToday: data.todayCheckIn?.smokeFreeToday,
+                onTap: () => context.push(AppRoutes.checkIn),
               ),
             ],
             loading: () => [
@@ -306,47 +303,74 @@ class _QuickLogCard extends StatelessWidget {
 }
 
 class _TodayCard extends StatelessWidget {
-  const _TodayCard({required this.title, required this.body});
+  const _TodayCard({
+    required this.checkedIn,
+    required this.smokeFreeToday,
+    required this.onTap,
+  });
 
-  final String title;
-  final String body;
+  final bool checkedIn;
+  final bool? smokeFreeToday;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPadding),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.calendar_today_rounded,
-            size: 20,
-            color: theme.colorScheme.onSurfaceVariant,
+    final title = checkedIn ? 'Check-in complete' : 'Daily check-in';
+    final body = checkedIn
+        ? (smokeFreeToday == true
+              ? 'Today is marked smoke-free. You can edit it if needed.'
+              : 'Today is logged honestly. That still counts.')
+        : 'One minute: mood, smoke-free status, and an optional note.';
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        decoration: BoxDecoration(
+          color: checkedIn
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: checkedIn
+                ? AppColors.primary.withValues(alpha: 0.2)
+                : theme.colorScheme.outlineVariant,
           ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  body,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              checkedIn
+                  ? Icons.check_circle_rounded
+                  : Icons.calendar_today_rounded,
+              size: 22,
+              color: checkedIn
+                  ? AppColors.primary
+                  : theme.colorScheme.onSurfaceVariant,
             ),
-          ),
-        ],
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    body,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
       ),
     );
   }
@@ -471,15 +495,4 @@ class _MetricCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String _timeLabel(DateTime value) {
-  final hour = value.hour == 0
-      ? 12
-      : value.hour > 12
-      ? value.hour - 12
-      : value.hour;
-  final minute = value.minute.toString().padLeft(2, '0');
-  final suffix = value.hour >= 12 ? 'PM' : 'AM';
-  return '$hour:$minute $suffix';
 }

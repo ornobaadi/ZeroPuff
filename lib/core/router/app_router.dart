@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/screens/sign_in_screen.dart';
+import '../../features/checkin/screens/daily_checkin_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/profile/screens/setup_settings_screen.dart';
 import '../../features/progress/screens/progress_screen.dart';
 import '../../features/rescue/screens/rescue_screen.dart';
 import '../../features/logging/screens/smoking_log_screen.dart';
@@ -80,6 +82,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.logging,
         pageBuilder: (context, state) =>
             _materialPage(state, const SmokingLogScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.checkIn,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const DailyCheckInScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.setupSettings,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const SetupSettingsScreen()),
       ),
     ],
   );
