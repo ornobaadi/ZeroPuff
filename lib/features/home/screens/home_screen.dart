@@ -142,9 +142,9 @@ class _SmokeFreeHero extends StatelessWidget {
               color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.sm),
           _FlipTimer(data: data),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
           Row(
             children: [
               Text(
@@ -194,21 +194,80 @@ class _FlipTimer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
-      children: [
-        _TimeBlock(value: data.smokeFreeDays, label: 'days'),
-        _TimeBlock(value: data.smokeFreeHours, label: 'hours'),
-        _TimeBlock(value: data.smokeFreeMinutes, label: 'min'),
-        _TimeBlock(value: data.smokeFreeSeconds, label: 'sec', accent: true),
-      ],
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.black.withValues(alpha: 0.14)
+            : AppColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.bottomLeft,
+                  child: Text(
+                    data.smokeFreeDays.toString(),
+                    style: AppTypography.displayNumber.copyWith(
+                      fontSize: 76,
+                      height: 0.92,
+                      color: isDark ? AppColors.cream : AppColors.primaryDark,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 7),
+                child: Text(
+                  data.smokeFreeDays == 1 ? 'day' : 'days',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: _TimePill(value: data.smokeFreeHours, label: 'hour'),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _TimePill(value: data.smokeFreeMinutes, label: 'min'),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _TimePill(
+                  value: data.smokeFreeSeconds,
+                  label: 'sec',
+                  accent: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _TimeBlock extends StatelessWidget {
-  const _TimeBlock({
+class _TimePill extends StatelessWidget {
+  const _TimePill({
     required this.value,
     required this.label,
     this.accent = false,
@@ -221,30 +280,27 @@ class _TimeBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = accent ? AppColors.primaryLight : AppColors.cream;
+    final isDark = theme.brightness == Brightness.dark;
+    final color = accent ? AppColors.primaryLight : theme.colorScheme.onSurface;
 
     return Container(
-      width: 86,
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.lg,
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? Colors.black.withValues(alpha: 0.16)
-            : AppColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        color: accent
+            ? AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.1)
+            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
           Text(
             value.toString().padLeft(2, '0'),
             style: AppTypography.liveCounter.copyWith(
-              fontSize: 31,
-              color: theme.brightness == Brightness.dark
-                  ? color
-                  : AppColors.primaryDark,
+              fontSize: 26,
+              color: isDark ? color : AppColors.primaryDark,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),

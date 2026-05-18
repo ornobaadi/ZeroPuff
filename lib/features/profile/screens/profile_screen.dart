@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../auth/controllers/google_sign_in_controller.dart';
+import '../../home/providers/home_dashboard_provider.dart';
 import '../../../repositories/auth_repository.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -111,9 +112,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 status: '',
                 onTap: () async {
                   await ref.read(authRepositoryProvider).signOut();
-                  if (context.mounted) {
-                    context.go(AppRoutes.signIn);
-                  }
+                  ref.invalidate(currentUserProvider);
+                  ref.invalidate(homeBaselineProvider);
+                  ref.invalidate(homeDashboardProvider);
                 },
               ),
             ],

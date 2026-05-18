@@ -13,7 +13,13 @@ final authStateProvider = StreamProvider<AuthState?>((ref) {
 });
 
 final currentUserProvider = Provider<User?>((ref) {
-  return ref.watch(authRepositoryProvider).currentUser;
+  final repository = ref.watch(authRepositoryProvider);
+  final authState = ref.watch(authStateProvider);
+
+  return authState.maybeWhen(
+    data: (state) => state?.session?.user ?? repository.currentUser,
+    orElse: () => repository.currentUser,
+  );
 });
 
 class AuthRepository {

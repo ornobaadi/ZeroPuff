@@ -4,6 +4,7 @@ import '../../../models/profile_data.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/profile_repository.dart';
+import '../../home/providers/home_dashboard_provider.dart';
 
 final googleSignInControllerProvider = Provider<GoogleSignInController>((ref) {
   return GoogleSignInController(ref);
@@ -19,7 +20,9 @@ class GoogleSignInController {
   Future<GoogleSignInOutcome> signInAndLinkGuestProfile() async {
     await _ref.read(authRepositoryProvider).signInWithGoogle();
 
-    final user = _ref.read(currentUserProvider);
+    final user =
+        _ref.read(currentUserProvider) ??
+        _ref.read(authRepositoryProvider).currentUser;
     if (user == null) {
       return const GoogleSignInOutcome(signedIn: false, hasLocalProfile: false);
     }
@@ -56,10 +59,20 @@ class GoogleSignInController {
       await _ref.read(profileRepositoryProvider).upsertProfile(linkedProfile);
     }
 
+    _refreshLocalViews();
+
     return GoogleSignInOutcome(
       signedIn: true,
       hasLocalProfile: localProfile != null,
     );
+  }
+
+  void _refreshLocalViews() {
+    _ref.invalidate(currentUserProvider);
+    _ref.invalidate(homeBaselineProvider);
+    _ref.invalidate(homeDashboardProvider);
+    _ref.invalidate(todayCheckInProvider);
+    _ref.invalidate(recentCheckInsProvider);
   }
 }
 
