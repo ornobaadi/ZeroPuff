@@ -100,6 +100,8 @@ class _SmokeFreeHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final milestoneProgress = _nextMilestoneProgress(data.smokeFreeDuration);
+    final milestonePercent = (milestoneProgress * 100).round().clamp(0, 100);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -134,39 +136,41 @@ class _SmokeFreeHero extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('You are smoke-free for', style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.md),
-          _FlipTimer(data: data),
-          const SizedBox(height: AppSpacing.md),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              minHeight: 10,
-              value: _nextMilestoneProgress(data.smokeFreeDuration),
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              color: AppColors.accentMoney,
+          Text(
+            'You are smoke-free for',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: isDark ? 0.16 : 0.08),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.flag_rounded, color: AppColors.primary),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    'The next useful step is simple: pause before the next cigarette.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+          _FlipTimer(data: data),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              Text(
+                '20 min milestone',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-              ],
+              ),
+              const Spacer(),
+              Text(
+                '$milestonePercent%',
+                style: AppTypography.displayNumber.copyWith(
+                  fontSize: 18,
+                  color: AppColors.accentMoney,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 12,
+              value: milestoneProgress,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              color: AppColors.accentMoney,
             ),
           ),
         ],
@@ -220,10 +224,10 @@ class _TimeBlock extends StatelessWidget {
     final color = accent ? AppColors.primaryLight : AppColors.cream;
 
     return Container(
-      width: 78,
+      width: 86,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
-        vertical: AppSpacing.md,
+        vertical: AppSpacing.lg,
       ),
       decoration: BoxDecoration(
         color: theme.brightness == Brightness.dark
@@ -237,7 +241,7 @@ class _TimeBlock extends StatelessWidget {
           Text(
             value.toString().padLeft(2, '0'),
             style: AppTypography.liveCounter.copyWith(
-              fontSize: 25,
+              fontSize: 31,
               color: theme.brightness == Brightness.dark
                   ? color
                   : AppColors.primaryDark,

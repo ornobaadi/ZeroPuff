@@ -21,6 +21,26 @@ class OnboardingRepository {
     _profile = profile;
   }
 
+  Future<void> attachGuestProfileToUser(String userId) async {
+    final existing = _profile;
+    if (existing == null) {
+      return;
+    }
+    _profile = ProfileData(
+      userId: userId,
+      displayName: existing.displayName,
+      avatarUrl: existing.avatarUrl,
+      quitDate: existing.quitDate,
+      cigarettesPerDay: existing.cigarettesPerDay,
+      packPrice: existing.packPrice,
+      packSize: existing.packSize,
+      currencyCode: existing.currencyCode,
+      currencySymbol: existing.currencySymbol,
+      triggers: existing.triggers,
+      quitReason: existing.quitReason,
+    );
+  }
+
   Future<ProfileData?> loadCompletedProfile() async => _profile;
 
   ProfileData? get debugProfile => _profile;

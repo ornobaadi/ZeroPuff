@@ -27,16 +27,24 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
 
+# Local tooling / caches
+.venv/
+**/.kotlin/
+
 # Local secrets
 .env
 .env.*
 !.env.example
+
+# Copilot / agent artifacts
+skills-lock.json
 
 # Symbolication related
 app.*.symbols

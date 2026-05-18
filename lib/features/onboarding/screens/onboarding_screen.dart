@@ -13,6 +13,7 @@ import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/profile_repository.dart';
+import '../../../services/device/device_identity_service.dart';
 
 const _triggerOptions = [
   'stress',
@@ -199,9 +200,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           max: 10000,
                           prefix: _currency.symbol,
                           step: _currency.largePriceStep ? 10 : 1,
-                          helperText: _currency.largePriceStep
-                              ? 'Use +/- 10 or tap the price to type.'
-                              : 'Use +/- 1 or tap the price to type.',
                           onChanged: (value) {
                             setState(() => _packPrice = value);
                           },
@@ -357,7 +355,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       final user = ref.read(currentUserProvider);
       final profile = ProfileData(
-        userId: user?.id ?? 'guest-device',
+        userId: user?.id ?? DeviceIdentityService.guestUserId,
         displayName:
             user?.userMetadata?['full_name']?.toString() ??
             user?.email ??
@@ -548,7 +546,6 @@ class _NumberStepper extends StatelessWidget {
     required this.onChanged,
     this.prefix,
     this.step = 1,
-    this.helperText,
   });
 
   final String label;
@@ -558,7 +555,6 @@ class _NumberStepper extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final String? prefix;
   final int step;
-  final String? helperText;
 
   @override
   Widget build(BuildContext context) {
@@ -609,15 +605,6 @@ class _NumberStepper extends StatelessWidget {
                 ),
               ],
             ),
-            if (helperText != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                helperText!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
           ],
         ),
       ),

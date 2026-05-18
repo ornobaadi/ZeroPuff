@@ -8,6 +8,7 @@ import '../../../models/profile_data.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/profile_repository.dart';
+import '../../../services/device/device_identity_service.dart';
 
 const _triggerOptions = [
   'stress',
@@ -80,7 +81,8 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
     try {
       final user = ref.read(currentUserProvider);
       final profile = ProfileData(
-        userId: existing?.userId ?? user?.id ?? 'guest-device',
+        userId:
+            existing?.userId ?? user?.id ?? DeviceIdentityService.guestUserId,
         displayName:
             existing?.displayName ??
             user?.userMetadata?['full_name']?.toString() ??

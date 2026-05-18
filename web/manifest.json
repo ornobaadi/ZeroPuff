@@ -1,11 +1,11 @@
 {
-    "name": "zeropuff",
-    "short_name": "zeropuff",
+    "name": "ZeroPuff",
+    "short_name": "ZeroPuff",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#071C16",
+    "theme_color": "#071C16",
+    "description": "A calm quit-smoking companion for the craving moment.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

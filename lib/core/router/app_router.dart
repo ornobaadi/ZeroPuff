@@ -12,6 +12,8 @@ import '../../features/progress/screens/progress_screen.dart';
 import '../../features/rescue/screens/rescue_screen.dart';
 import '../../features/logging/screens/smoking_log_screen.dart';
 import '../../features/shell/app_shell.dart';
+import '../../repositories/auth_repository.dart';
+import '../../repositories/onboarding_repository.dart';
 import 'app_routes.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -22,7 +24,41 @@ final shellNavigatorProfileKey = GlobalKey<NavigatorState>();
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: rootNavigatorKey,
-    initialLocation: AppRoutes.signIn,
+    initialLocation: AppRoutes.home,
+    redirect: (context, state) async {
+      final onboardingRepository = ref.read(onboardingRepositoryProvider);
+      final completedProfile = await onboardingRepository.loadCompletedProfile();
+      final hasCompletedOnboarding = completedProfile != null;
+
+      final user = ref.read(currentUserProvider);
+      final isSignedIn = user != null;
+
+      final location = state.matchedLocation;
+      final isSignInRoute = location == AppRoutes.signIn;
+      final isOnboardingRoute = location == AppRoutes.onboarding;
+
+      if (hasCompletedOnboarding) {
+        if (isOnboardingRoute) {
+          return AppRoutes.home;
+        }
+
+        if (isSignInRoute && isSignedIn) {
+          return AppRoutes.home;
+        }
+
+        return null;
+      }
+
+      if (isOnboardingRoute) {
+        return null;
+      }
+
+      if (isSignInRoute) {
+        return isSignedIn ? AppRoutes.onboarding : null;
+      }
+
+      return isSignedIn ? AppRoutes.onboarding : AppRoutes.signIn;
+    },
     routes: [
       GoRoute(
         path: AppRoutes.signIn,

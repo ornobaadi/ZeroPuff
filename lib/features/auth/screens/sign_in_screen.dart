@@ -9,10 +9,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../models/profile_data.dart';
-import '../../../repositories/auth_repository.dart';
-import '../../../repositories/onboarding_repository.dart';
-import '../../../repositories/profile_repository.dart';
+import '../controllers/google_sign_in_controller.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -131,36 +128,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Future<void> _signIn() async {
     setState(() => _isSigningIn = true);
     try {
-      await ref.read(authRepositoryProvider).signInWithGoogle();
-      final user = ref.read(currentUserProvider);
-      final localProfile = await ref
-          .read(onboardingRepositoryProvider)
-          .loadCompletedProfile();
-      if (user != null && localProfile != null) {
-        final linkedProfile = ProfileData(
-          userId: user.id,
-          displayName:
-              user.userMetadata?['full_name']?.toString() ??
-              user.email ??
-              localProfile.displayName,
-          avatarUrl: user.userMetadata?['avatar_url']?.toString(),
-          quitDate: localProfile.quitDate,
-          cigarettesPerDay: localProfile.cigarettesPerDay,
-          packPrice: localProfile.packPrice,
-          packSize: localProfile.packSize,
-          currencyCode: localProfile.currencyCode,
-          currencySymbol: localProfile.currencySymbol,
-          triggers: localProfile.triggers,
-          quitReason: localProfile.quitReason,
-        );
-        await ref
-            .read(onboardingRepositoryProvider)
-            .completeOnboarding(linkedProfile);
-        await ref.read(profileRepositoryProvider).upsertProfile(linkedProfile);
-      }
+      final outcome = await ref
+          .read(googleSignInControllerProvider)
+          .signInAndLinkGuestProfile();
+
       if (mounted) {
         context.go(
-          localProfile == null ? AppRoutes.onboarding : AppRoutes.home,
+          outcome.hasLocalProfile ? AppRoutes.home : AppRoutes.onboarding,
         );
       }
     } on Object catch (error) {

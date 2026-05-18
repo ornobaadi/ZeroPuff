@@ -5,22 +5,25 @@ import '../models/local_models.dart';
 import '../models/onboarding_data.dart';
 import '../models/profile_data.dart';
 import '../services/local_database/local_database_service_io.dart';
+import '../services/device/device_identity_service.dart';
 
 final onboardingRepositoryProvider = Provider<OnboardingRepository>((ref) {
   final database = ref.watch(localDatabaseProvider);
-  if (database == null) {
-    throw StateError('Local database has not been initialized.');
-  }
   return OnboardingRepository(database);
 });
 
 class OnboardingRepository {
   const OnboardingRepository(this._database);
 
-  final Isar _database;
+  final Isar? _database;
 
   Future<OnboardingData?> loadDraft() async {
-    final draft = await _database.onboardingDrafts.where().findFirst();
+    final database = _database;
+    if (database == null) {
+      return null;
+    }
+
+    final draft = await database.onboardingDrafts.where().findFirst();
     if (draft == null) {
       return null;
     }
@@ -40,7 +43,12 @@ class OnboardingRepository {
   }
 
   Future<void> saveDraft(OnboardingData data) async {
-    final existing = await _database.onboardingDrafts.where().findFirst();
+    final database = _database;
+    if (database == null) {
+      return;
+    }
+
+    final existing = await database.onboardingDrafts.where().findFirst();
     final draft = existing ?? OnboardingDraft();
     draft
       ..quitDate = data.quitDate
@@ -55,10 +63,15 @@ class OnboardingRepository {
       ..completed = data.completed
       ..updatedAt = DateTime.now();
 
-    await _database.writeTxn(() => _database.onboardingDrafts.put(draft));
+    await database.writeTxn(() => database.onboardingDrafts.put(draft));
   }
 
   Future<void> completeOnboarding(ProfileData profile) async {
+    final database = _database;
+    if (database == null) {
+      return;
+    }
+
     final localProfile = LocalProfile()
       ..userId = profile.userId
       ..displayName = profile.displayName
@@ -80,14 +93,84 @@ class OnboardingRepository {
       ..operation = 'upsert'
       ..createdAt = DateTime.now();
 
-    await _database.writeTxn(() async {
-      await _database.localProfiles.put(localProfile);
-      await _database.syncQueueItems.put(queueItem);
+    await database.writeTxn(() async {
+      await database.localProfiles.put(localProfile);
+      await database.syncQueueItems.put(queueItem);
+    });
+  }
+
+  Future<void> attachGuestProfileToUser(String userId) async {
+    final database = _database;
+    if (database == null) {
+      return;
+    }
+
+    final guestUserId = DeviceIdentityService.guestUserId;
+
+    await database.writeTxn(() async {
+      final guestProfile = await database.localProfiles.getByUserId(guestUserId);
+      if (guestProfile == null) {
+        return;
+      }
+
+      final existingUserProfile = await database.localProfiles.getByUserId(userId);
+      if (existingUserProfile != null && existingUserProfile.id != guestProfile.id) {
+        existingUserProfile
+          ..displayName = guestProfile.displayName
+          ..avatarUrl = guestProfile.avatarUrl
+          ..quitDate = guestProfile.quitDate
+          ..cigarettesPerDay = guestProfile.cigarettesPerDay
+          ..packPrice = guestProfile.packPrice
+          ..packSize = guestProfile.packSize
+          ..currencyCode = guestProfile.currencyCode
+          ..currencySymbol = guestProfile.currencySymbol
+          ..triggers = guestProfile.triggers
+          ..quitReason = guestProfile.quitReason
+          ..updatedAt = DateTime.now()
+          ..synced = false;
+
+        await database.localProfiles.put(existingUserProfile);
+        await database.localProfiles.delete(guestProfile.id);
+      } else {
+        guestProfile
+          ..userId = userId
+          ..updatedAt = DateTime.now()
+          ..synced = false;
+
+        await database.localProfiles.put(guestProfile);
+      }
+
+      final staleQueueItems = await database.syncQueueItems
+          .filter()
+          .entityTypeEqualTo('profile')
+          .entityIdEqualTo(guestUserId)
+          .findAll();
+      for (final item in staleQueueItems) {
+        item.entityId = userId;
+      }
+      if (staleQueueItems.isNotEmpty) {
+        await database.syncQueueItems.putAll(staleQueueItems);
+      }
+
+      final queueItem = SyncQueueItem()
+        ..entityType = 'profile'
+        ..entityId = userId
+        ..operation = 'upsert'
+        ..createdAt = DateTime.now();
+      await database.syncQueueItems.put(queueItem);
     });
   }
 
   Future<ProfileData?> loadCompletedProfile() async {
-    final profile = await _database.localProfiles.where().findFirst();
+    final database = _database;
+    if (database == null) {
+      return null;
+    }
+
+    final profile = await database.localProfiles
+        .where()
+        .sortByUpdatedAtDesc()
+        .findFirst();
     if (profile == null) {
       return null;
     }

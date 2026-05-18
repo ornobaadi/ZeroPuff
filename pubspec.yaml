@@ -51,7 +51,6 @@ dependencies:
   uuid: ^4.5.3
   isar_community: ^3.3.2
   isar_community_flutter_libs: ^3.3.2
-  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -66,6 +65,8 @@ dev_dependencies:
   build_runner: ^2.15.0
   isar_community_generator: ^3.3.2
   riverpod_generator: ^4.0.3
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -80,7 +81,6 @@ flutter:
 
   assets:
     - .env
-    - assets/icons/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -112,3 +112,22 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/branding/app_icon.png
+  remove_alpha_ios: true
+
+flutter_native_splash:
+  color: "#FAF6EE"
+  color_dark: "#071C16"
+  background_image: assets/branding/bg.png
+  background_image_dark: assets/branding/bg.png
+  image: assets/branding/splash.png
+  image_dark: assets/branding/splash.png
+  android_12:
+    color: "#00C883"
+    color_dark: "#00C883"
+    image: assets/branding/splash.png
+    image_dark: assets/branding/splash.png

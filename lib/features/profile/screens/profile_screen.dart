@@ -5,13 +5,21 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../auth/controllers/google_sign_in_controller.dart';
 import '../../../repositories/auth_repository.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _isSyncing = false;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final user = ref.watch(currentUserProvider);
     final isGuest = user == null;
@@ -89,7 +97,10 @@ class ProfileScreen extends ConsumerWidget {
               subtitle: isGuest
                   ? 'Optional. Guest mode remains available.'
                   : 'Connected to Google.',
-              status: isGuest ? 'Optional' : 'Connected',
+              status: isGuest
+                  ? (_isSyncing ? 'Opening…' : 'Optional')
+                  : 'Connected',
+              onTap: isGuest && !_isSyncing ? _connectGoogle : null,
             ),
             if (!isGuest) ...[
               const SizedBox(height: AppSpacing.componentGap),
@@ -139,6 +150,25 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _connectGoogle() async {
+    setState(() => _isSyncing = true);
+    try {
+      await ref
+          .read(googleSignInControllerProvider)
+          .signInAndLinkGuestProfile();
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
+    }
   }
 }
 
