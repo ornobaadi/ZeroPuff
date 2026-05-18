@@ -23,12 +23,13 @@ class SmokingLogRepositoryIO implements SmokingLogRepository {
   Future<String> addLog({
     required int count,
     required String trigger,
+    DateTime? smokedAt,
     String? note,
   }) async {
     final logId = const Uuid().v4();
     final log = SmokingLog()
       ..logId = logId
-      ..smokedAt = DateTime.now().toUtc()
+      ..smokedAt = (smokedAt ?? DateTime.now()).toUtc()
       ..count = count
       ..trigger = trigger
       ..note = note;
@@ -52,5 +53,18 @@ class SmokingLogRepositoryIO implements SmokingLogRepository {
         .findAll();
 
     return logs.fold<int>(0, (sum, log) => sum + log.count);
+  }
+
+  @override
+  Future<DateTime?> getLatestSmokedAt() async {
+    final logs = await _isar.smokingLogs
+        .where()
+        .sortBySmokedAtDesc()
+        .limit(1)
+        .findAll();
+    if (logs.isEmpty) {
+      return null;
+    }
+    return logs.first.smokedAt.toLocal();
   }
 }

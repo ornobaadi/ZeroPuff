@@ -105,10 +105,18 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: isDark
-            ? AppColors.surfaceElevatedDark
+            ? AppColors.surfaceElevatedDark.withValues(alpha: 0.9)
             : AppColors.surfaceElevated,
-        selectedColor: AppColors.primaryLight,
-        labelStyle: AppTypography.textTheme.labelMedium,
+        selectedColor: isDark
+            ? AppColors.primaryLight.withValues(alpha: 0.92)
+            : AppColors.primaryLight,
+        checkmarkColor: isDark ? AppColors.textPrimary : AppColors.primaryDark,
+        labelStyle: AppTypography.textTheme.labelMedium?.copyWith(
+          color: scheme.onSurface,
+        ),
+        secondaryLabelStyle: AppTypography.textTheme.labelMedium?.copyWith(
+          color: isDark ? AppColors.textPrimary : AppColors.primaryDark,
+        ),
         side: BorderSide.none,
         shape: const RoundedRectangleBorder(borderRadius: AppShapes.chip),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

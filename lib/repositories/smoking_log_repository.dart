@@ -11,7 +11,9 @@ abstract class SmokingLogRepository {
   Future<String> addLog({
     required int count,
     required String trigger,
+    DateTime? smokedAt,
     String? note,
   });
   Future<int> getTotalSmokedToday();
+  Future<DateTime?> getLatestSmokedAt();
 }

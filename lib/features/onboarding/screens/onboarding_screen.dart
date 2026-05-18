@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -25,10 +26,10 @@ const _triggerOptions = [
 
 const _currencyOptions = [
   _CurrencyOption('USD', r'$', 'US dollar'),
-  _CurrencyOption('EUR', 'EUR', 'Euro'),
-  _CurrencyOption('GBP', 'GBP', 'British pound'),
-  _CurrencyOption('INR', 'INR', 'Indian rupee'),
-  _CurrencyOption('BDT', 'BDT', 'Bangladeshi taka'),
+  _CurrencyOption('EUR', '€', 'Euro'),
+  _CurrencyOption('GBP', '£', 'British pound'),
+  _CurrencyOption('INR', '₹', 'Indian rupee'),
+  _CurrencyOption('BDT', '৳', 'Bangladeshi taka'),
 ];
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -195,8 +196,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           label: 'Pack price',
                           value: _packPrice,
                           min: 0,
-                          max: 999,
+                          max: 10000,
                           prefix: _currency.symbol,
+                          step: _currency.largePriceStep ? 10 : 1,
+                          helperText: _currency.largePriceStep
+                              ? 'Use +/- 10 or tap the price to type.'
+                              : 'Use +/- 1 or tap the price to type.',
                           onChanged: (value) {
                             setState(() => _packPrice = value);
                           },
@@ -542,6 +547,8 @@ class _NumberStepper extends StatelessWidget {
     required this.max,
     required this.onChanged,
     this.prefix,
+    this.step = 1,
+    this.helperText,
   });
 
   final String label;
@@ -550,40 +557,106 @@ class _NumberStepper extends StatelessWidget {
   final int max;
   final ValueChanged<int> onChanged;
   final String? prefix;
+  final int step;
+  final String? helperText;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Expanded(child: Text(label, style: theme.textTheme.titleMedium)),
-          IconButton.filledTonal(
-            onPressed: value <= min ? null : () => onChanged(value - 1),
-            icon: const Icon(Icons.remove_rounded),
-          ),
-          SizedBox(
-            width: 82,
-            child: Text(
-              '${prefix ?? ''}$value',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.headlineSmall,
+    return InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: () => _editValue(context),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(label, style: theme.textTheme.titleMedium),
+                ),
+                IconButton.filledTonal(
+                  onPressed: value <= min
+                      ? null
+                      : () => onChanged((value - step).clamp(min, max)),
+                  icon: const Icon(Icons.remove_rounded),
+                ),
+                SizedBox(
+                  width: 112,
+                  child: Text(
+                    '${prefix ?? ''}$value',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      fontSize: 27,
+                      fontWeight: FontWeight.w800,
+                      height: 1,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                IconButton.filledTonal(
+                  onPressed: value >= max
+                      ? null
+                      : () => onChanged((value + step).clamp(min, max)),
+                  icon: const Icon(Icons.add_rounded),
+                ),
+              ],
             ),
-          ),
-          IconButton.filledTonal(
-            onPressed: value >= max ? null : () => onChanged(value + 1),
-            icon: const Icon(Icons.add_rounded),
-          ),
-        ],
+            if (helperText != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                helperText!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _editValue(BuildContext context) async {
+    final controller = TextEditingController(text: value.toString());
+    final next = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(label),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(prefixText: prefix),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final parsed = int.tryParse(controller.text.trim());
+                Navigator.of(context).pop(parsed);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (next != null) {
+      onChanged(next.clamp(min, max));
+    }
   }
 }
 
@@ -593,4 +666,6 @@ class _CurrencyOption {
   final String code;
   final String symbol;
   final String name;
+
+  bool get largePriceStep => code == 'BDT' || code == 'INR';
 }

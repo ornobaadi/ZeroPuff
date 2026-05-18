@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../repositories/auth_repository.dart';
 
@@ -15,67 +16,109 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('You')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.pagePadding),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.cardPadding),
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: theme.colorScheme.outlineVariant),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  child: Icon(
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.pagePadding),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.cardPadding),
+              decoration: BoxDecoration(
+                color: isGuest
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : theme.cardTheme.color,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: isGuest
+                      ? AppColors.primary.withValues(alpha: 0.18)
+                      : theme.colorScheme.outlineVariant,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    child: Icon(
+                      isGuest
+                          ? Icons.person_outline_rounded
+                          : Icons.person_rounded,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    isGuest ? 'Guest mode' : user.email ?? 'Signed in',
+                    style: theme.textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
                     isGuest
-                        ? Icons.person_outline_rounded
-                        : Icons.person_rounded,
-                    color: theme.colorScheme.onPrimaryContainer,
+                        ? 'Explore first. Your local progress can be attached to Google when account sync is fully enabled.'
+                        : 'Google is connected. Sync controls and account deletion arrive in the settings phase.',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  isGuest ? 'Guest mode' : user.email ?? 'Signed in',
-                  style: theme.textTheme.headlineSmall,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  isGuest
-                      ? 'Your progress is local on this device. Google sync will attach it to your account when you sign in.'
-                      : 'Your account can sync progress once the sync queue is enabled.',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.sectionGap),
-          _SettingsTile(
-            icon: Icons.tune_rounded,
-            title: 'Setup details',
-            subtitle: 'Quit date, daily baseline, currency, and triggers.',
-          ),
-          const SizedBox(height: AppSpacing.componentGap),
-          _SettingsTile(
-            icon: Icons.notifications_none_rounded,
-            title: 'Reminders',
-            subtitle: 'Daily check-in and streak protection controls.',
-          ),
-          const SizedBox(height: AppSpacing.componentGap),
-          _SettingsTile(
-            icon: Icons.cloud_sync_outlined,
-            title: 'Account sync',
-            subtitle: isGuest
-                ? 'Available after Google sign-in.'
-                : 'Google account connected.',
-          ),
-        ],
+            const SizedBox(height: AppSpacing.sectionGap),
+            Text('Settings', style: theme.textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.md),
+            const _SettingsTile(
+              icon: Icons.tune_rounded,
+              title: 'Setup details',
+              subtitle: 'Quit date, daily baseline, currency, and triggers.',
+              status: 'Phase 10',
+            ),
+            const SizedBox(height: AppSpacing.componentGap),
+            const _SettingsTile(
+              icon: Icons.notifications_none_rounded,
+              title: 'Reminders',
+              subtitle: 'Daily check-in and streak protection controls.',
+              status: 'Phase 11',
+            ),
+            const SizedBox(height: AppSpacing.componentGap),
+            _SettingsTile(
+              icon: Icons.cloud_sync_outlined,
+              title: 'Account sync',
+              subtitle: isGuest
+                  ? 'Optional. Guest mode remains available.'
+                  : 'Connected to Google.',
+              status: isGuest ? 'Optional' : 'Connected',
+            ),
+            const SizedBox(height: AppSpacing.sectionGap),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.cardPadding),
+              decoration: BoxDecoration(
+                color: AppColors.accentCraving.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: AppColors.accentCraving.withValues(alpha: 0.18),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.privacy_tip_outlined,
+                    color: AppColors.accentCraving,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      'ZeroPuff should never shame you into using it. Account features are for backup and sync, not for permission to start.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -86,11 +129,13 @@ class _SettingsTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    required this.status,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final String status;
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +150,15 @@ class _SettingsTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, color: theme.colorScheme.onSurfaceVariant),
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: theme.colorScheme.onSurfaceVariant),
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -122,7 +175,13 @@ class _SettingsTile extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            status,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );

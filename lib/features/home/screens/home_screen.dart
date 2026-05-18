@@ -34,6 +34,10 @@ class HomeScreen extends ConsumerWidget {
           children: dashboard.when(
             data: (data) => [
               _SmokeFreeHero(data: data),
+              const SizedBox(height: AppSpacing.lg),
+              _BreathingCravingButton(
+                onPressed: () => context.push(AppRoutes.rescue),
+              ),
               const SizedBox(height: AppSpacing.sectionGap),
               Row(
                 children: [
@@ -60,17 +64,15 @@ class HomeScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
+              _QuickLogCard(onTap: () => context.push(AppRoutes.logging)),
+              const SizedBox(height: AppSpacing.md),
               _TodayCard(
-                title: data.honestyStreakDays > 0
+                title: data.lastSmokeAt == null
                     ? 'Your baseline is ready'
-                    : 'Your baseline needs setup',
-                body: data.honestyStreakDays > 0
+                    : 'Timer restarted honestly',
+                body: data.lastSmokeAt == null
                     ? 'If a craving hits today, open rescue before making a decision. Logging honestly still counts as progress.'
-                    : 'Finish setup so your counter and savings are personal.',
-              ),
-              const SizedBox(height: AppSpacing.sectionGap),
-              _BreathingCravingButton(
-                onPressed: () => context.push(AppRoutes.rescue),
+                    : 'Last smoke logged at ${_timeLabel(data.lastSmokeAt!)}. The clock now counts from there.',
               ),
             ],
             loading: () => [
@@ -100,13 +102,14 @@ class _SmokeFreeHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.52),
+        color: isDark ? AppColors.surfaceCardDark : AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.16)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,36 +130,176 @@ class _SmokeFreeHero extends StatelessWidget {
                 child: Text(
                   'Smoke-free clock',
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text(
-            '${data.smokeFreeDays} days',
-            style: AppTypography.displayNumber.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            data.liveClock,
-            style: AppTypography.liveCounter.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
+          Text('You are smoke-free for', style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.md),
+          _FlipTimer(data: data),
+          const SizedBox(height: AppSpacing.md),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 10,
+              value: _nextMilestoneProgress(data.smokeFreeDuration),
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              color: AppColors.accentMoney,
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text(
-            'One quiet stretch at a time.',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer.withValues(
-                alpha: 0.76,
-              ),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: isDark ? 0.16 : 0.08),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.flag_rounded, color: AppColors.primary),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'The next useful step is simple: pause before the next cigarette.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  double _nextMilestoneProgress(Duration duration) {
+    const next = Duration(minutes: 20);
+    if (duration >= next) {
+      return 1;
+    }
+    return duration.inSeconds / next.inSeconds;
+  }
+}
+
+class _FlipTimer extends StatelessWidget {
+  const _FlipTimer({required this.data});
+
+  final HomeDashboardData data;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: [
+        _TimeBlock(value: data.smokeFreeDays, label: 'days'),
+        _TimeBlock(value: data.smokeFreeHours, label: 'hours'),
+        _TimeBlock(value: data.smokeFreeMinutes, label: 'min'),
+        _TimeBlock(value: data.smokeFreeSeconds, label: 'sec', accent: true),
+      ],
+    );
+  }
+}
+
+class _TimeBlock extends StatelessWidget {
+  const _TimeBlock({
+    required this.value,
+    required this.label,
+    this.accent = false,
+  });
+
+  final int value;
+  final String label;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = accent ? AppColors.primaryLight : AppColors.cream;
+
+    return Container(
+      width: 78,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? Colors.black.withValues(alpha: 0.16)
+            : AppColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value.toString().padLeft(2, '0'),
+            style: AppTypography.liveCounter.copyWith(
+              fontSize: 25,
+              color: theme.brightness == Brightness.dark
+                  ? color
+                  : AppColors.primaryDark,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickLogCard extends StatelessWidget {
+  const _QuickLogCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        decoration: BoxDecoration(
+          color: AppColors.relapse.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.relapse.withValues(alpha: 0.14)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.edit_note_rounded, color: AppColors.relapse),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Need to log?', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Private, quick, and shame-free.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
       ),
     );
   }
@@ -328,4 +471,15 @@ class _MetricCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _timeLabel(DateTime value) {
+  final hour = value.hour == 0
+      ? 12
+      : value.hour > 12
+      ? value.hour - 12
+      : value.hour;
+  final minute = value.minute.toString().padLeft(2, '0');
+  final suffix = value.hour >= 12 ? 'PM' : 'AM';
+  return '$hour:$minute $suffix';
 }
