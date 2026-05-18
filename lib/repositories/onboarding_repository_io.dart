@@ -108,13 +108,18 @@ class OnboardingRepository {
     final guestUserId = DeviceIdentityService.guestUserId;
 
     await database.writeTxn(() async {
-      final guestProfile = await database.localProfiles.getByUserId(guestUserId);
+      final guestProfile = await database.localProfiles.getByUserId(
+        guestUserId,
+      );
       if (guestProfile == null) {
         return;
       }
 
-      final existingUserProfile = await database.localProfiles.getByUserId(userId);
-      if (existingUserProfile != null && existingUserProfile.id != guestProfile.id) {
+      final existingUserProfile = await database.localProfiles.getByUserId(
+        userId,
+      );
+      if (existingUserProfile != null &&
+          existingUserProfile.id != guestProfile.id) {
         existingUserProfile
           ..displayName = guestProfile.displayName
           ..avatarUrl = guestProfile.avatarUrl

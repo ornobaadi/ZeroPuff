@@ -160,9 +160,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           .signInAndLinkGuestProfile();
     } on Object catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.toString())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
     } finally {
       if (mounted) {

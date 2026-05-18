@@ -28,8 +28,9 @@ class GoogleSignInController {
         .read(onboardingRepositoryProvider)
         .attachGuestProfileToUser(user.id);
 
-    final localProfile =
-        await _ref.read(onboardingRepositoryProvider).loadCompletedProfile();
+    final localProfile = await _ref
+        .read(onboardingRepositoryProvider)
+        .loadCompletedProfile();
 
     if (localProfile != null) {
       final linkedProfile = ProfileData(
@@ -63,7 +64,10 @@ class GoogleSignInController {
 }
 
 class GoogleSignInOutcome {
-  const GoogleSignInOutcome({required this.signedIn, required this.hasLocalProfile});
+  const GoogleSignInOutcome({
+    required this.signedIn,
+    required this.hasLocalProfile,
+  });
 
   final bool signedIn;
   final bool hasLocalProfile;

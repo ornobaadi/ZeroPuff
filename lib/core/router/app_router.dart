@@ -27,7 +27,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.home,
     redirect: (context, state) async {
       final onboardingRepository = ref.read(onboardingRepositoryProvider);
-      final completedProfile = await onboardingRepository.loadCompletedProfile();
+      final completedProfile = await onboardingRepository
+          .loadCompletedProfile();
       final hasCompletedOnboarding = completedProfile != null;
 
       final user = ref.read(currentUserProvider);
