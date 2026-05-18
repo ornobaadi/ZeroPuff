@@ -18,16 +18,17 @@ Last updated: May 18, 2026.
 
 - Phase 0: complete. The app has the real Flutter shell, dependencies, router, Riverpod scope, bootstrap, environment loading, and feature folders.
 - Phase 1: mostly complete. Theme tokens, typography, colors, spacing, shapes, component styling, and the first Material 3 Expressive design pass are implemented. A dedicated debug design preview screen is still optional.
-- Phase 2: partially complete. Supabase initialization, local Isar models, repositories, migrations, and offline-first write patterns exist for the early flows. Sync retry hardening and complete RLS QA remain.
+- Phase 2: mostly complete. Supabase initialization, local Isar models, repositories, migrations, offline-first write patterns, and queue-backed sync retry exist for the early flows. Complete RLS QA remains.
 - Phase 3: partially complete. Guest-first entry and Google Sign-In integration are implemented, but Android Google OAuth still needs verified console setup on a real device.
 - Phase 4: mostly complete. Guest-first global onboarding is implemented with local draft/completion save and Google profile linking on sign-in.
-- Phase 5: partially complete. Home dashboard has live smoke-free counter, estimated savings, avoided cigarettes, craving CTA, and logging shortcut. Daily check-in card behavior is still pending.
+- Phase 5: mostly complete. Home dashboard has live smoke-free counter, estimated savings, avoided cigarettes, craving CTA, logging shortcut, and daily check-in card state.
 - Phase 6: partially complete. Offline craving rescue setup, two-minute timer, outcome capture, and persistence are implemented. Background survival and deeper restart handling still need QA.
 - Phase 7: started. Private smoking log exists with count, trigger, note, local save, and compassionate copy. Deterministic streak recalculation and dashboard integration remain.
-- Phase 8: partially complete. Daily check-in route, local repository, browser fallback, mood/status/count/note UI, edit-today behavior, and Home card state are implemented. Supabase sync and notification reminder tie-in remain.
-- Phase 9: partially complete. Progress tab now calculates smoke-free duration, savings, cigarettes avoided, health milestones, next milestone progress, basic time achievements, and check-in summary. Dedicated services/tests and full achievement persistence remain.
-- Phase 10: started. Setup details can be edited from the You tab, saved locally, queued for profile sync, and reflected in Home/Progress. Notification settings, account deletion, and deeper profile controls remain.
-- Phases 11-12: not complete. Notifications, sync hardening, test coverage expansion, and beta release QA are next.
+- Phase 8: mostly complete. Daily check-in route, local repository, browser fallback, mood/status/count/note UI, edit-today behavior, Home card state, local notification reminder tie-in, and queued Supabase sync are implemented. Real Supabase/RLS QA remains.
+- Phase 9: mostly complete. Progress tab now calculates smoke-free duration, savings, cigarettes avoided, health milestones, next milestone progress, basic time achievements, and check-in summary. Calculation tests and achievement persistence exist; broader UI QA remains.
+- Phase 10: mostly complete. Setup details can be edited from the You tab, notification preferences can be managed, sign out updates live, and local delete removes device data plus accessible synced profile rows. Full Supabase auth-user deletion still needs the secure Edge Function/service-role path.
+- Phase 11: mostly complete. Local notification initialization, Android scheduled-notification manifest wiring, permission request, daily check-in reminder, first-milestone reminder, 11 PM streak protection nudge, local preference storage, remote preference upsert, and rescue-session notification suppression are implemented. Real-device firing QA remains.
+- Phase 12: started. Queue-backed sync retry, startup/manual sync, quiet sync failure handling, smoking-log queueing, streak calculation tests, and release APK build are implemented. Real-device Android QA, offline scenario walkthroughs, and expanded widget tests remain.
 
 ## v0.1 Scope
 

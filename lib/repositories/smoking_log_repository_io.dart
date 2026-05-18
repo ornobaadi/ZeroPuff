@@ -32,10 +32,18 @@ class SmokingLogRepositoryIO implements SmokingLogRepository {
       ..smokedAt = (smokedAt ?? DateTime.now()).toUtc()
       ..count = count
       ..trigger = trigger
-      ..note = note;
+      ..note = note
+      ..synced = false;
+
+    final queueItem = SyncQueueItem()
+      ..entityType = 'smoking_log'
+      ..entityId = logId
+      ..operation = 'upsert'
+      ..createdAt = DateTime.now();
 
     await _isar.writeTxn(() async {
       await _isar.smokingLogs.put(log);
+      await _isar.syncQueueItems.put(queueItem);
     });
 
     return logId;

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/profile_data.dart';
+import 'notification_preferences_repository.dart';
 import '../services/supabase/supabase_service.dart';
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
@@ -54,4 +55,39 @@ class ProfileRepository {
       'updated_at': DateTime.now().toIso8601String(),
     });
   }
+
+  Future<void> upsertNotificationPreferences({
+    required String userId,
+    required NotificationPreferences preferences,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      return;
+    }
+
+    await client.from('notification_preferences').upsert({
+      'user_id': userId,
+      'daily_checkin_enabled': preferences.dailyCheckInEnabled,
+      'daily_checkin_time':
+          '${_two(preferences.dailyCheckInHour)}:${_two(preferences.dailyCheckInMinute)}:00',
+      'milestone_reminder_enabled': preferences.milestoneReminderEnabled,
+      'streak_protection_enabled': preferences.streakProtectionEnabled,
+      'updated_at': DateTime.now().toIso8601String(),
+    });
+  }
+
+  Future<void> deleteUserOwnedRows(String userId) async {
+    final client = _client;
+    if (client == null) {
+      return;
+    }
+
+    await client
+        .from('notification_preferences')
+        .delete()
+        .eq('user_id', userId);
+    await client.from('profiles').delete().eq('id', userId);
+  }
+
+  String _two(int value) => value.toString().padLeft(2, '0');
 }

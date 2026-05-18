@@ -5,9 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../repositories/account_repository.dart';
+import '../../../repositories/auth_repository.dart';
+import '../../../repositories/profile_repository.dart';
+import '../../../services/notifications/notification_service.dart';
+import '../../../services/sync/sync_service.dart';
 import '../../auth/controllers/google_sign_in_controller.dart';
 import '../../home/providers/home_dashboard_provider.dart';
-import '../../../repositories/auth_repository.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -18,12 +22,14 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isSyncing = false;
+  bool _isManualSyncing = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final user = ref.watch(currentUserProvider);
     final isGuest = user == null;
+    final pendingSync = ref.watch(pendingSyncCountProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('You')),
@@ -85,11 +91,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onTap: () => context.push(AppRoutes.setupSettings),
             ),
             const SizedBox(height: AppSpacing.componentGap),
-            const _SettingsTile(
+            _SettingsTile(
               icon: Icons.notifications_none_rounded,
               title: 'Reminders',
-              subtitle: 'Daily check-in and streak protection controls.',
-              status: 'Phase 11',
+              subtitle: 'Daily check-in, milestone, and 11 PM nudges.',
+              status: 'Edit',
+              onTap: () => context.push(AppRoutes.notificationSettings),
             ),
             const SizedBox(height: AppSpacing.componentGap),
             _SettingsTile(
@@ -106,6 +113,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             if (!isGuest) ...[
               const SizedBox(height: AppSpacing.componentGap),
               _SettingsTile(
+                icon: Icons.sync_rounded,
+                title: 'Sync now',
+                subtitle: pendingSync.when(
+                  data: (count) => count == 0
+                      ? 'Everything local is caught up.'
+                      : '$count local change${count == 1 ? '' : 's'} waiting.',
+                  loading: () => 'Checking local changes.',
+                  error: (_, _) => 'Could not check local changes.',
+                ),
+                status: _isManualSyncing ? 'Syncing' : 'Retry',
+                onTap: _isManualSyncing ? null : _syncNow,
+              ),
+            ],
+            if (!isGuest) ...[
+              const SizedBox(height: AppSpacing.componentGap),
+              _SettingsTile(
                 icon: Icons.logout_rounded,
                 title: 'Sign out',
                 subtitle: 'Keep local data on this device.',
@@ -118,6 +141,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 },
               ),
             ],
+            const SizedBox(height: AppSpacing.componentGap),
+            _SettingsTile(
+              icon: Icons.delete_outline_rounded,
+              title: 'Delete local data',
+              subtitle: isGuest
+                  ? 'Erase guest progress from this device.'
+                  : 'Erase local data and remove synced profile rows.',
+              status: '',
+              destructive: true,
+              onTap: () => _confirmDeleteAccount(isGuest),
+            ),
             const SizedBox(height: AppSpacing.sectionGap),
             Container(
               padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -171,6 +205,90 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     }
   }
+
+  Future<void> _syncNow() async {
+    setState(() => _isManualSyncing = true);
+    try {
+      final result = await ref
+          .read(syncServiceProvider)
+          .syncPending(limit: 100);
+      ref.invalidate(pendingSyncCountProvider);
+      if (mounted) {
+        final message = result.skipped
+            ? 'Sign in to sync local changes.'
+            : result.failed > 0
+            ? 'Synced ${result.succeeded}. ${result.failed} still need retry.'
+            : result.remaining > 0
+            ? 'Synced ${result.succeeded}. ${result.remaining} still queued.'
+            : 'Sync complete.';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isManualSyncing = false);
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteAccount(bool isGuest) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete ZeroPuff data?'),
+        content: Text(
+          isGuest
+              ? 'This removes your guest progress, logs, check-ins, and settings from this device.'
+              : 'This removes local data and attempts to delete your synced profile/settings rows. Full auth-user deletion needs the later secure Edge Function.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      return;
+    }
+
+    try {
+      final user = ref.read(currentUserProvider);
+      if (user != null) {
+        await ref.read(profileRepositoryProvider).deleteUserOwnedRows(user.id);
+      }
+      await NotificationService.cancelScheduledReminders();
+      await ref.read(accountRepositoryProvider).deleteLocalData();
+      await ref.read(authRepositoryProvider).signOut();
+      ref.invalidate(currentUserProvider);
+      ref.invalidate(homeBaselineProvider);
+      ref.invalidate(homeDashboardProvider);
+      if (mounted) {
+        context.go(AppRoutes.signIn);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('ZeroPuff data deleted.')));
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    }
+  }
 }
 
 class _SettingsTile extends StatelessWidget {
@@ -180,6 +298,7 @@ class _SettingsTile extends StatelessWidget {
     required this.subtitle,
     required this.status,
     this.onTap,
+    this.destructive = false,
   });
 
   final IconData icon;
@@ -187,6 +306,7 @@ class _SettingsTile extends StatelessWidget {
   final String subtitle;
   final String status;
   final VoidCallback? onTap;
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
@@ -211,14 +331,24 @@ class _SettingsTile extends StatelessWidget {
                 color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: theme.colorScheme.onSurfaceVariant),
+              child: Icon(
+                icon,
+                color: destructive
+                    ? theme.colorScheme.error
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: theme.textTheme.titleMedium),
+                  Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: destructive ? theme.colorScheme.error : null,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     subtitle,

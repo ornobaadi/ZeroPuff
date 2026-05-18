@@ -6,9 +6,11 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../models/profile_data.dart';
 import '../../../repositories/auth_repository.dart';
+import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../../services/device/device_identity_service.dart';
+import '../../../services/notifications/notification_service.dart';
 
 const _triggerOptions = [
   'stress',
@@ -107,6 +109,13 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
       if (user != null) {
         await ref.read(profileRepositoryProvider).upsertProfile(profile);
       }
+      final notificationPreferences = await ref
+          .read(notificationPreferencesRepositoryProvider)
+          .load();
+      await NotificationService.reschedule(
+        preferences: notificationPreferences,
+        quitDate: profile.quitDate,
+      );
       ref.invalidate(homeBaselineProvider);
       ref.invalidate(editableProfileProvider);
 

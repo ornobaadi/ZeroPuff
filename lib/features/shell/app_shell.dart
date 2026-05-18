@@ -1,21 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class AppShell extends StatelessWidget {
+import '../../services/sync/sync_service.dart';
+
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
 
   @override
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() async {
+      try {
+        final result = await ref.read(syncServiceProvider).syncPending();
+        if (result.attempted > 0 || result.succeeded > 0) {
+          ref.invalidate(pendingSyncCountProvider);
+        }
+      } on Object {
+        ref.invalidate(pendingSyncCountProvider);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      body: widget.navigationShell,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
+        selectedIndex: widget.navigationShell.currentIndex,
         onDestinationSelected: (index) {
-          navigationShell.goBranch(
+          widget.navigationShell.goBranch(
             index,
-            initialLocation: index == navigationShell.currentIndex,
+            initialLocation: index == widget.navigationShell.currentIndex,
           );
         },
         destinations: const [

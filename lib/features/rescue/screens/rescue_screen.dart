@@ -10,6 +10,9 @@ import '../../../core/theme/app_typography.dart';
 import '../../../models/app_event.dart';
 import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/craving_repository.dart';
+import '../../../repositories/notification_preferences_repository.dart';
+import '../../../repositories/onboarding_repository.dart';
+import '../../../services/notifications/notification_service.dart';
 
 const _rescueTriggers = [
   'stress',
@@ -58,9 +61,13 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
       canPop: _stage != _RescueStage.active,
       onPopInvokedWithResult: (didPop, _) async {
         if (!didPop && _stage == _RescueStage.active) {
+          final navigator = Navigator.of(context);
           final leave = await _confirmLeave();
-          if (leave && context.mounted) {
-            Navigator.of(context).pop();
+          if (leave && mounted) {
+            await _restoreReminders();
+            if (mounted) {
+              navigator.pop();
+            }
           }
         }
       },
@@ -109,6 +116,7 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
   Future<void> _startRescue() async {
     final repository = ref.read(cravingRepositoryProvider);
     final eventRepository = ref.read(appEventRepositoryProvider);
+    await NotificationService.cancelScheduledReminders();
     final sessionId = await repository.startRescue(
       intensity: _intensity,
       triggers: _triggers.toList(),
@@ -149,6 +157,7 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
     await ref
         .read(appEventRepositoryProvider)
         .track(AppEvent(eventName: 'craving_outcome_$outcome'));
+    await _restoreReminders();
 
     if (mounted) {
       if (outcome == 'smoked') {
@@ -161,6 +170,19 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(_outcomeMessage(outcome))));
     }
+  }
+
+  Future<void> _restoreReminders() async {
+    final preferences = await ref
+        .read(notificationPreferencesRepositoryProvider)
+        .load();
+    final profile = await ref
+        .read(onboardingRepositoryProvider)
+        .loadCompletedProfile();
+    await NotificationService.reschedule(
+      preferences: preferences,
+      quitDate: profile?.quitDate,
+    );
   }
 
   Future<bool> _confirmLeave() async {

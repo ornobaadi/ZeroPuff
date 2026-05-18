@@ -5,6 +5,7 @@ import '../../../repositories/auth_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../home/providers/home_dashboard_provider.dart';
+import '../../../services/sync/sync_service.dart';
 
 final googleSignInControllerProvider = Provider<GoogleSignInController>((ref) {
   return GoogleSignInController(ref);
@@ -59,6 +60,8 @@ class GoogleSignInController {
       await _ref.read(profileRepositoryProvider).upsertProfile(linkedProfile);
     }
 
+    await _ref.read(syncServiceProvider).syncPending(limit: 100);
+
     _refreshLocalViews();
 
     return GoogleSignInOutcome(
@@ -73,6 +76,7 @@ class GoogleSignInController {
     _ref.invalidate(homeDashboardProvider);
     _ref.invalidate(todayCheckInProvider);
     _ref.invalidate(recentCheckInsProvider);
+    _ref.invalidate(pendingSyncCountProvider);
   }
 }
 

@@ -10,4 +10,5 @@ class AppRoutes {
   static const logging = '/log-smoke';
   static const checkIn = '/check-in';
   static const setupSettings = '/setup-settings';
+  static const notificationSettings = '/notification-settings';
 }

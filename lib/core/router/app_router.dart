@@ -7,6 +7,7 @@ import '../../features/checkin/screens/daily_checkin_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/profile/screens/notification_settings_screen.dart';
 import '../../features/profile/screens/setup_settings_screen.dart';
 import '../../features/progress/screens/progress_screen.dart';
 import '../../features/rescue/screens/rescue_screen.dart';
@@ -131,6 +132,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.setupSettings,
         pageBuilder: (context, state) =>
             _materialPage(state, const SetupSettingsScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.notificationSettings,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const NotificationSettingsScreen()),
       ),
     ],
   );
