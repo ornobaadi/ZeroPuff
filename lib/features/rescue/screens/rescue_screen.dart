@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../models/app_event.dart';
 import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/craving_repository.dart';
@@ -66,7 +68,7 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
         appBar: AppBar(title: const Text('Two-minute rescue')),
         body: SafeArea(
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 240),
+            duration: const Duration(milliseconds: 260),
             child: switch (_stage) {
               _RescueStage.setup => _SetupView(
                 intensity: _intensity,
@@ -149,6 +151,11 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
         .track(AppEvent(eventName: 'craving_outcome_$outcome'));
 
     if (mounted) {
+      if (outcome == 'smoked') {
+        Navigator.of(context).pop();
+        GoRouter.of(context).push('/log-smoke');
+        return;
+      }
       Navigator.of(context).pop();
       ScaffoldMessenger.of(
         context,
@@ -211,12 +218,40 @@ class _SetupView extends StatelessWidget {
       key: const ValueKey('rescue-setup'),
       padding: const EdgeInsets.all(AppSpacing.pagePadding),
       children: [
-        Text(
-          'Give me two minutes before you decide.',
-          style: theme.textTheme.headlineMedium,
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.air_rounded, color: AppColors.primary, size: 32),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Give me two minutes before you decide.',
+                style: theme.textTheme.headlineMedium,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'No pressure to be perfect. Just create a small gap.',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: AppSpacing.xl),
-        Text('Intensity: $intensity', style: theme.textTheme.titleMedium),
+        const SizedBox(height: AppSpacing.sectionGap),
+        Row(
+          children: [
+            Expanded(
+              child: Text('Intensity', style: theme.textTheme.titleMedium),
+            ),
+            Text('$intensity/10', style: theme.textTheme.headlineSmall),
+          ],
+        ),
         Slider(
           value: intensity.toDouble(),
           min: 1,
@@ -232,14 +267,18 @@ class _SetupView extends StatelessWidget {
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
           children: _rescueTriggers.map((trigger) {
+            final selected = triggers.contains(trigger);
             return FilterChip(
+              avatar: selected
+                  ? const Icon(Icons.check_rounded, size: 16)
+                  : null,
               label: Text(trigger),
-              selected: triggers.contains(trigger),
+              selected: selected,
               onSelected: (_) => onTriggerToggled(trigger),
             );
           }).toList(),
         ),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.xxl),
         FilledButton.icon(
           onPressed: onStart,
           icon: const Icon(Icons.timer_outlined),
@@ -269,20 +308,43 @@ class _ActiveView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$minutes:$seconds', style: theme.textTheme.displayLarge),
+          Text('Stay with this minute', style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.md),
-          LinearProgressIndicator(value: progress),
+          Text(
+            '$minutes:$seconds',
+            style: AppTypography.liveCounter.copyWith(
+              fontSize: 64,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(minHeight: 10, value: progress),
+          ),
           const SizedBox(height: AppSpacing.xl),
-          Card(
-            color: theme.colorScheme.primaryContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.cardPadding),
-              child: Text(action, style: theme.textTheme.headlineSmall),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.cardPadding),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.self_improvement_rounded,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(action, style: theme.textTheme.headlineSmall),
+              ],
             ),
           ),
           const Spacer(),
           Text(
-            'No decision right now. Just finish this minute.',
+            'No decision right now. Just finish this window.',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -310,25 +372,90 @@ class _OutcomeView extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         Text(
           'No shame. Honest data is how the app gets useful.',
-          style: theme.textTheme.bodyLarge,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: AppSpacing.xl),
-        FilledButton(
-          onPressed: () => onOutcome('resisted'),
-          child: const Text('I resisted'),
+        _OutcomeButton(
+          icon: Icons.check_circle_rounded,
+          title: 'I resisted',
+          subtitle: 'Save the win and return home.',
+          color: AppColors.primary,
+          onTap: () => onOutcome('resisted'),
         ),
         const SizedBox(height: AppSpacing.md),
-        OutlinedButton(
-          onPressed: () => onOutcome('still_craving'),
-          child: const Text('Still craving'),
+        _OutcomeButton(
+          icon: Icons.refresh_rounded,
+          title: 'Still craving',
+          subtitle: 'Log it, then start another rescue anytime.',
+          color: AppColors.accentCraving,
+          onTap: () => onOutcome('still_craving'),
         ),
         const SizedBox(height: AppSpacing.md),
-        OutlinedButton(
-          style: OutlinedButton.styleFrom(foregroundColor: AppColors.relapse),
-          onPressed: () => onOutcome('smoked'),
-          child: const Text('I smoked'),
+        _OutcomeButton(
+          icon: Icons.edit_note_rounded,
+          title: 'I smoked',
+          subtitle: 'Log it privately. You did not lose everything.',
+          color: AppColors.relapse,
+          onTap: () => onOutcome('smoked'),
         ),
       ],
+    );
+  }
+}
+
+class _OutcomeButton extends StatelessWidget {
+  const _OutcomeButton({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: color.withValues(alpha: 0.18)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

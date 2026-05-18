@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_routes.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../models/app_event.dart';
 import '../../../models/onboarding_data.dart';
@@ -19,6 +19,7 @@ const _triggerOptions = [
   'social',
   'after food',
   'coffee',
+  'routine',
   'other',
 ];
 
@@ -39,13 +40,13 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
-  final _cigarettesController = TextEditingController(text: '10');
-  final _packPriceController = TextEditingController(text: '12');
-  final _packSizeController = TextEditingController(text: '20');
   final _reasonController = TextEditingController();
 
   int _step = 0;
   DateTime _quitDate = DateTime.now();
+  int _cigarettesPerDay = 10;
+  int _packPrice = 12;
+  int _packSize = 20;
   _CurrencyOption _currency = _currencyOptions.first;
   final Set<String> _triggers = {'stress'};
   bool _isSaving = false;
@@ -53,138 +54,205 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void dispose() {
     _pageController.dispose();
-    _cigarettesController.dispose();
-    _packPriceController.dispose();
-    _packSizeController.dispose();
     _reasonController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Set your baseline'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4),
-          child: LinearProgressIndicator(value: (_step + 1) / 4),
-        ),
-      ),
       body: SafeArea(
-        child: PageView(
-          controller: _pageController,
-          physics: const NeverScrollableScrollPhysics(),
+        child: Column(
           children: [
-            _StepPane(
-              title: 'When does your clean-air clock start?',
-              subtitle:
-                  'Choose the moment ZeroPuff should count from. You can change it later.',
-              body: Column(
-                children: [
-                  _ChoiceTile(
-                    title: 'Today',
-                    subtitle: 'Start fresh from this moment.',
-                    selected: _isSameDate(_quitDate, DateTime.now()),
-                    onTap: () => setState(() => _quitDate = DateTime.now()),
-                  ),
-                  _ChoiceTile(
-                    title: 'Yesterday',
-                    subtitle: 'You have already begun.',
-                    selected: _isSameDate(
-                      _quitDate,
-                      DateTime.now().subtract(const Duration(days: 1)),
-                    ),
-                    onTap: () => setState(
-                      () => _quitDate = DateTime.now().subtract(
-                        const Duration(days: 1),
-                      ),
-                    ),
-                  ),
-                  _ChoiceTile(
-                    title: 'Tomorrow',
-                    subtitle: 'Prepare first, start with intention.',
-                    selected: _quitDate.isAfter(DateTime.now()),
-                    onTap: () => setState(
-                      () => _quitDate = DateTime.now().add(
-                        const Duration(days: 1),
-                      ),
-                    ),
-                  ),
-                ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.pagePadding,
+                AppSpacing.md,
+                AppSpacing.pagePadding,
+                AppSpacing.sm,
               ),
-            ),
-            _StepPane(
-              title: 'Make the progress feel real',
-              subtitle:
-                  'These numbers power your private counter and savings estimate.',
-              body: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
+                  IconButton(
+                    onPressed: _step == 0 || _isSaving ? null : _previous,
+                    icon: const Icon(Icons.arrow_back_rounded),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        minHeight: 8,
+                        value: (_step + 1) / 4,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
                   Text(
-                    'Currency',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: _currencyOptions.map((currency) {
-                      return ChoiceChip(
-                        label: Text('${currency.symbol} ${currency.code}'),
-                        selected: _currency.code == currency.code,
-                        onSelected: (_) {
-                          setState(() => _currency = currency);
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  _NumberField(
-                    controller: _cigarettesController,
-                    label: 'Cigarettes per day',
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  _NumberField(
-                    controller: _packPriceController,
-                    label: 'Pack price',
-                    prefixText: '${_currency.symbol} ',
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  _NumberField(
-                    controller: _packSizeController,
-                    label: 'Cigarettes per pack',
+                    '${_step + 1}/4',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
             ),
-            _StepPane(
-              title: 'What usually pulls you toward smoking?',
-              subtitle: 'Pick what fits. This keeps the rescue flow fast.',
-              body: Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: _triggerOptions.map((trigger) {
-                  final selected = _triggers.contains(trigger);
-                  return FilterChip(
-                    label: Text(trigger),
-                    selected: selected,
-                    onSelected: (_) => _toggleTrigger(trigger),
-                  );
-                }).toList(),
-              ),
-            ),
-            _StepPane(
-              title: 'Give future-you one honest reason',
-              subtitle:
-                  'When a craving hits, this is the sentence we bring back.',
-              body: TextField(
-                controller: _reasonController,
-                minLines: 5,
-                maxLines: 8,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: 'Example: I want my breathing back.',
-                ),
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _StepPane(
+                    icon: Icons.flag_rounded,
+                    eyebrow: 'Your clock',
+                    title: 'When should ZeroPuff start counting?',
+                    subtitle:
+                        'Pick the moment that feels honest. You can adjust it later.',
+                    body: Column(
+                      children: [
+                        _ChoiceTile(
+                          title: 'Today',
+                          subtitle: 'Start fresh from this moment.',
+                          icon: Icons.wb_sunny_outlined,
+                          selected: _isSameDate(_quitDate, DateTime.now()),
+                          onTap: () {
+                            setState(() => _quitDate = DateTime.now());
+                          },
+                        ),
+                        _ChoiceTile(
+                          title: 'Yesterday',
+                          subtitle: 'You have already begun.',
+                          icon: Icons.nightlight_round,
+                          selected: _isSameDate(
+                            _quitDate,
+                            DateTime.now().subtract(const Duration(days: 1)),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _quitDate = DateTime.now().subtract(
+                                const Duration(days: 1),
+                              );
+                            });
+                          },
+                        ),
+                        _ChoiceTile(
+                          title: 'Choose a date',
+                          subtitle: _dateLabel(_quitDate),
+                          icon: Icons.event_rounded,
+                          selected:
+                              !_isSameDate(_quitDate, DateTime.now()) &&
+                              !_isSameDate(
+                                _quitDate,
+                                DateTime.now().subtract(
+                                  const Duration(days: 1),
+                                ),
+                              ),
+                          onTap: _pickQuitDate,
+                        ),
+                      ],
+                    ),
+                  ),
+                  _StepPane(
+                    icon: Icons.payments_outlined,
+                    eyebrow: 'Your baseline',
+                    title: 'Make progress measurable',
+                    subtitle:
+                        'No judgement here. These numbers turn time into real feedback.',
+                    body: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Currency', style: theme.textTheme.titleMedium),
+                        const SizedBox(height: AppSpacing.sm),
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: _currencyOptions.map((currency) {
+                            return ChoiceChip(
+                              label: Text(
+                                '${currency.symbol} ${currency.code}',
+                              ),
+                              selected: _currency.code == currency.code,
+                              onSelected: (_) {
+                                setState(() => _currency = currency);
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        _NumberStepper(
+                          label: 'Cigarettes per day',
+                          value: _cigarettesPerDay,
+                          min: 0,
+                          max: 80,
+                          onChanged: (value) {
+                            setState(() => _cigarettesPerDay = value);
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        _NumberStepper(
+                          label: 'Pack price',
+                          value: _packPrice,
+                          min: 0,
+                          max: 999,
+                          prefix: _currency.symbol,
+                          onChanged: (value) {
+                            setState(() => _packPrice = value);
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        _NumberStepper(
+                          label: 'Cigarettes per pack',
+                          value: _packSize,
+                          min: 1,
+                          max: 60,
+                          onChanged: (value) {
+                            setState(() => _packSize = value);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  _StepPane(
+                    icon: Icons.bolt_rounded,
+                    eyebrow: 'Rescue shortcuts',
+                    title: 'What usually pulls you toward smoking?',
+                    subtitle:
+                        'Pick a few. During a craving, we will keep choices fast.',
+                    body: Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: _triggerOptions.map((trigger) {
+                        final selected = _triggers.contains(trigger);
+                        return FilterChip(
+                          avatar: selected
+                              ? const Icon(Icons.check_rounded, size: 16)
+                              : null,
+                          label: Text(trigger),
+                          selected: selected,
+                          onSelected: (_) => _toggleTrigger(trigger),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  _StepPane(
+                    icon: Icons.favorite_border_rounded,
+                    eyebrow: 'Future-you',
+                    title: 'Leave yourself one honest reason',
+                    subtitle:
+                        'When a craving hits, this sentence can become the pause.',
+                    body: TextField(
+                      controller: _reasonController,
+                      minLines: 5,
+                      maxLines: 8,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        hintText: 'Example: I want my breathing back.',
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -193,23 +261,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.pagePadding),
-          child: Row(
-            children: [
-              if (_step > 0)
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _isSaving ? null : _previous,
-                    child: const Text('Back'),
-                  ),
-                ),
-              if (_step > 0) const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: FilledButton(
-                  onPressed: _isSaving ? null : _next,
-                  child: Text(_buttonLabel()),
-                ),
-              ),
-            ],
+          child: FilledButton.icon(
+            onPressed: _isSaving ? null : _next,
+            icon: Icon(
+              _step == 3 ? Icons.check_rounded : Icons.arrow_forward_rounded,
+            ),
+            label: Text(_buttonLabel()),
           ),
         ),
       ),
@@ -221,6 +278,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       return 'Saving';
     }
     return _step == 3 ? 'Finish setup' : 'Continue';
+  }
+
+  String _dateLabel(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _pickQuitDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _quitDate,
+      firstDate: DateTime(now.year - 10),
+      lastDate: DateTime(now.year + 1),
+    );
+    if (picked != null) {
+      setState(() => _quitDate = picked);
+    }
   }
 
   void _toggleTrigger(String trigger) {
@@ -236,7 +310,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _previous() async {
     setState(() => _step -= 1);
     await _pageController.previousPage(
-      duration: const Duration(milliseconds: 240),
+      duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
     );
   }
@@ -246,7 +320,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (_step < 3) {
       setState(() => _step += 1);
       await _pageController.nextPage(
-        duration: const Duration(milliseconds: 240),
+        duration: const Duration(milliseconds: 260),
         curve: Curves.easeOutCubic,
       );
       return;
@@ -258,9 +332,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _saveDraft({required bool completed}) async {
     final data = OnboardingData(
       quitDate: _quitDate,
-      cigarettesPerDay: int.tryParse(_cigarettesController.text.trim()) ?? 0,
-      packPrice: double.tryParse(_packPriceController.text.trim()) ?? 0,
-      packSize: int.tryParse(_packSizeController.text.trim()) ?? 20,
+      cigarettesPerDay: _cigarettesPerDay,
+      packPrice: _packPrice.toDouble(),
+      packSize: _packSize,
       currencyCode: _currency.code,
       currencySymbol: _currency.symbol,
       triggers: _triggers.toList(),
@@ -285,9 +359,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             'Guest',
         avatarUrl: user?.userMetadata?['avatar_url']?.toString(),
         quitDate: _quitDate,
-        cigarettesPerDay: int.tryParse(_cigarettesController.text.trim()) ?? 0,
-        packPrice: double.tryParse(_packPriceController.text.trim()) ?? 0,
-        packSize: int.tryParse(_packSizeController.text.trim()) ?? 20,
+        cigarettesPerDay: _cigarettesPerDay,
+        packPrice: _packPrice.toDouble(),
+        packSize: _packSize,
         currencyCode: _currency.code,
         currencySymbol: _currency.symbol,
         triggers: _triggers.toList(),
@@ -326,8 +400,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 class _StepPane extends StatelessWidget {
-  const _StepPane({required this.title, required this.body, this.subtitle});
+  const _StepPane({
+    required this.icon,
+    required this.eyebrow,
+    required this.title,
+    required this.body,
+    this.subtitle,
+  });
 
+  final IconData icon;
+  final String eyebrow;
   final String title;
   final String? subtitle;
   final Widget body;
@@ -337,8 +419,34 @@ class _StepPane extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.pagePadding),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.pagePadding,
+        AppSpacing.lg,
+        AppSpacing.pagePadding,
+        AppSpacing.xl,
+      ),
       children: [
+        Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: AppColors.primary),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text(
+              eyebrow,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
         Text(title, style: theme.textTheme.headlineMedium),
         if (subtitle != null) ...[
           const SizedBox(height: AppSpacing.sm),
@@ -360,12 +468,14 @@ class _ChoiceTile extends StatelessWidget {
   const _ChoiceTile({
     required this.title,
     required this.subtitle,
+    required this.icon,
     required this.selected,
     required this.onTap,
   });
 
   final String title;
   final String subtitle;
+  final IconData icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -374,40 +484,105 @@ class _ChoiceTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Card(
-        color: selected
-            ? theme.colorScheme.primaryContainer
-            : theme.cardTheme.color,
-        child: ListTile(
-          onTap: onTap,
-          title: Text(title),
-          subtitle: Text(subtitle),
-          trailing: selected ? const Icon(Icons.check_circle_rounded) : null,
+      padding: const EdgeInsets.only(bottom: AppSpacing.componentGap),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: selected
+                ? theme.colorScheme.primaryContainer
+                : theme.cardTheme.color,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: selected
+                  ? AppColors.primary
+                  : theme.colorScheme.outlineVariant,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: selected ? AppColors.primary : null),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (selected)
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.primary,
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _NumberField extends StatelessWidget {
-  const _NumberField({
-    required this.controller,
+class _NumberStepper extends StatelessWidget {
+  const _NumberStepper({
     required this.label,
-    this.prefixText,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+    this.prefix,
   });
 
-  final TextEditingController controller;
   final String label;
-  final String? prefixText;
+  final int value;
+  final int min;
+  final int max;
+  final ValueChanged<int> onChanged;
+  final String? prefix;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      decoration: InputDecoration(labelText: label, prefixText: prefixText),
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: theme.textTheme.titleMedium)),
+          IconButton.filledTonal(
+            onPressed: value <= min ? null : () => onChanged(value - 1),
+            icon: const Icon(Icons.remove_rounded),
+          ),
+          SizedBox(
+            width: 82,
+            child: Text(
+              '${prefix ?? ''}$value',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall,
+            ),
+          ),
+          IconButton.filledTonal(
+            onPressed: value >= max ? null : () => onChanged(value + 1),
+            icon: const Icon(Icons.add_rounded),
+          ),
+        ],
+      ),
     );
   }
 }

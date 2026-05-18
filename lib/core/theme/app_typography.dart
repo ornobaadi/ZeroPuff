@@ -8,14 +8,14 @@ class AppTypography {
     fontSize: 64,
     fontWeight: FontWeight.w600,
     height: 1.05,
-    letterSpacing: -1.5,
+    letterSpacing: 0,
   );
 
-  static TextStyle get liveCounter => GoogleFonts.outfit(
+  static TextStyle get liveCounter => GoogleFonts.spaceMono(
     fontSize: 48,
     fontWeight: FontWeight.w700,
     height: 1,
-    letterSpacing: -1.0,
+    letterSpacing: 0,
     fontFeatures: const [FontFeature.tabularFigures()],
   );
 

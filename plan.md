@@ -12,6 +12,20 @@ Target audience: 10-20 trusted friends and family via sideloaded APK.
 
 Target build window: 3-4 weeks.
 
+## Current Implementation Status
+
+Last updated: May 18, 2026.
+
+- Phase 0: complete. The app has the real Flutter shell, dependencies, router, Riverpod scope, bootstrap, environment loading, and feature folders.
+- Phase 1: mostly complete. Theme tokens, typography, colors, spacing, shapes, component styling, and the first Material 3 Expressive design pass are implemented. A dedicated debug design preview screen is still optional.
+- Phase 2: partially complete. Supabase initialization, local Isar models, repositories, migrations, and offline-first write patterns exist for the early flows. Sync retry hardening and complete RLS QA remain.
+- Phase 3: partially complete. Guest-first entry and Google Sign-In integration are implemented, but Android Google OAuth still needs verified console setup on a real device.
+- Phase 4: mostly complete. Guest-first global onboarding is implemented with local draft/completion save and Google profile linking on sign-in.
+- Phase 5: partially complete. Home dashboard has live smoke-free counter, estimated savings, avoided cigarettes, craving CTA, and logging shortcut. Daily check-in card behavior is still pending.
+- Phase 6: partially complete. Offline craving rescue setup, two-minute timer, outcome capture, and persistence are implemented. Background survival and deeper restart handling still need QA.
+- Phase 7: started. Private smoking log exists with count, trigger, note, local save, and compassionate copy. Deterministic streak recalculation and dashboard integration remain.
+- Phases 8-12: not complete. Daily check-in, milestones, achievements, settings, notifications, sync hardening, test coverage, and beta release QA are next.
+
 ## v0.1 Scope
 
 ### Included
@@ -736,12 +750,9 @@ This gives enough signal for the v0.1 gate without adding another vendor.
 
 ## Immediate Next Step
 
-Start Phase 0 by converting the starter Flutter app into the ZeroPuff app shell:
+Continue the v0.1 core loop:
 
-1. Update dependencies.
-2. Add folder structure.
-3. Add design system files.
-4. Replace `main.dart` with `ProviderScope`, bootstrap initialization, and `MaterialApp.router`.
-5. Add placeholder auth/onboarding/home routes.
-
-After that, request Supabase and Google Sign-In credentials before implementing real authentication.
+1. Finish Phase 7 by wiring smoking logs into smoke-free streak and honesty streak calculations.
+2. Build Phase 8 daily check-in with local save, edit-today behavior, and Home card state.
+3. Build Phase 9 progress timeline and savings screen from the same calculation services.
+4. Return to Google Sign-In Android QA once the OAuth console package name and SHA fingerprints are verified on device.

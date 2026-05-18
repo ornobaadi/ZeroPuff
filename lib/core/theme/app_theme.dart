@@ -34,6 +34,16 @@ class AppTheme {
         bodyColor: scheme.onSurface,
         displayColor: scheme.onSurface,
       ),
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        backgroundColor: scheme.surface,
+        foregroundColor: scheme.onSurface,
+        titleTextStyle: AppTypography.textTheme.titleLarge?.copyWith(
+          color: scheme.onSurface,
+        ),
+      ),
       cardTheme: CardThemeData(
         elevation: 0,
         color: isDark ? AppColors.surfaceCardDark : AppColors.surfaceCard,
@@ -56,6 +66,24 @@ class AppTheme {
           side: BorderSide(color: scheme.outlineVariant),
           shape: const RoundedRectangleBorder(borderRadius: AppShapes.button),
         ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          foregroundColor: AppColors.primary,
+          textStyle: AppTypography.textTheme.labelLarge,
+          shape: const RoundedRectangleBorder(borderRadius: AppShapes.button),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+      ),
+      sliderTheme: SliderThemeData(
+        activeTrackColor: AppColors.primary,
+        inactiveTrackColor: AppColors.primaryLight.withValues(alpha: 0.55),
+        thumbColor: AppColors.primary,
+        overlayColor: AppColors.primary.withValues(alpha: 0.12),
+        trackHeight: 6,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -91,6 +119,8 @@ class AppTheme {
             ? AppColors.surfaceCardDark
             : AppColors.surfaceCard,
         indicatorColor: AppColors.primaryLight,
+        height: 72,
+        surfaceTintColor: Colors.transparent,
         labelTextStyle: WidgetStatePropertyAll(
           AppTypography.textTheme.labelSmall,
         ),

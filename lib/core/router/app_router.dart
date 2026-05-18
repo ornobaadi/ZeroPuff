@@ -8,6 +8,7 @@ import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/progress/screens/progress_screen.dart';
 import '../../features/rescue/screens/rescue_screen.dart';
+import '../../features/logging/screens/smoking_log_screen.dart';
 import '../../features/shell/app_shell.dart';
 import 'app_routes.dart';
 
@@ -73,6 +74,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.rescue,
         pageBuilder: (context, state) =>
             _materialPage(state, const RescueScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.logging,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const SmokingLogScreen()),
       ),
     ],
   );

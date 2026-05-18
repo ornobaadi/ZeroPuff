@@ -7,4 +7,5 @@ class AppRoutes {
   static const progress = '/progress';
   static const profile = '/profile';
   static const rescue = '/rescue';
+  static const logging = '/log-smoke';
 }
