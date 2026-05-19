@@ -19,7 +19,23 @@ final homeTickerProvider = StreamProvider<DateTime>((ref) {
 });
 
 final homeBaselineProvider = FutureProvider<OnboardingData>((ref) async {
-  final draft = await ref.watch(onboardingRepositoryProvider).loadDraft();
+  final repository = ref.watch(onboardingRepositoryProvider);
+  final completedProfile = await repository.loadCompletedProfile();
+  if (completedProfile != null) {
+    return OnboardingData(
+      quitDate: completedProfile.quitDate,
+      cigarettesPerDay: completedProfile.cigarettesPerDay,
+      packPrice: completedProfile.packPrice,
+      packSize: completedProfile.packSize,
+      currencyCode: completedProfile.currencyCode,
+      currencySymbol: completedProfile.currencySymbol,
+      triggers: completedProfile.triggers,
+      quitReason: completedProfile.quitReason,
+      completed: true,
+    );
+  }
+
+  final draft = await repository.loadDraft();
   return draft ??
       OnboardingData(
         quitDate: DateTime.now(),
@@ -118,12 +134,19 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
       .map((record) => StreakCalculations.parseLocalDateKey(record.localDate))
       .nonNulls
       .toSet();
+  final smokeFreeCheckInDates = checkIns
+      .where((record) => record.smokeFreeToday)
+      .map((record) => StreakCalculations.parseLocalDateKey(record.localDate))
+      .nonNulls
+      .toSet();
   final smokingDates = smokingLogs
       .map((record) => StreakCalculations.dateOnly(record.smokedAt))
       .toSet();
-  final smokeFreeStreakDays = StreakCalculations.smokeFreeCalendarStreakDays(
+  final smokeFreeStreakDays = StreakCalculations.smokeFreeCheckInStreakDays(
     quitDate: baselineQuitDate,
     today: now,
+    checkInDates: checkInDates,
+    smokeFreeCheckInDates: smokeFreeCheckInDates,
     smokingDates: smokingDates,
   );
   final checkInStreakDays = StreakCalculations.consecutiveDayStreak(

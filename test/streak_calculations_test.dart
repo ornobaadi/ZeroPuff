@@ -44,24 +44,109 @@ void main() {
       expect(streak, 0);
     });
 
-    test('counts smoke-free calendar streak until a relapse day', () {
-      final streak = StreakCalculations.smokeFreeCalendarStreakDays(
-        quitDate: DateTime(2026, 5, 10, 9),
-        today: DateTime(2026, 5, 18, 21),
-        smokingDates: {DateTime(2026, 5, 14, 22), DateTime(2026, 5, 12, 10)},
-      );
-
-      expect(streak, 4);
-    });
-
-    test('returns zero smoke-free calendar streak after smoking today', () {
-      final streak = StreakCalculations.smokeFreeCalendarStreakDays(
+    test('smoke-free check-in streak requires proof days', () {
+      final streak = StreakCalculations.smokeFreeCheckInStreakDays(
         quitDate: DateTime(2026, 5, 10),
         today: DateTime(2026, 5, 18, 21),
-        smokingDates: {DateTime(2026, 5, 18, 8)},
+        checkInDates: {
+          DateTime(2026, 5, 18),
+          DateTime(2026, 5, 17),
+          DateTime(2026, 5, 15),
+        },
+        smokeFreeCheckInDates: {
+          DateTime(2026, 5, 18),
+          DateTime(2026, 5, 17),
+          DateTime(2026, 5, 15),
+        },
+        smokingDates: const {},
+      );
+
+      expect(streak, 2);
+    });
+
+    test('missing today does not reset an otherwise protected streak yet', () {
+      final streak = StreakCalculations.smokeFreeCheckInStreakDays(
+        quitDate: DateTime(2026, 5, 10),
+        today: DateTime(2026, 5, 18, 12),
+        checkInDates: {DateTime(2026, 5, 17), DateTime(2026, 5, 16)},
+        smokeFreeCheckInDates: {DateTime(2026, 5, 17), DateTime(2026, 5, 16)},
+        smokingDates: const {},
+      );
+
+      expect(streak, 2);
+    });
+
+    test('missing yesterday breaks the smoke-free check-in streak', () {
+      final streak = StreakCalculations.smokeFreeCheckInStreakDays(
+        quitDate: DateTime(2026, 5, 10),
+        today: DateTime(2026, 5, 18, 12),
+        checkInDates: {DateTime(2026, 5, 16)},
+        smokeFreeCheckInDates: {DateTime(2026, 5, 16)},
+        smokingDates: const {},
       );
 
       expect(streak, 0);
+    });
+
+    test(
+      'checking in with smoking today resets smoke-free check-in streak',
+      () {
+        final streak = StreakCalculations.smokeFreeCheckInStreakDays(
+          quitDate: DateTime(2026, 5, 10),
+          today: DateTime(2026, 5, 18, 12),
+          checkInDates: {
+            DateTime(2026, 5, 18),
+            DateTime(2026, 5, 17),
+            DateTime(2026, 5, 16),
+          },
+          smokeFreeCheckInDates: {DateTime(2026, 5, 17), DateTime(2026, 5, 16)},
+          smokingDates: const {},
+        );
+
+        expect(streak, 0);
+      },
+    );
+
+    test('smoking today resets smoke-free check-in streak', () {
+      final streak = StreakCalculations.smokeFreeCheckInStreakDays(
+        quitDate: DateTime(2026, 5, 10),
+        today: DateTime(2026, 5, 18, 12),
+        checkInDates: {
+          DateTime(2026, 5, 18),
+          DateTime(2026, 5, 17),
+          DateTime(2026, 5, 16),
+        },
+        smokeFreeCheckInDates: {
+          DateTime(2026, 5, 18),
+          DateTime(2026, 5, 17),
+          DateTime(2026, 5, 16),
+        },
+        smokingDates: {DateTime(2026, 5, 18, 10)},
+      );
+
+      expect(streak, 0);
+    });
+
+    test('past smoking log stops the smoke-free check-in streak', () {
+      final streak = StreakCalculations.smokeFreeCheckInStreakDays(
+        quitDate: DateTime(2026, 5, 10),
+        today: DateTime(2026, 5, 18, 12),
+        checkInDates: {
+          DateTime(2026, 5, 18),
+          DateTime(2026, 5, 17),
+          DateTime(2026, 5, 16),
+          DateTime(2026, 5, 15),
+        },
+        smokeFreeCheckInDates: {
+          DateTime(2026, 5, 18),
+          DateTime(2026, 5, 17),
+          DateTime(2026, 5, 16),
+          DateTime(2026, 5, 15),
+        },
+        smokingDates: {DateTime(2026, 5, 16, 10)},
+      );
+
+      expect(streak, 2);
     });
 
     test('honesty streak includes smoke logs as honest activity', () {

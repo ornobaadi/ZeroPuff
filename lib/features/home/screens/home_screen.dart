@@ -513,9 +513,9 @@ class _TodayCard extends StatelessWidget {
     final title = checkedIn ? 'Check-in complete' : 'Daily check-in';
     final body = checkedIn
         ? (smokeFreeToday == true
-              ? 'Today is marked smoke-free. You can edit it if needed.'
+              ? 'Today is marked smoke-free.'
               : 'Today is logged honestly. That still counts.')
-        : 'One minute: Log your daily progress.';
+              : 'One minute: Log your daily progress.';
 
     return InkWell(
       borderRadius: BorderRadius.circular(24),

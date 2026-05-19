@@ -76,7 +76,7 @@ class StreakDetailsScreen extends ConsumerWidget {
                       icon: Icons.air_rounded,
                       title: 'How this streak works',
                       body:
-                          'It tracks consecutive smoke-free days. Logging a smoke resets the streak.',
+                          'It counts smoke-free check-ins in a row. Missing a day breaks the streak; logging a smoke resets the clock.',
                     ),
                     SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
                     SizedBox(
