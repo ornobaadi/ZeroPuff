@@ -130,7 +130,43 @@ class _SelectedDayDetails extends ConsumerWidget {
           _EmptyDayCard(day: selectedDay)
         else
           _EntryTimeline(summary: summary),
+        if ((summary?.smokes ?? 0) > 0) ...[
+          const SizedBox(height: AppSpacing.sm),
+          const _RecoveryNoteCard(),
+        ],
       ],
+    );
+  }
+}
+
+class _RecoveryNoteCard extends StatelessWidget {
+  const _RecoveryNoteCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: BoxDecoration(
+        color: AppColors.relapse.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.relapse.withValues(alpha: 0.14)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.favorite_rounded, color: AppColors.relapse),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              'This day is logged honestly. Edit the log if the details need a correction; the map only gets clearer.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

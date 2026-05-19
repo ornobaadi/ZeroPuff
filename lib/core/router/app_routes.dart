@@ -9,11 +9,13 @@ class AppRoutes {
   static const profile = '/profile';
   static const rescue = '/rescue';
   static const logging = '/log-smoke';
+  static const recovery = '/recovery';
   static const checkIn = '/check-in';
   static const streakDetails = '/streaks';
   static const smokeFreeDetails = '/stats/smoke-free';
   static const savingsDetails = '/stats/savings';
   static const avoidedDetails = '/stats/avoided';
+  static const cravingAnalysis = '/stats/cravings';
   static const healthDetails = '/stats/health';
   static const achievementsDetails = '/stats/achievements';
   static const checkInDetails = '/stats/check-ins';

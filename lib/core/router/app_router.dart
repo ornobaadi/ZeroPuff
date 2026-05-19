@@ -11,6 +11,7 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/notification_settings_screen.dart';
 import '../../features/profile/screens/setup_settings_screen.dart';
 import '../../features/progress/screens/progress_screen.dart';
+import '../../features/recovery/screens/relapse_recovery_screen.dart';
 import '../../features/rescue/screens/rescue_screen.dart';
 import '../../features/logging/screens/smoking_log_screen.dart';
 import '../../features/shell/app_shell.dart';
@@ -139,6 +140,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.recovery,
+        pageBuilder: (context, state) => _materialPage(
+          state,
+          RelapseRecoveryScreen(logId: state.uri.queryParameters['logId']),
+        ),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
         path: AppRoutes.checkIn,
         pageBuilder: (context, state) =>
             _materialPage(state, const DailyCheckInScreen()),
@@ -166,6 +175,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.avoidedDetails,
         pageBuilder: (context, state) =>
             _materialPage(state, const AvoidedDetailsScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.cravingAnalysis,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const CravingAnalysisScreen()),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,

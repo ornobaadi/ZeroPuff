@@ -30,6 +30,7 @@ class ProgressScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final dashboard = ref.watch(homeDashboardProvider);
     final recentCheckIns = ref.watch(recentCheckInsProvider);
+    final recentCravings = ref.watch(recentCravingsProvider);
     final unlockedAchievements = ref.watch(unlockedAchievementsProvider);
 
     return Scaffold(
@@ -43,6 +44,7 @@ class ProgressScreen extends ConsumerWidget {
                 data.smokeFreeDuration,
               );
               final recent = recentCheckIns.value ?? const [];
+              final cravings = recentCravings.value ?? const [];
               final unlocked = unlockedAchievements.value ?? const {};
               final smokeFreeCheckIns = recent
                   .where((record) => record.smokeFreeToday)
@@ -108,6 +110,11 @@ class ProgressScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _CravingAnalysisCard(
+                  cravingCount: cravings.length,
+                  onTap: () => context.push(AppRoutes.cravingAnalysis),
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
                 if (next != null)
@@ -190,6 +197,68 @@ class ProgressScreen extends ConsumerWidget {
               Text(error.toString()),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CravingAnalysisCard extends StatelessWidget {
+  const _CravingAnalysisCard({required this.cravingCount, required this.onTap});
+
+  final int cravingCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        decoration: BoxDecoration(
+          color: AppColors.accentCraving.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.accentCraving.withValues(alpha: 0.18),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.accentCraving.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.insights_rounded,
+                color: AppColors.accentCraving,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Craving analysis', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    cravingCount < 3
+                        ? '$cravingCount logged. Three unlocks useful patterns.'
+                        : '$cravingCount logs ready for pattern spotting.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded),
+          ],
         ),
       ),
     );

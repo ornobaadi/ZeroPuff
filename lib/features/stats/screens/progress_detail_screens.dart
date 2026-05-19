@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/calculations/craving_analysis_calculations.dart';
 import '../../../core/calculations/progress_calculations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -121,6 +122,135 @@ class AvoidedDetailsScreen extends ConsumerWidget {
   }
 }
 
+class CravingAnalysisScreen extends ConsumerWidget {
+  const CravingAnalysisScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final cravings = ref.watch(recentCravingsProvider);
+    final smokingLogs = ref.watch(recentSmokingLogsProvider);
+
+    if (cravings is AsyncLoading || smokingLogs is AsyncLoading) {
+      return const Scaffold(
+        appBar: _SimpleAppBar(title: 'Craving analysis'),
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+    if (cravings is AsyncError) {
+      return _ErrorScaffold(title: 'Craving analysis', error: cravings.error!);
+    }
+    if (smokingLogs is AsyncError) {
+      return _ErrorScaffold(
+        title: 'Craving analysis',
+        error: smokingLogs.error!,
+      );
+    }
+
+    final analysis = CravingAnalysisCalculations.analyze(
+      cravings: cravings.value ?? const [],
+      smokingLogs: smokingLogs.value ?? const [],
+      now: DateTime.now(),
+    );
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Craving analysis')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.pagePadding),
+          children: [
+            _HeroNumber(
+              value: '${analysis.totalCravings}',
+              label: 'recent craving logs',
+              color: AppColors.accentCraving,
+              icon: Icons.bolt_rounded,
+            ),
+            if (!analysis.hasEnoughData) ...[
+              _InfoCard(
+                title: 'A few more logs first',
+                body:
+                    'Log three cravings before ZeroPuff turns this into patterns. Tiny sample sizes can lie.',
+                icon: Icons.hourglass_empty_rounded,
+                color: AppColors.accentCraving,
+              ),
+              ...analysis.insights.map(
+                (insight) => _InfoCard(
+                  title: 'Building the map',
+                  body: insight,
+                  icon: Icons.map_rounded,
+                  color: AppColors.primary,
+                ),
+              ),
+            ] else ...[
+              _InsightList(insights: analysis.insights),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: _MiniStat(
+                      value: '${(analysis.resistanceRate * 100).round()}%',
+                      label: 'resisted',
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _MiniStat(
+                      value: analysis.averageIntensity.toStringAsFixed(1),
+                      label: 'avg intensity',
+                      color: AppColors.accentStreak,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: _MiniStat(
+                      value: '${analysis.cravingsThisWeek}',
+                      label: 'this week',
+                      color: AppColors.accentCraving,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _MiniStat(
+                      value: '${analysis.smokeFreeDaysThisMonth}',
+                      label: 'clean days this month',
+                      color: AppColors.accentMoney,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _InfoCard(
+                title: 'Hardest window',
+                body: analysis.peakWindow == null
+                    ? 'No clear time window yet.'
+                    : '${analysis.peakWindow!.label} has the most logged cravings.',
+                icon: Icons.schedule_rounded,
+                color: AppColors.accentCraving,
+              ),
+              if (analysis.topTriggers.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.md),
+                Text('Top triggers', style: theme.textTheme.titleLarge),
+                const SizedBox(height: AppSpacing.md),
+                ...analysis.topTriggers.map(
+                  (trigger) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: _TriggerRow(trigger: trigger),
+                  ),
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class HealthMilestoneDetailsScreen extends ConsumerWidget {
   const HealthMilestoneDetailsScreen({super.key});
 
@@ -148,6 +278,203 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
           ),
         ];
       },
+    );
+  }
+}
+
+class _InsightList extends StatelessWidget {
+  const _InsightList({required this.insights});
+
+  final List<String> insights;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: BoxDecoration(
+        color: AppColors.accentCraving.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: AppColors.accentCraving.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.insights_rounded,
+                color: AppColors.accentCraving,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                'Today’s read',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ...insights.map(
+            (insight) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: _BulletLine(text: insight),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BulletLine extends StatelessWidget {
+  const _BulletLine({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          margin: const EdgeInsets.only(top: 8),
+          decoration: const BoxDecoration(
+            color: AppColors.accentCraving,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            text,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  final String value;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value, style: theme.textTheme.headlineSmall),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TriggerRow extends StatelessWidget {
+  const _TriggerRow({required this.trigger});
+
+  final CravingTriggerStat trigger;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.label_rounded, color: AppColors.accentCraving),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(trigger.trigger, style: theme.textTheme.titleMedium),
+          ),
+          Text(
+            '${trigger.count}x',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.accentCraving,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SimpleAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _SimpleAppBar({required this.title});
+
+  final String title;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(title: Text(title));
+  }
+}
+
+class _ErrorScaffold extends StatelessWidget {
+  const _ErrorScaffold({required this.title, required this.error});
+
+  final String title;
+  final Object error;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.pagePadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Unavailable', style: theme.textTheme.titleLarge),
+              const SizedBox(height: AppSpacing.sm),
+              Text(error.toString()),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

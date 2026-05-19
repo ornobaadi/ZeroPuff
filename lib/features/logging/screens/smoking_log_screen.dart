@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
@@ -59,14 +61,15 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
         : _noteController.text.trim();
     final logId = widget.logId;
 
-    if (logId == null) {
-      await repository.addLog(
-        count: _count,
-        trigger: _trigger,
-        smokedAt: _smokedAt,
-        note: note,
-      );
-    } else {
+    final savedLogId =
+        logId ??
+        (await repository.addLog(
+          count: _count,
+          trigger: _trigger,
+          smokedAt: _smokedAt,
+          note: note,
+        ));
+    if (logId != null) {
       await repository.updateLog(
         logId: logId,
         count: _count,
@@ -91,16 +94,18 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
     ref.invalidate(homeBaselineProvider);
 
     if (!_isDisposed && mounted) {
+      if (logId == null) {
+        context.go('${AppRoutes.recovery}?logId=$savedLogId');
+        return;
+      }
+
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            logId == null
-                ? "Logged. Let's keep going. You did not lose everything."
-                : 'Log updated. Your timeline is clearer now.',
-          ),
+        const SnackBar(
+          content: Text('Log updated. Your timeline is clearer now.'),
         ),
       );
     }

@@ -20,54 +20,64 @@ class StreakDetailsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Smoke-free streak')),
       body: SafeArea(
         child: dashboard.when(
-          data: (data) => ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.pagePadding,
-              AppSpacing.md,
-              AppSpacing.pagePadding,
-              AppSpacing.xxl,
-            ),
-            children: [
-              const SizedBox(height: AppSpacing.lg),
-              _StreakHero(streak: data.smokeFreeStreakDays),
-              const SizedBox(height: AppSpacing.xxl),
-              Text(
-                _headline(data.smokeFreeStreakDays),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'One day at a time. The only streak that matters here is the clean-air chain you are building.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+          data: (data) => LayoutBuilder(
+            builder: (context, constraints) {
+              final heroSize = (constraints.maxHeight * 0.36).clamp(
+                220.0,
+                320.0,
+              );
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.pagePadding,
+                  AppSpacing.sm,
+                  AppSpacing.pagePadding,
+                  AppSpacing.lg,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-              _SoftInfoCard(
-                icon: Icons.air_rounded,
-                title: 'How this streak works',
-                body:
-                    'It counts consecutive calendar days without a smoking log. If you smoke and log it, the streak resets cleanly and the app helps you start again.',
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _SoftInfoCard(
-                icon: Icons.calendar_today_rounded,
-                title: 'Protect today',
-                body: data.todayCheckIn == null
-                    ? 'Do a quick check-in before the day ends. It keeps your journey visible.'
-                    : 'Today is already checked in. Nice and steady.',
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-              FilledButton.icon(
-                onPressed: () => context.push(AppRoutes.checkIn),
-                icon: const Icon(Icons.check_rounded),
-                label: Text(
-                  data.todayCheckIn == null ? 'Check in today' : 'Review today',
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: heroSize,
+                      width: heroSize,
+                      child: _StreakHero(streak: data.smokeFreeStreakDays),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      _headline(data.smokeFreeStreakDays),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'One day at a time. The only streak that matters here is the clean-air chain you are building.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const Spacer(),
+                    _SoftInfoCard(
+                      icon: Icons.air_rounded,
+                      title: 'How this streak works',
+                      body:
+                          'It tracks consecutive smoke-free days. Logging a smoke resets the streak.',
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => context.push(AppRoutes.checkIn),
+                        icon: const Icon(Icons.check_rounded),
+                        label: Text(
+                          data.todayCheckIn == null
+                              ? 'Check in today'
+                              : 'Review today',
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => ListView(
