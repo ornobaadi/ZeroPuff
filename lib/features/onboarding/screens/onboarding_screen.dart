@@ -11,9 +11,11 @@ import '../../../models/onboarding_data.dart';
 import '../../../models/profile_data.dart';
 import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/auth_repository.dart';
+import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../../services/device/device_identity_service.dart';
+import '../../../services/notifications/notification_service.dart';
 
 const _triggerOptions = [
   'stress',
@@ -380,6 +382,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await ref
           .read(appEventRepositoryProvider)
           .track(const AppEvent(eventName: 'onboarding_completed'));
+      await _setupNotifications(profile.quitDate);
 
       if (mounted) {
         context.go(AppRoutes.home);
@@ -395,6 +398,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  Future<void> _setupNotifications(DateTime quitDate) async {
+    await NotificationService.requestPermission();
+    final preferences = await ref
+        .read(notificationPreferencesRepositoryProvider)
+        .save(const NotificationPreferences());
+    await NotificationService.reschedule(
+      preferences: preferences,
+      quitDate: quitDate,
+    );
   }
 
   bool _isSameDate(DateTime a, DateTime b) {

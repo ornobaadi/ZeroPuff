@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/screens/sign_in_screen.dart';
 import '../../features/checkin/screens/daily_checkin_screen.dart';
 import '../../features/home/screens/home_screen.dart';
+import '../../features/journal/screens/quit_journal_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/notification_settings_screen.dart';
@@ -13,6 +14,7 @@ import '../../features/progress/screens/progress_screen.dart';
 import '../../features/rescue/screens/rescue_screen.dart';
 import '../../features/logging/screens/smoking_log_screen.dart';
 import '../../features/shell/app_shell.dart';
+import '../../features/stats/screens/progress_detail_screens.dart';
 import '../../features/stats/screens/streak_details_screen.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/onboarding_repository.dart';
@@ -20,6 +22,7 @@ import 'app_routes.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 final shellNavigatorHomeKey = GlobalKey<NavigatorState>();
+final shellNavigatorJournalKey = GlobalKey<NavigatorState>();
 final shellNavigatorProgressKey = GlobalKey<NavigatorState>();
 final shellNavigatorProfileKey = GlobalKey<NavigatorState>();
 
@@ -89,6 +92,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: shellNavigatorJournalKey,
+            routes: [
+              GoRoute(
+                path: AppRoutes.journal,
+                pageBuilder: (context, state) =>
+                    _noTransitionPage(state, const QuitJournalScreen()),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
             navigatorKey: shellNavigatorProgressKey,
             routes: [
               GoRoute(
@@ -119,8 +132,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: AppRoutes.logging,
-        pageBuilder: (context, state) =>
-            _materialPage(state, const SmokingLogScreen()),
+        pageBuilder: (context, state) => _materialPage(
+          state,
+          SmokingLogScreen(logId: state.uri.queryParameters['logId']),
+        ),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
@@ -133,6 +148,42 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.streakDetails,
         pageBuilder: (context, state) =>
             _materialPage(state, const StreakDetailsScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.smokeFreeDetails,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const SmokeFreeDetailsScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.savingsDetails,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const SavingsDetailsScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.avoidedDetails,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const AvoidedDetailsScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.healthDetails,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const HealthMilestoneDetailsScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.achievementsDetails,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const AchievementsDetailsScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.checkInDetails,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const CheckInDetailsScreen()),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,

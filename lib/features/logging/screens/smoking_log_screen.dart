@@ -19,7 +19,9 @@ const _triggers = [
 ];
 
 class SmokingLogScreen extends ConsumerStatefulWidget {
-  const SmokingLogScreen({super.key});
+  const SmokingLogScreen({this.logId, super.key});
+
+  final String? logId;
 
   @override
   ConsumerState<SmokingLogScreen> createState() => _SmokingLogScreenState();
@@ -32,6 +34,15 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
   final _noteController = TextEditingController();
 
   bool _isDisposed = false;
+  bool _loadingExisting = false;
+
+  bool get _isEditing => widget.logId != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExisting();
+  }
 
   @override
   void dispose() {
@@ -43,19 +54,31 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
   Future<void> _submitLog() async {
     final repository = ref.read(smokingLogRepositoryProvider);
     final eventRepository = ref.read(appEventRepositoryProvider);
+    final note = _noteController.text.trim().isEmpty
+        ? null
+        : _noteController.text.trim();
+    final logId = widget.logId;
 
-    await repository.addLog(
-      count: _count,
-      trigger: _trigger,
-      smokedAt: _smokedAt,
-      note: _noteController.text.trim().isEmpty
-          ? null
-          : _noteController.text.trim(),
-    );
+    if (logId == null) {
+      await repository.addLog(
+        count: _count,
+        trigger: _trigger,
+        smokedAt: _smokedAt,
+        note: note,
+      );
+    } else {
+      await repository.updateLog(
+        logId: logId,
+        count: _count,
+        trigger: _trigger,
+        smokedAt: _smokedAt,
+        note: note,
+      );
+    }
 
     await eventRepository.track(
       AppEvent(
-        eventName: 'smoke_logged',
+        eventName: logId == null ? 'smoke_logged' : 'smoke_log_updated',
         properties: {
           'count': _count,
           'trigger': _trigger,
@@ -72,12 +95,38 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
         Navigator.of(context).pop();
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            "Logged. Let's keep going. You did not lose everything.",
+            logId == null
+                ? "Logged. Let's keep going. You did not lose everything."
+                : 'Log updated. Your timeline is clearer now.',
           ),
         ),
       );
+    }
+  }
+
+  Future<void> _loadExisting() async {
+    final logId = widget.logId;
+    if (logId == null) {
+      return;
+    }
+    setState(() => _loadingExisting = true);
+    try {
+      final log = await ref.read(smokingLogRepositoryProvider).getById(logId);
+      if (log == null || !mounted) {
+        return;
+      }
+      setState(() {
+        _count = log.count;
+        _trigger = log.trigger;
+        _smokedAt = log.smokedAt;
+        _noteController.text = log.note ?? '';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _loadingExisting = false);
+      }
     }
   }
 
@@ -86,120 +135,137 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Log cigarette')),
+      appBar: AppBar(title: Text(_isEditing ? 'Edit log' : 'Log cigarette')),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.pagePadding),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.cardPadding),
-              decoration: BoxDecoration(
-                color: AppColors.relapse.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: AppColors.relapse.withValues(alpha: 0.16),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: _loadingExisting
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
+                padding: const EdgeInsets.all(AppSpacing.pagePadding),
                 children: [
-                  Text('Private log', style: theme.textTheme.labelLarge),
-                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.cardPadding),
+                    decoration: BoxDecoration(
+                      color: AppColors.relapse.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: AppColors.relapse.withValues(alpha: 0.16),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _isEditing ? 'Private correction' : 'Private log',
+                          style: theme.textTheme.labelLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          _isEditing
+                              ? 'Make the timeline accurate.'
+                              : 'This is not a failure screen.',
+                          style: theme.textTheme.headlineMedium,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          _isEditing
+                              ? 'Small corrections matter. Your progress should reflect what really happened.'
+                              : 'Honest logs protect the bigger pattern and help tomorrow feel less random.',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sectionGap),
+                  Text('How many?', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: theme.cardTheme.color,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton.filledTonal(
+                          onPressed: _count > 1
+                              ? () => setState(() => _count--)
+                              : null,
+                          icon: const Icon(Icons.remove_rounded),
+                        ),
+                        SizedBox(
+                          width: 120,
+                          child: Text(
+                            '$_count',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.displayMedium,
+                          ),
+                        ),
+                        IconButton.filledTonal(
+                          onPressed: () => setState(() => _count++),
+                          icon: const Icon(Icons.add_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
                   Text(
-                    'This is not a failure screen.',
-                    style: theme.textTheme.headlineMedium,
+                    'What triggered it?',
+                    style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: _triggers.map((trigger) {
+                      return ChoiceChip(
+                        label: Text(trigger),
+                        selected: _trigger == trigger,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() => _trigger = trigger);
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
                   Text(
-                    'Honest logs protect the bigger pattern and help tomorrow feel less random.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    'When did this happen?',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _TimeSelector(
+                    smokedAt: _smokedAt,
+                    onChanged: (value) => setState(() => _smokedAt = value),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  TextField(
+                    controller: _noteController,
+                    decoration: const InputDecoration(
+                      labelText: 'Optional note',
+                      hintText: 'What was happening right before?',
                     ),
+                    minLines: 3,
+                    maxLines: 5,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.relapse,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: _submitLog,
+                    icon: const Icon(Icons.check_rounded),
+                    label: Text(_isEditing ? 'Update log' : 'Save log'),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: AppSpacing.sectionGap),
-            Text('How many?', style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.sm),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: theme.cardTheme.color,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: theme.colorScheme.outlineVariant),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton.filledTonal(
-                    onPressed: _count > 1
-                        ? () => setState(() => _count--)
-                        : null,
-                    icon: const Icon(Icons.remove_rounded),
-                  ),
-                  SizedBox(
-                    width: 120,
-                    child: Text(
-                      '$_count',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.displayMedium,
-                    ),
-                  ),
-                  IconButton.filledTonal(
-                    onPressed: () => setState(() => _count++),
-                    icon: const Icon(Icons.add_rounded),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text('What triggered it?', style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: _triggers.map((trigger) {
-                return ChoiceChip(
-                  label: Text(trigger),
-                  selected: _trigger == trigger,
-                  onSelected: (selected) {
-                    if (selected) {
-                      setState(() => _trigger = trigger);
-                    }
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text('When did this happen?', style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.sm),
-            _TimeSelector(
-              smokedAt: _smokedAt,
-              onChanged: (value) => setState(() => _smokedAt = value),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            TextField(
-              controller: _noteController,
-              decoration: const InputDecoration(
-                labelText: 'Optional note',
-                hintText: 'What was happening right before?',
-              ),
-              minLines: 3,
-              maxLines: 5,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.relapse,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: _submitLog,
-              icon: const Icon(Icons.check_rounded),
-              label: const Text('Save log'),
-            ),
-          ],
-        ),
       ),
     );
   }

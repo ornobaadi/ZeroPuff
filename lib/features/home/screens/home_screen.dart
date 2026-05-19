@@ -71,7 +71,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           padding: const EdgeInsets.all(AppSpacing.pagePadding),
           children: dashboard.when(
             data: (data) => [
-              _SmokeFreeHero(data: data),
+              _SmokeFreeHero(
+                data: data,
+                onTap: () => context.push(AppRoutes.smokeFreeDetails),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _TodayCard(
+                checkedIn: data.todayCheckIn != null,
+                smokeFreeToday: data.todayCheckIn?.smokeFreeToday,
+                onTap: () => context.push(AppRoutes.checkIn),
+              ),
               const SizedBox(height: AppSpacing.lg),
               _BreathingCravingButton(
                 onPressed: () => context.push(AppRoutes.rescue),
@@ -86,6 +95,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       suffix: 'cigarettes',
                       color: AppColors.primary,
                       icon: Icons.smoke_free_rounded,
+                      onTap: () => context.push(AppRoutes.avoidedDetails),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
@@ -97,18 +107,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       suffix: 'estimated',
                       color: AppColors.accentMoney,
                       icon: Icons.savings_rounded,
+                      onTap: () => context.push(AppRoutes.savingsDetails),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
               _QuickLogCard(onTap: () => context.push(AppRoutes.logging)),
-              const SizedBox(height: AppSpacing.md),
-              _TodayCard(
-                checkedIn: data.todayCheckIn != null,
-                smokeFreeToday: data.todayCheckIn?.smokeFreeToday,
-                onTap: () => context.push(AppRoutes.checkIn),
-              ),
             ],
             loading: () => [
               const SizedBox(height: 160),
@@ -150,9 +155,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class _SmokeFreeHero extends StatelessWidget {
-  const _SmokeFreeHero({required this.data});
+  const _SmokeFreeHero({required this.data, required this.onTap});
 
   final HomeDashboardData data;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -178,79 +184,87 @@ class _SmokeFreeHero extends StatelessWidget {
           );
     final milestonePercent = (milestoneProgress * 100).round().clamp(0, 100);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPadding),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceCardDark : AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(Icons.air_rounded, color: AppColors.primary),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  'Smoke-free clock',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurface,
+    return InkWell(
+      borderRadius: BorderRadius.circular(28),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceCardDark : AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.air_rounded,
+                    color: AppColors.primary,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            'You are smoke-free for',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _FlipTimer(data: data),
-          const SizedBox(height: AppSpacing.xl),
-          Row(
-            children: [
-              Text(
-                nextMilestone == null
-                    ? '${shownMilestone.title} milestone'
-                    : '${shownMilestone.title} milestone',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    'Smoke-free clock',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
                 ),
-              ),
-              const Spacer(),
-              Text(
-                '$milestonePercent%',
-                style: AppTypography.displayNumber.copyWith(
-                  fontSize: 18,
-                  color: AppColors.accentMoney,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              minHeight: 12,
-              value: milestoneProgress,
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              color: AppColors.accentMoney,
+                const Icon(Icons.chevron_right_rounded),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'You are smoke-free for',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _FlipTimer(data: data),
+            const SizedBox(height: AppSpacing.xl),
+            Row(
+              children: [
+                Text(
+                  nextMilestone == null
+                      ? '${shownMilestone.title} milestone'
+                      : '${shownMilestone.title} milestone',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '$milestonePercent%',
+                  style: AppTypography.displayNumber.copyWith(
+                    fontSize: 18,
+                    color: AppColors.accentMoney,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                minHeight: 12,
+                value: milestoneProgress,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                color: AppColors.accentMoney,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -723,6 +737,7 @@ class _MetricCard extends StatelessWidget {
     required this.suffix,
     required this.color,
     this.icon,
+    this.onTap,
   });
 
   final String label;
@@ -730,41 +745,52 @@ class _MetricCard extends StatelessWidget {
   final String suffix;
   final Color color;
   final IconData? icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPadding),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (icon != null) Icon(icon, size: 20, color: color),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            value,
-            style: GoogleFonts.outfit(
-              fontSize: 30,
-              fontWeight: FontWeight.w700,
-              color: color,
-              letterSpacing: 0,
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                if (icon != null) Icon(icon, size: 20, color: color),
+                const Spacer(),
+                if (onTap != null) const Icon(Icons.chevron_right_rounded),
+              ],
             ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(label, style: theme.textTheme.titleSmall),
-          Text(
-            suffix,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              value,
+              style: GoogleFonts.outfit(
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
+                color: color,
+                letterSpacing: 0,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.xs),
+            Text(label, style: theme.textTheme.titleSmall),
+            Text(
+              suffix,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

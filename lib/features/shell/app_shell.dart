@@ -48,6 +48,11 @@ class _AppShellState extends ConsumerState<AppShell> {
             label: 'Home',
           ),
           NavigationDestination(
+            icon: Icon(Icons.calendar_month_outlined),
+            selectedIcon: Icon(Icons.calendar_month_rounded),
+            label: 'Journal',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.timeline_outlined),
             selectedIcon: Icon(Icons.timeline_rounded),
             label: 'Progress',

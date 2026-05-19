@@ -95,4 +95,57 @@ class SmokingLogRepositoryIO implements SmokingLogRepository {
         )
         .toList();
   }
+
+  @override
+  Future<SmokingLogRecord?> getById(String logId) async {
+    final log = await _isar.smokingLogs
+        .filter()
+        .logIdEqualTo(logId)
+        .findFirst();
+    if (log == null) {
+      return null;
+    }
+    return SmokingLogRecord(
+      logId: log.logId,
+      count: log.count,
+      trigger: log.trigger,
+      smokedAt: log.smokedAt.toLocal(),
+      note: log.note,
+    );
+  }
+
+  @override
+  Future<void> updateLog({
+    required String logId,
+    required int count,
+    required String trigger,
+    required DateTime smokedAt,
+    String? note,
+  }) async {
+    final log = await _isar.smokingLogs
+        .filter()
+        .logIdEqualTo(logId)
+        .findFirst();
+    if (log == null) {
+      throw StateError('Smoking log not found.');
+    }
+
+    log
+      ..count = count
+      ..trigger = trigger
+      ..smokedAt = smokedAt.toUtc()
+      ..note = note
+      ..synced = false;
+
+    final queueItem = SyncQueueItem()
+      ..entityType = 'smoking_log'
+      ..entityId = logId
+      ..operation = 'upsert'
+      ..createdAt = DateTime.now();
+
+    await _isar.writeTxn(() async {
+      await _isar.smokingLogs.put(log);
+      await _isar.syncQueueItems.put(queueItem);
+    });
+  }
 }

@@ -66,6 +66,42 @@ class SmokingLogRepositoryStub implements SmokingLogRepository {
         )
         .toList();
   }
+
+  @override
+  Future<SmokingLogRecord?> getById(String logId) async {
+    final log = _logs.where((item) => item.logId == logId).firstOrNull;
+    if (log == null) {
+      return null;
+    }
+    return SmokingLogRecord(
+      logId: log.logId,
+      count: log.count,
+      trigger: log.trigger,
+      smokedAt: log.smokedAt,
+      note: log.note,
+    );
+  }
+
+  @override
+  Future<void> updateLog({
+    required String logId,
+    required int count,
+    required String trigger,
+    required DateTime smokedAt,
+    String? note,
+  }) async {
+    final index = _logs.indexWhere((item) => item.logId == logId);
+    if (index == -1) {
+      throw StateError('Smoking log not found.');
+    }
+    _logs[index] = _StubSmokingLog(
+      logId: logId,
+      count: count,
+      smokedAt: smokedAt,
+      trigger: trigger,
+      note: note,
+    );
+  }
 }
 
 class _StubSmokingLog {

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/calculations/progress_calculations.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
@@ -67,6 +69,7 @@ class ProgressScreen extends ConsumerWidget {
                         value: '${data.smokeFreeDays}d',
                         icon: Icons.air_rounded,
                         color: AppColors.primary,
+                        onTap: () => context.push(AppRoutes.smokeFreeDetails),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -77,6 +80,7 @@ class ProgressScreen extends ConsumerWidget {
                             '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
                         icon: Icons.savings_rounded,
                         color: AppColors.accentMoney,
+                        onTap: () => context.push(AppRoutes.savingsDetails),
                       ),
                     ),
                   ],
@@ -90,6 +94,7 @@ class ProgressScreen extends ConsumerWidget {
                         value: '${data.cigarettesAvoided}',
                         icon: Icons.smoke_free_rounded,
                         color: AppColors.accentStreak,
+                        onTap: () => context.push(AppRoutes.avoidedDetails),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -99,14 +104,33 @@ class ProgressScreen extends ConsumerWidget {
                         value: '${recent.length}',
                         icon: Icons.fact_check_rounded,
                         color: AppColors.accentCraving,
+                        onTap: () => context.push(AppRoutes.checkInDetails),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
-                if (next != null) _NextMilestoneCard(next: next, data: data),
+                if (next != null)
+                  _NextMilestoneCard(
+                    next: next,
+                    data: data,
+                    onTap: () => context.push(AppRoutes.healthDetails),
+                  ),
                 if (next != null) const SizedBox(height: AppSpacing.sectionGap),
-                Text('Health timeline', style: theme.textTheme.titleLarge),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Health timeline',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push(AppRoutes.healthDetails),
+                      child: const Text('View all'),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: AppSpacing.md),
                 ...ProgressCalculations.healthMilestones.map(
                   (milestone) => Padding(
@@ -121,7 +145,21 @@ class ProgressScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
-                Text('Achievements', style: theme.textTheme.titleLarge),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Achievements',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          context.push(AppRoutes.achievementsDetails),
+                      child: const Text('View all'),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
                   spacing: AppSpacing.sm,
@@ -159,10 +197,15 @@ class ProgressScreen extends ConsumerWidget {
 }
 
 class _NextMilestoneCard extends StatelessWidget {
-  const _NextMilestoneCard({required this.next, required this.data});
+  const _NextMilestoneCard({
+    required this.next,
+    required this.data,
+    required this.onTap,
+  });
 
   final ProgressMilestone next;
   final HomeDashboardData data;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -173,38 +216,52 @@ class _NextMilestoneCard extends StatelessWidget {
       milestone: next,
     );
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPadding),
-      decoration: BoxDecoration(
-        color: AppColors.accentMoney.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: AppColors.accentMoney.withValues(alpha: 0.22),
+    return InkWell(
+      borderRadius: BorderRadius.circular(28),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        decoration: BoxDecoration(
+          color: AppColors.accentMoney.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: AppColors.accentMoney.withValues(alpha: 0.22),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Next milestone', style: theme.textTheme.labelLarge),
-          const SizedBox(height: AppSpacing.sm),
-          Text(next.title, style: theme.textTheme.headlineSmall),
-          const SizedBox(height: AppSpacing.md),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              minHeight: 10,
-              value: progress,
-              color: AppColors.accentMoney,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Next milestone',
+                    style: theme.textTheme.labelLarge,
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded),
+              ],
             ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            '${_durationLabel(remaining)} left',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            const SizedBox(height: AppSpacing.sm),
+            Text(next.title, style: theme.textTheme.headlineSmall),
+            const SizedBox(height: AppSpacing.md),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                minHeight: 10,
+                value: progress,
+                color: AppColors.accentMoney,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              '${_durationLabel(remaining)} left',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -226,42 +283,54 @@ class _ProgressStat extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   final String label;
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(height: AppSpacing.md),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(value, style: theme.textTheme.headlineSmall),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: color.withValues(alpha: 0.18)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color),
+                const Spacer(),
+                if (onTap != null) const Icon(Icons.chevron_right_rounded),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.md),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(value, style: theme.textTheme.headlineSmall),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
