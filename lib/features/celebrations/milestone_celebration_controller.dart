@@ -13,12 +13,16 @@ final milestoneCelebrationProvider = FutureProvider<CelebrationEvent?>((
   if (dashboard == null) {
     return null;
   }
+  final cravings = ref.watch(recentCravingsProvider).value ?? const [];
 
   final healthKeys = ProgressCalculations.unlockedHealthMilestoneKeys(
     dashboard.smokeFreeDuration,
   );
-  final achievementKeys = ProgressCalculations.unlockedAchievementKeys(
-    dashboard.smokeFreeDuration,
+  final achievementKeys = ProgressCalculations.unlockedAchievementKeysForStats(
+    smokeFreeDuration: dashboard.smokeFreeDuration,
+    cravingCount: cravings.length,
+    cigarettesAvoided: dashboard.cigarettesAvoided,
+    moneySaved: dashboard.moneySaved,
   );
   final newlyUnlocked = await ref
       .watch(achievementRepositoryProvider)
@@ -37,7 +41,7 @@ final milestoneCelebrationProvider = FutureProvider<CelebrationEvent?>((
         .map(CelebrationEvent.healthMilestone),
     ...ProgressCalculations.achievements
         .where((achievement) => newlyUnlocked.contains(achievement.key))
-        .map(CelebrationEvent.timeAchievement),
+        .map(CelebrationEvent.achievement),
   ];
   if (events.isEmpty) {
     return null;
@@ -58,6 +62,7 @@ class CelebrationEvent {
     required this.duration,
     required this.icon,
     required this.color,
+    this.badgeAsset,
   });
 
   factory CelebrationEvent.healthMilestone(ProgressMilestone milestone) {
@@ -69,18 +74,20 @@ class CelebrationEvent {
       duration: milestone.duration,
       icon: Icons.emoji_events_rounded,
       color: AppColors.accentMoney,
+      badgeAsset: milestone.badgeAsset,
     );
   }
 
-  factory CelebrationEvent.timeAchievement(ProgressMilestone achievement) {
+  factory CelebrationEvent.achievement(ProgressMilestone achievement) {
     return CelebrationEvent(
       kind: CelebrationKind.timeAchievement,
       key: achievement.key,
-      title: '${achievement.title} smoke-free',
-      body: 'You protected the pause long enough to reach a new marker.',
+      title: achievement.title,
+      body: achievement.body,
       duration: achievement.duration,
       icon: Icons.military_tech_rounded,
       color: AppColors.primary,
+      badgeAsset: achievement.badgeAsset,
     );
   }
 
@@ -91,4 +98,5 @@ class CelebrationEvent {
   final Duration duration;
   final IconData icon;
   final Color color;
+  final String? badgeAsset;
 }

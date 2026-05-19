@@ -515,7 +515,7 @@ class _TodayCard extends StatelessWidget {
         ? (smokeFreeToday == true
               ? 'Today is marked smoke-free. You can edit it if needed.'
               : 'Today is logged honestly. That still counts.')
-        : 'One minute: mood, smoke-free status, and an optional note.';
+        : 'One minute: Log your daily progress.';
 
     return InkWell(
       borderRadius: BorderRadius.circular(24),

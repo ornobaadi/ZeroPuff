@@ -62,13 +62,26 @@ void main() {
 
     test('unlocks achievements by elapsed duration', () {
       final unlocked = ProgressCalculations.unlockedAchievementKeys(
-        const Duration(hours: 12),
+        const Duration(hours: 24),
       );
 
-      expect(unlocked.contains('1_hour'), isTrue);
-      expect(unlocked.contains('6_hours'), isTrue);
-      expect(unlocked.contains('12_hours'), isTrue);
-      expect(unlocked.contains('1_day'), isFalse);
+      expect(unlocked.contains('20_minutes'), isTrue);
+      expect(unlocked.contains('8_hours'), isTrue);
+      expect(unlocked.contains('24_hours'), isTrue);
+      expect(unlocked.contains('48_hours'), isFalse);
+    });
+
+    test('unlocks stat achievements from cravings, avoided, and savings', () {
+      final unlocked = ProgressCalculations.unlockedAchievementKeysForStats(
+        smokeFreeDuration: const Duration(days: 2),
+        cravingCount: 10,
+        cigarettesAvoided: 100,
+        moneySaved: 50,
+      );
+
+      expect(unlocked.contains('10_cravings'), isTrue);
+      expect(unlocked.contains('100_avoided'), isTrue);
+      expect(unlocked.contains('50_saved'), isTrue);
     });
   });
 }

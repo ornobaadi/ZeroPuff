@@ -22,9 +22,14 @@ class StreakDetailsScreen extends ConsumerWidget {
         child: dashboard.when(
           data: (data) => LayoutBuilder(
             builder: (context, constraints) {
-              final heroSize = (constraints.maxHeight * 0.36).clamp(
-                220.0,
-                320.0,
+              final compact = constraints.maxHeight < 720;
+              final heroSectionHeight = (constraints.maxHeight * 0.56).clamp(
+                compact ? 320.0 : 390.0,
+                compact ? 420.0 : 500.0,
+              );
+              final heroSize = (heroSectionHeight * 0.72).clamp(
+                compact ? 220.0 : 280.0,
+                compact ? 310.0 : 370.0,
               );
               return Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -36,32 +41,44 @@ class StreakDetailsScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     SizedBox(
-                      height: heroSize,
-                      width: heroSize,
-                      child: _StreakHero(streak: data.smokeFreeStreakDays),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      _headline(data.smokeFreeStreakDays),
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'One day at a time. The only streak that matters here is the clean-air chain you are building.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                      height: heroSectionHeight,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            height: heroSize,
+                            width: heroSize,
+                            child: _StreakHero(
+                              streak: data.smokeFreeStreakDays,
+                            ),
+                          ),
+                          SizedBox(
+                            height: compact ? AppSpacing.sm : AppSpacing.md,
+                          ),
+                          Text(
+                            _headline(data.smokeFreeStreakDays),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'One day at a time. The only streak that matters here is the clean-air chain you are building.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const Spacer(),
+                    SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xl),
                     _SoftInfoCard(
                       icon: Icons.air_rounded,
                       title: 'How this streak works',
                       body:
                           'It tracks consecutive smoke-free days. Logging a smoke resets the streak.',
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(

@@ -14,8 +14,12 @@ final unlockedAchievementsProvider = FutureProvider<Set<String>>((ref) async {
   if (data == null) {
     return const {};
   }
-  final computed = ProgressCalculations.unlockedAchievementKeys(
-    data.smokeFreeDuration,
+  final cravings = ref.watch(recentCravingsProvider).value ?? const [];
+  final computed = ProgressCalculations.unlockedAchievementKeysForStats(
+    smokeFreeDuration: data.smokeFreeDuration,
+    cravingCount: cravings.length,
+    cigarettesAvoided: data.cigarettesAvoided,
+    moneySaved: data.moneySaved,
   );
   final repository = ref.watch(achievementRepositoryProvider);
   final stored = await repository.unlockedKeys();
@@ -40,9 +44,6 @@ class ProgressScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(AppSpacing.pagePadding),
           children: dashboard.when(
             data: (data) {
-              final next = ProgressCalculations.nextMilestone(
-                data.smokeFreeDuration,
-              );
               final recent = recentCheckIns.value ?? const [];
               final cravings = recentCravings.value ?? const [];
               final unlocked = unlockedAchievements.value ?? const {};
@@ -117,68 +118,10 @@ class ProgressScreen extends ConsumerWidget {
                   onTap: () => context.push(AppRoutes.cravingAnalysis),
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
-                if (next != null)
-                  _NextMilestoneCard(
-                    next: next,
-                    data: data,
-                    onTap: () => context.push(AppRoutes.healthDetails),
-                  ),
-                if (next != null) const SizedBox(height: AppSpacing.sectionGap),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Health timeline',
-                        style: theme.textTheme.titleLarge,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => context.push(AppRoutes.healthDetails),
-                      child: const Text('View all'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                ...ProgressCalculations.healthMilestones.map(
-                  (milestone) => Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: AppSpacing.componentGap,
-                    ),
-                    child: _PreviewMilestone(
-                      title: milestone.title,
-                      body: milestone.body,
-                      active: data.smokeFreeDuration >= milestone.duration,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sectionGap),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Achievements',
-                        style: theme.textTheme.titleLarge,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () =>
-                          context.push(AppRoutes.achievementsDetails),
-                      child: const Text('View all'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: ProgressCalculations.achievements.map((
-                    achievement,
-                  ) {
-                    return _AchievementChip(
-                      label: achievement.title,
-                      unlocked: unlocked.contains(achievement.key),
-                    );
-                  }).toList(),
+                _AchievementShowcaseCard(
+                  achievements: ProgressCalculations.achievements,
+                  unlocked: unlocked,
+                  onTap: () => context.push(AppRoutes.achievementsDetails),
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
                 _CheckInSummary(
@@ -265,25 +208,23 @@ class _CravingAnalysisCard extends StatelessWidget {
   }
 }
 
-class _NextMilestoneCard extends StatelessWidget {
-  const _NextMilestoneCard({
-    required this.next,
-    required this.data,
+class _AchievementShowcaseCard extends StatelessWidget {
+  const _AchievementShowcaseCard({
+    required this.achievements,
+    required this.unlocked,
     required this.onTap,
   });
 
-  final ProgressMilestone next;
-  final HomeDashboardData data;
+  final List<ProgressMilestone> achievements;
+  final Set<String> unlocked;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final remaining = next.duration - data.smokeFreeDuration;
-    final progress = ProgressCalculations.milestoneProgress(
-      smokeFreeDuration: data.smokeFreeDuration,
-      milestone: next,
-    );
+    final unlockedCount = achievements
+        .where((achievement) => unlocked.contains(achievement.key))
+        .length;
 
     return InkWell(
       borderRadius: BorderRadius.circular(28),
@@ -291,11 +232,9 @@ class _NextMilestoneCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.cardPadding),
         decoration: BoxDecoration(
-          color: AppColors.accentMoney.withValues(alpha: 0.1),
+          color: AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: AppColors.accentMoney.withValues(alpha: 0.22),
-          ),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,46 +242,44 @@ class _NextMilestoneCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    'Next milestone',
-                    style: theme.textTheme.labelLarge,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Achievements', style: theme.textTheme.titleLarge),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        '$unlockedCount of ${achievements.length} unlocked',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const Icon(Icons.chevron_right_rounded),
               ],
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(next.title, style: theme.textTheme.headlineSmall),
-            const SizedBox(height: AppSpacing.md),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                minHeight: 10,
-                value: progress,
-                color: AppColors.accentMoney,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              '${_durationLabel(remaining)} left',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            const SizedBox(height: AppSpacing.lg),
+            SizedBox(
+              height: 178,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: achievements.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(width: AppSpacing.md),
+                itemBuilder: (context, index) {
+                  final achievement = achievements[index];
+                  return _AchievementBadgePreview(
+                    achievement: achievement,
+                    unlocked: unlocked.contains(achievement.key),
+                  );
+                },
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  String _durationLabel(Duration duration) {
-    if (duration.inDays > 0) {
-      return '${duration.inDays}d ${duration.inHours.remainder(24)}h';
-    }
-    if (duration.inHours > 0) {
-      return '${duration.inHours}h ${duration.inMinutes.remainder(60)}m';
-    }
-    return '${duration.inMinutes}m';
   }
 }
 
@@ -405,51 +342,49 @@ class _ProgressStat extends StatelessWidget {
   }
 }
 
-class _PreviewMilestone extends StatelessWidget {
-  const _PreviewMilestone({
-    required this.title,
-    required this.body,
-    required this.active,
+class _AchievementBadgePreview extends StatelessWidget {
+  const _AchievementBadgePreview({
+    required this.achievement,
+    required this.unlocked,
   });
 
-  final String title;
-  final String body;
-  final bool active;
+  final ProgressMilestone achievement;
+  final bool unlocked;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = active ? AppColors.primary : theme.colorScheme.outline;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: active
-            ? AppColors.primary.withValues(alpha: 0.1)
-            : theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: color.withValues(alpha: 0.22)),
-      ),
-      child: Row(
+    return SizedBox(
+      width: 142,
+      child: Column(
         children: [
-          Icon(
-            active ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
-            color: color,
+          _AchievementBadgeImage(
+            achievement: achievement,
+            unlocked: unlocked,
+            size: 104,
           ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  body,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            achievement.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: unlocked
+                  ? theme.colorScheme.onSurface
+                  : theme.colorScheme.onSurfaceVariant,
+              fontWeight: unlocked ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            achievement.body,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -458,39 +393,79 @@ class _PreviewMilestone extends StatelessWidget {
   }
 }
 
-class _AchievementChip extends StatelessWidget {
-  const _AchievementChip({required this.label, required this.unlocked});
+class _AchievementBadgeImage extends StatelessWidget {
+  const _AchievementBadgeImage({
+    required this.achievement,
+    required this.unlocked,
+    required this.size,
+  });
 
-  final String label;
+  final ProgressMilestone achievement;
   final bool unlocked;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final asset = achievement.badgeAsset;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: unlocked
-            ? AppColors.primary.withValues(alpha: 0.12)
-            : theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: unlocked
-              ? AppColors.primary.withValues(alpha: 0.24)
-              : theme.colorScheme.outlineVariant,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    final badge = asset == null
+        ? Icon(
+            Icons.emoji_events_rounded,
+            size: size * 0.62,
+            color: unlocked ? AppColors.accentMoney : theme.colorScheme.outline,
+          )
+        : Image.asset(asset, width: size, height: size, fit: BoxFit.contain);
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Icon(
-            unlocked ? Icons.lock_open_rounded : Icons.lock_outline_rounded,
-            size: 16,
-            color: unlocked ? AppColors.primary : theme.colorScheme.outline,
+          ColorFiltered(
+            colorFilter: unlocked
+                ? const ColorFilter.mode(Colors.transparent, BlendMode.dst)
+                : const ColorFilter.matrix(<double>[
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                  ]),
+            child: Opacity(opacity: unlocked ? 1 : 0.58, child: badge),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(label, style: theme.textTheme.labelMedium),
+          if (!unlocked)
+            Positioned(
+              bottom: 6,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface.withValues(alpha: 0.82),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.lock_rounded,
+                  size: size * 0.20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -157,31 +157,23 @@ class CravingAnalysisScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Craving analysis')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.pagePadding),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.pagePadding,
+            AppSpacing.sm,
+            AppSpacing.pagePadding,
+            AppSpacing.lg,
+          ),
           children: [
-            _HeroNumber(
-              value: '${analysis.totalCravings}',
-              label: 'recent craving logs',
-              color: AppColors.accentCraving,
-              icon: Icons.bolt_rounded,
-            ),
             if (!analysis.hasEnoughData) ...[
-              _InfoCard(
-                title: 'A few more logs first',
-                body:
-                    'Log three cravings before ZeroPuff turns this into patterns. Tiny sample sizes can lie.',
-                icon: Icons.hourglass_empty_rounded,
-                color: AppColors.accentCraving,
-              ),
-              ...analysis.insights.map(
-                (insight) => _InfoCard(
-                  title: 'Building the map',
-                  body: insight,
-                  icon: Icons.map_rounded,
-                  color: AppColors.primary,
-                ),
-              ),
+              _CravingEmptyState(totalCravings: analysis.totalCravings),
             ] else ...[
+              _CompactHeroNumber(
+                value: '${analysis.totalCravings}',
+                label: 'recent craving logs',
+                color: AppColors.accentCraving,
+                icon: Icons.bolt_rounded,
+              ),
+              const SizedBox(height: AppSpacing.md),
               _InsightList(insights: analysis.insights),
               const SizedBox(height: AppSpacing.md),
               Row(
@@ -321,6 +313,110 @@ class _InsightList extends StatelessWidget {
               child: _BulletLine(text: insight),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CravingEmptyState extends StatelessWidget {
+  const _CravingEmptyState({required this.totalCravings});
+
+  final int totalCravings;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final remaining = 3 - totalCravings;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: AppColors.accentCraving.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: AppColors.accentCraving.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.bolt_rounded,
+            color: AppColors.accentCraving,
+            size: 34,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            '$totalCravings / 3 logs',
+            style: theme.textTheme.headlineLarge?.copyWith(
+              color: AppColors.accentCraving,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text('Craving map warming up', style: theme.textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            remaining == 1
+                ? 'Log one more craving to unlock useful patterns. Tiny sample sizes can lie.'
+                : 'Log $remaining more cravings to unlock useful patterns. Tiny sample sizes can lie.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 9,
+              value: (totalCravings / 3).clamp(0, 1),
+              color: AppColors.accentCraving,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactHeroNumber extends StatelessWidget {
+  const _CompactHeroNumber({
+    required this.value,
+    required this.label,
+    required this.color,
+    required this.icon,
+  });
+
+  final String value;
+  final String label;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 32),
+          const SizedBox(width: AppSpacing.md),
+          Text(
+            value,
+            style: theme.textTheme.headlineLarge?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: Text(label, style: theme.textTheme.titleMedium)),
         ],
       ),
     );
@@ -486,23 +582,240 @@ class AchievementsDetailsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(homeDashboardProvider);
     final unlocked = ref.watch(unlockedAchievementsProvider).value ?? const {};
+    final catalogUnlocked = ProgressCalculations.achievements
+        .where((achievement) => unlocked.contains(achievement.key))
+        .length;
     return _DetailScaffold(
       title: 'Achievements',
       dashboard: dashboard,
       builder: (context, data) => [
-        _HeroNumber(
-          value: '${unlocked.length}',
-          label: 'unlocked',
-          color: AppColors.primary,
-          icon: Icons.emoji_events_rounded,
+        _AchievementSummaryPill(
+          unlocked: catalogUnlocked,
+          total: ProgressCalculations.achievements.length,
         ),
-        ...ProgressCalculations.achievements.map(
-          (achievement) => _MilestoneRow(
-            milestone: achievement,
-            active: unlocked.contains(achievement.key),
-          ),
+        _AchievementGrid(
+          achievements: ProgressCalculations.achievements,
+          unlocked: unlocked,
         ),
       ],
+    );
+  }
+}
+
+class _AchievementGrid extends StatelessWidget {
+  const _AchievementGrid({required this.achievements, required this.unlocked});
+
+  final List<ProgressMilestone> achievements;
+  final Set<String> unlocked;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 520 ? 3 : 2;
+        return GridView.builder(
+          itemCount: achievements.length,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: AppSpacing.sm,
+            mainAxisSpacing: AppSpacing.sm,
+            childAspectRatio: columns == 3 ? 0.9 : 0.84,
+          ),
+          itemBuilder: (context, index) {
+            final achievement = achievements[index];
+            return _AchievementBadgeCard(
+              achievement: achievement,
+              unlocked: unlocked.contains(achievement.key),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _AchievementSummaryPill extends StatelessWidget {
+  const _AchievementSummaryPill({required this.unlocked, required this.total});
+
+  final int unlocked;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.componentGap,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.emoji_events_rounded, color: AppColors.primary),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              '$unlocked/$total unlocked',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AchievementBadgeCard extends StatelessWidget {
+  const _AchievementBadgeCard({
+    required this.achievement,
+    required this.unlocked,
+  });
+
+  final ProgressMilestone achievement;
+  final bool unlocked;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: unlocked
+            ? AppColors.primary.withValues(alpha: 0.1)
+            : theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: unlocked
+              ? AppColors.primary.withValues(alpha: 0.24)
+              : theme.colorScheme.outlineVariant,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _DetailBadgeImage(
+            achievement: achievement,
+            unlocked: unlocked,
+            size: 116,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            achievement.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: unlocked
+                  ? theme.colorScheme.onSurface
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Expanded(
+            child: Text(
+              achievement.body,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailBadgeImage extends StatelessWidget {
+  const _DetailBadgeImage({
+    required this.achievement,
+    required this.unlocked,
+    required this.size,
+  });
+
+  final ProgressMilestone achievement;
+  final bool unlocked;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final asset = achievement.badgeAsset;
+    final badge = asset == null
+        ? Icon(
+            Icons.emoji_events_rounded,
+            size: size * 0.62,
+            color: unlocked ? AppColors.accentMoney : theme.colorScheme.outline,
+          )
+        : Image.asset(asset, width: size, height: size, fit: BoxFit.contain);
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          ColorFiltered(
+            colorFilter: unlocked
+                ? const ColorFilter.mode(Colors.transparent, BlendMode.dst)
+                : const ColorFilter.matrix(<double>[
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                  ]),
+            child: Opacity(opacity: unlocked ? 1 : 0.58, child: badge),
+          ),
+          if (!unlocked)
+            Positioned(
+              bottom: 8,
+              child: Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface.withValues(alpha: 0.84),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.lock_rounded,
+                  size: size * 0.18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

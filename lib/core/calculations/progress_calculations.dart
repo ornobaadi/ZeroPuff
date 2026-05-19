@@ -7,24 +7,28 @@ class ProgressCalculations {
       title: '20 minutes',
       body: 'Pulse and blood pressure begin to settle.',
       duration: Duration(minutes: 20),
+      badgeAsset: 'assets/badges/20min.png',
     ),
     ProgressMilestone(
       key: '8_hours',
       title: '8 hours',
       body: 'Oxygen levels get more room to recover.',
       duration: Duration(hours: 8),
+      badgeAsset: 'assets/badges/8h.png',
     ),
     ProgressMilestone(
       key: '24_hours',
       title: '24 hours',
       body: 'The first full-day marker becomes visible.',
       duration: Duration(hours: 24),
+      badgeAsset: 'assets/badges/24h.png',
     ),
     ProgressMilestone(
       key: '48_hours',
       title: '48 hours',
       body: 'Taste and smell may start feeling sharper.',
       duration: Duration(hours: 48),
+      badgeAsset: 'assets/badges/48h.png',
     ),
     ProgressMilestone(
       key: '72_hours',
@@ -37,81 +41,125 @@ class ProgressCalculations {
       title: '1 week',
       body: 'A full week of practice, data, and recovery.',
       duration: Duration(days: 7),
+      badgeAsset: 'assets/badges/1w.png',
     ),
     ProgressMilestone(
       key: '2_weeks',
       title: '2 weeks',
       body: 'Circulation and routine stability keep building.',
       duration: Duration(days: 14),
+      badgeAsset: 'assets/badges/2w.png',
     ),
     ProgressMilestone(
       key: '1_month',
       title: '1 month',
       body: 'The new pattern has real weight now.',
       duration: Duration(days: 30),
+      badgeAsset: 'assets/badges/1m.png',
     ),
     ProgressMilestone(
       key: '3_months',
       title: '3 months',
       body: 'Craving patterns can feel more predictable and manageable.',
       duration: Duration(days: 90),
+      badgeAsset: 'assets/badges/3m.png',
     ),
     ProgressMilestone(
       key: '1_year',
       title: '1 year',
       body: 'A year of decisions, data, and momentum.',
       duration: Duration(days: 365),
+      badgeAsset: 'assets/badges/1y.png',
     ),
   ];
 
   static const achievements = [
     ProgressMilestone(
-      key: '1_hour',
-      title: '1 hour',
-      body: '',
-      duration: Duration(hours: 1),
+      key: '20_minutes',
+      title: 'First Reset',
+      body: 'Stay smoke-free for the first 20 minutes.',
+      duration: Duration(minutes: 20),
+      badgeAsset: 'assets/badges/20min.png',
     ),
     ProgressMilestone(
-      key: '6_hours',
-      title: '6 hours',
-      body: '',
-      duration: Duration(hours: 6),
+      key: '8_hours',
+      title: 'Fresh Oxygen',
+      body: 'Protect 8 smoke-free hours.',
+      duration: Duration(hours: 8),
+      badgeAsset: 'assets/badges/8h.png',
     ),
     ProgressMilestone(
-      key: '12_hours',
-      title: '12 hours',
-      body: '',
-      duration: Duration(hours: 12),
+      key: '24_hours',
+      title: 'First Full Day',
+      body: 'Complete 24 hours without smoking.',
+      duration: Duration(hours: 24),
+      badgeAsset: 'assets/badges/24h.png',
     ),
     ProgressMilestone(
-      key: '1_day',
-      title: '1 day',
-      body: '',
-      duration: Duration(days: 1),
-    ),
-    ProgressMilestone(
-      key: '3_days',
-      title: '3 days',
-      body: '',
-      duration: Duration(days: 3),
+      key: '48_hours',
+      title: 'Two-Day Spark',
+      body: 'Reach 48 smoke-free hours.',
+      duration: Duration(hours: 48),
+      badgeAsset: 'assets/badges/48h.png',
     ),
     ProgressMilestone(
       key: '1_week',
-      title: '1 week',
-      body: '',
+      title: 'Week Warrior',
+      body: 'Build a 1-week smoke-free chain.',
       duration: Duration(days: 7),
+      badgeAsset: 'assets/badges/1w.png',
     ),
     ProgressMilestone(
       key: '2_weeks',
-      title: '2 weeks',
-      body: '',
+      title: 'Routine Breaker',
+      body: 'Keep going for 2 full weeks.',
       duration: Duration(days: 14),
+      badgeAsset: 'assets/badges/2w.png',
     ),
     ProgressMilestone(
       key: '1_month',
-      title: '1 month',
-      body: '',
+      title: 'Month Builder',
+      body: 'Reach one month smoke-free.',
       duration: Duration(days: 30),
+      badgeAsset: 'assets/badges/1m.png',
+    ),
+    ProgressMilestone(
+      key: '3_months',
+      title: 'Craving Tamer',
+      body: 'Reach three months of clean-air practice.',
+      duration: Duration(days: 90),
+      badgeAsset: 'assets/badges/3m.png',
+    ),
+    ProgressMilestone(
+      key: '1_year',
+      title: 'Year Legend',
+      body: 'Protect a full year smoke-free.',
+      duration: Duration(days: 365),
+      badgeAsset: 'assets/badges/1y.png',
+    ),
+    ProgressMilestone(
+      key: '10_cravings',
+      title: 'Craving Scout',
+      body: 'Log 10 cravings and learn your patterns.',
+      duration: Duration.zero,
+      badgeAsset: 'assets/badges/10crave.png',
+      cravingCountTarget: 10,
+    ),
+    ProgressMilestone(
+      key: '100_avoided',
+      title: 'Hundred Saved',
+      body: 'Avoid 100 cigarettes compared with your old pace.',
+      duration: Duration.zero,
+      badgeAsset: 'assets/badges/100avoid.png',
+      cigarettesAvoidedTarget: 100,
+    ),
+    ProgressMilestone(
+      key: '50_saved',
+      title: 'Pocket Win',
+      body: 'Save your first 50 in cigarette money.',
+      duration: Duration.zero,
+      badgeAsset: r'assets/badges/$50.png',
+      moneySavedTarget: 50,
     ),
   ];
 
@@ -183,7 +231,30 @@ class ProgressCalculations {
 
   static Set<String> unlockedAchievementKeys(Duration smokeFreeDuration) {
     return achievements
-        .where((achievement) => smokeFreeDuration >= achievement.duration)
+        .where(
+          (achievement) =>
+              achievement.duration > Duration.zero &&
+              smokeFreeDuration >= achievement.duration,
+        )
+        .map((achievement) => achievement.key)
+        .toSet();
+  }
+
+  static Set<String> unlockedAchievementKeysForStats({
+    required Duration smokeFreeDuration,
+    required int cravingCount,
+    required int cigarettesAvoided,
+    required double moneySaved,
+  }) {
+    return achievements
+        .where(
+          (achievement) => achievement.isUnlocked(
+            smokeFreeDuration: smokeFreeDuration,
+            cravingCount: cravingCount,
+            cigarettesAvoided: cigarettesAvoided,
+            moneySaved: moneySaved,
+          ),
+        )
         .map((achievement) => achievement.key)
         .toSet();
   }
@@ -210,10 +281,45 @@ class ProgressMilestone {
     required this.title,
     required this.body,
     required this.duration,
+    this.badgeAsset,
+    this.cravingCountTarget,
+    this.cigarettesAvoidedTarget,
+    this.moneySavedTarget,
   });
 
   final String key;
   final String title;
   final String body;
   final Duration duration;
+  final String? badgeAsset;
+  final int? cravingCountTarget;
+  final int? cigarettesAvoidedTarget;
+  final double? moneySavedTarget;
+
+  bool isUnlocked({
+    required Duration smokeFreeDuration,
+    required int cravingCount,
+    required int cigarettesAvoided,
+    required double moneySaved,
+  }) {
+    if (duration > Duration.zero && smokeFreeDuration < duration) {
+      return false;
+    }
+    final cravings = cravingCountTarget;
+    if (cravings != null && cravingCount < cravings) {
+      return false;
+    }
+    final avoided = cigarettesAvoidedTarget;
+    if (avoided != null && cigarettesAvoided < avoided) {
+      return false;
+    }
+    final saved = moneySavedTarget;
+    if (saved != null && moneySaved < saved) {
+      return false;
+    }
+    return duration > Duration.zero ||
+        cravingCountTarget != null ||
+        cigarettesAvoidedTarget != null ||
+        moneySavedTarget != null;
+  }
 }

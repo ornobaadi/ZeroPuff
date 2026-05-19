@@ -65,7 +65,15 @@ class _CelebrationDialogState extends State<CelebrationDialog>
                         color: event.color.withValues(alpha: 0.26),
                       ),
                     ),
-                    child: Icon(event.icon, size: 50, color: event.color),
+                    child: event.badgeAsset == null
+                        ? Icon(event.icon, size: 50, color: event.color)
+                        : Padding(
+                            padding: const EdgeInsets.all(AppSpacing.sm),
+                            child: Image.asset(
+                              event.badgeAsset!,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
