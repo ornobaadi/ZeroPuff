@@ -16,4 +16,21 @@ abstract class SmokingLogRepository {
   });
   Future<int> getTotalSmokedToday();
   Future<DateTime?> getLatestSmokedAt();
+  Future<List<SmokingLogRecord>> getRecent({int limit = 90});
+}
+
+class SmokingLogRecord {
+  const SmokingLogRecord({
+    required this.logId,
+    required this.count,
+    required this.trigger,
+    required this.smokedAt,
+    this.note,
+  });
+
+  final String logId;
+  final int count;
+  final String trigger;
+  final DateTime smokedAt;
+  final String? note;
 }

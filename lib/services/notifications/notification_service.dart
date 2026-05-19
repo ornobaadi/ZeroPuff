@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../core/calculations/progress_calculations.dart';
 import '../../repositories/notification_preferences_repository.dart';
 
 class NotificationService {
@@ -68,13 +69,25 @@ class NotificationService {
     }
 
     if (preferences.milestoneReminderEnabled && quitDate != null) {
-      final reminderAt = quitDate.add(const Duration(minutes: 15));
-      if (reminderAt.isAfter(DateTime.now())) {
+      final now = DateTime.now();
+      final smokeFreeDuration = now.isBefore(quitDate)
+          ? Duration.zero
+          : now.difference(quitDate);
+      final nextMilestone = ProgressCalculations.nextMilestone(
+        smokeFreeDuration,
+      );
+      final milestoneAt = nextMilestone == null
+          ? null
+          : quitDate.add(nextMilestone.duration);
+
+      if (nextMilestone != null &&
+          milestoneAt != null &&
+          milestoneAt.isAfter(now)) {
         await plugin.zonedSchedule(
           id: milestoneReminderId,
-          title: 'Five minutes to the first milestone',
-          body: 'Stay with the pause. You are closer than it feels.',
-          scheduledDate: tz.TZDateTime.from(reminderAt, tz.local),
+          title: '${nextMilestone.title} smoke-free',
+          body: nextMilestone.body,
+          scheduledDate: tz.TZDateTime.from(milestoneAt, tz.local),
           notificationDetails: _details(),
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         );

@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/calculations/progress_calculations.dart';
+import '../../../core/calculations/streak_calculations.dart';
+import '../../../models/craving_rescue_data.dart';
 import '../../../models/onboarding_data.dart';
+import '../../../repositories/craving_repository.dart';
 import '../../../repositories/daily_checkin_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/smoking_log_repository.dart';
@@ -35,10 +38,16 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
   final baseline = ref.watch(homeBaselineProvider);
   final latestSmoke = ref.watch(latestSmokeAtProvider);
   final todayCheckIn = ref.watch(todayCheckInProvider);
+  final recentCheckIns = ref.watch(recentCheckInsProvider);
+  final recentSmokingLogs = ref.watch(recentSmokingLogsProvider);
+  final recentCravings = ref.watch(recentCravingsProvider);
 
   if (baseline is AsyncLoading ||
       latestSmoke is AsyncLoading ||
-      todayCheckIn is AsyncLoading) {
+      todayCheckIn is AsyncLoading ||
+      recentCheckIns is AsyncLoading ||
+      recentSmokingLogs is AsyncLoading ||
+      recentCravings is AsyncLoading) {
     return const AsyncLoading<HomeDashboardData>();
   }
   if (baseline is AsyncError) {
@@ -56,6 +65,24 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
       todayCheckIn.stackTrace!,
     );
   }
+  if (recentCheckIns is AsyncError) {
+    return AsyncError<HomeDashboardData>(
+      recentCheckIns.error!,
+      recentCheckIns.stackTrace!,
+    );
+  }
+  if (recentSmokingLogs is AsyncError) {
+    return AsyncError<HomeDashboardData>(
+      recentSmokingLogs.error!,
+      recentSmokingLogs.stackTrace!,
+    );
+  }
+  if (recentCravings is AsyncError) {
+    return AsyncError<HomeDashboardData>(
+      recentCravings.error!,
+      recentCravings.stackTrace!,
+    );
+  }
 
   final data = baseline.value;
   if (data == null) {
@@ -64,6 +91,9 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
 
   final loggedSmokeAt = latestSmoke.value;
   final checkIn = todayCheckIn.value;
+  final checkIns = recentCheckIns.value ?? const <DailyCheckInRecord>[];
+  final smokingLogs = recentSmokingLogs.value ?? const <SmokingLogRecord>[];
+  final cravings = recentCravings.value ?? const <CravingRescueData>[];
   final baselineQuitDate = data.quitDate ?? now;
   final quitDate =
       loggedSmokeAt != null && loggedSmokeAt.isAfter(baselineQuitDate)
@@ -84,6 +114,30 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
     packPrice: packPrice,
     packSize: packSize,
   );
+  final checkInDates = checkIns
+      .map((record) => StreakCalculations.parseLocalDateKey(record.localDate))
+      .nonNulls
+      .toSet();
+  final smokingDates = smokingLogs
+      .map((record) => StreakCalculations.dateOnly(record.smokedAt))
+      .toSet();
+  final smokeFreeStreakDays = StreakCalculations.smokeFreeCalendarStreakDays(
+    quitDate: baselineQuitDate,
+    today: now,
+    smokingDates: smokingDates,
+  );
+  final checkInStreakDays = StreakCalculations.consecutiveDayStreak(
+    today: now,
+    activeDates: checkInDates,
+  );
+  final honestyStreakDays = StreakCalculations.honestyStreakDaysFromActivity(
+    today: now,
+    checkInDates: checkInDates,
+    smokingLogDates: smokingDates,
+  );
+  final resistanceStreak = StreakCalculations.resistanceStreak(
+    cravings.map((session) => session.outcome).toList(),
+  );
 
   return AsyncData(
     HomeDashboardData(
@@ -92,7 +146,10 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
       moneySaved: moneySaved,
       currencySymbol: data.currencySymbol,
       smokeFreeDays: smokeFreeDuration.inDays,
-      honestyStreakDays: checkIn == null ? 0 : 1,
+      smokeFreeStreakDays: smokeFreeStreakDays,
+      checkInStreakDays: checkInStreakDays,
+      honestyStreakDays: honestyStreakDays,
+      resistanceStreak: resistanceStreak,
       lastSmokeAt: loggedSmokeAt,
       todayCheckIn: checkIn,
     ),
@@ -110,7 +167,19 @@ final todayCheckInProvider = FutureProvider<DailyCheckInRecord?>((ref) async {
 final recentCheckInsProvider = FutureProvider<List<DailyCheckInRecord>>((
   ref,
 ) async {
-  return ref.watch(dailyCheckInRepositoryProvider).getRecent();
+  return ref.watch(dailyCheckInRepositoryProvider).getRecent(limit: 90);
+});
+
+final recentSmokingLogsProvider = FutureProvider<List<SmokingLogRecord>>((
+  ref,
+) async {
+  return ref.watch(smokingLogRepositoryProvider).getRecent(limit: 90);
+});
+
+final recentCravingsProvider = FutureProvider<List<CravingRescueData>>((
+  ref,
+) async {
+  return ref.watch(cravingRepositoryProvider).recent(limit: 90);
 });
 
 class HomeDashboardData {
@@ -120,7 +189,10 @@ class HomeDashboardData {
     required this.moneySaved,
     required this.currencySymbol,
     required this.smokeFreeDays,
+    required this.smokeFreeStreakDays,
+    required this.checkInStreakDays,
     required this.honestyStreakDays,
+    required this.resistanceStreak,
     this.lastSmokeAt,
     this.todayCheckIn,
   });
@@ -130,7 +202,10 @@ class HomeDashboardData {
   final double moneySaved;
   final String currencySymbol;
   final int smokeFreeDays;
+  final int smokeFreeStreakDays;
+  final int checkInStreakDays;
   final int honestyStreakDays;
+  final int resistanceStreak;
   final DateTime? lastSmokeAt;
   final DailyCheckInRecord? todayCheckIn;
 

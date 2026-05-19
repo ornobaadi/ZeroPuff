@@ -32,6 +32,22 @@ void main() {
       expect(milestone?.key, '8_hours');
     });
 
+    test('moves past the first milestone after it is completed', () {
+      final milestone = ProgressCalculations.nextMilestone(
+        const Duration(minutes: 22),
+      );
+
+      expect(milestone?.key, '8_hours');
+    });
+
+    test('maps health milestone keys to synced achievement keys', () {
+      final unlocked = ProgressCalculations.unlockedHealthMilestoneKeys(
+        const Duration(minutes: 22),
+      );
+
+      expect(unlocked, {'health_milestone_20_minutes'});
+    });
+
     test('clamps milestone progress', () {
       final milestone = ProgressCalculations.healthMilestones.first;
 

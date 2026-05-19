@@ -146,6 +146,28 @@ class ProgressCalculations {
     return null;
   }
 
+  static ProgressMilestone currentMilestone(Duration smokeFreeDuration) {
+    ProgressMilestone current = healthMilestones.first;
+    for (final milestone in healthMilestones) {
+      if (smokeFreeDuration >= milestone.duration) {
+        current = milestone;
+      } else {
+        break;
+      }
+    }
+    return current;
+  }
+
+  static ProgressMilestone? previousMilestone(ProgressMilestone milestone) {
+    final index = healthMilestones.indexWhere(
+      (item) => item.key == milestone.key,
+    );
+    if (index <= 0) {
+      return null;
+    }
+    return healthMilestones[index - 1];
+  }
+
   static double milestoneProgress({
     required Duration smokeFreeDuration,
     required ProgressMilestone milestone,
@@ -164,6 +186,21 @@ class ProgressCalculations {
         .where((achievement) => smokeFreeDuration >= achievement.duration)
         .map((achievement) => achievement.key)
         .toSet();
+  }
+
+  static Set<String> unlockedHealthMilestoneKeys(Duration smokeFreeDuration) {
+    return healthMilestones
+        .where((milestone) => smokeFreeDuration >= milestone.duration)
+        .map((milestone) => healthMilestoneAchievementKey(milestone.key))
+        .toSet();
+  }
+
+  static String healthMilestoneAchievementKey(String key) {
+    return 'health_milestone_$key';
+  }
+
+  static String healthMilestoneKeyFromAchievement(String achievementKey) {
+    return achievementKey.replaceFirst('health_milestone_', '');
   }
 }
 

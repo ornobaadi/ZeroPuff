@@ -75,4 +75,24 @@ class SmokingLogRepositoryIO implements SmokingLogRepository {
     }
     return logs.first.smokedAt.toLocal();
   }
+
+  @override
+  Future<List<SmokingLogRecord>> getRecent({int limit = 90}) async {
+    final logs = await _isar.smokingLogs
+        .where()
+        .sortBySmokedAtDesc()
+        .limit(limit)
+        .findAll();
+    return logs
+        .map(
+          (log) => SmokingLogRecord(
+            logId: log.logId,
+            count: log.count,
+            trigger: log.trigger,
+            smokedAt: log.smokedAt.toLocal(),
+            note: log.note,
+          ),
+        )
+        .toList();
+  }
 }

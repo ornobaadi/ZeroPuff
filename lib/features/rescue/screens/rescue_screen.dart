@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../models/app_event.dart';
 import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/craving_repository.dart';
@@ -153,6 +154,7 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
       await ref
           .read(cravingRepositoryProvider)
           .completeRescue(sessionId: sessionId, outcome: outcome);
+      ref.invalidate(recentCravingsProvider);
     }
     await ref
         .read(appEventRepositoryProvider)

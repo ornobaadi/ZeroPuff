@@ -3,24 +3,62 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/calculations/progress_calculations.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../celebrations/milestone_celebration_controller.dart';
+import '../../../repositories/notification_preferences_repository.dart';
+import '../../../repositories/onboarding_repository.dart';
+import '../../../services/notifications/notification_service.dart';
 import '../providers/home_dashboard_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String? _shownMilestoneKey;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual(milestoneCelebrationProvider, (previous, next) {
+      final milestone = next.value;
+      if (milestone == null || milestone.key == _shownMilestoneKey) {
+        return;
+      }
+      _shownMilestoneKey = milestone.key;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showMilestoneDialog(milestone);
+          _rescheduleMilestoneNotifications();
+        }
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dashboard = ref.watch(homeDashboardProvider);
+    ref.watch(milestoneCelebrationProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('ZeroPuff'),
         actions: [
+          dashboard.maybeWhen(
+            data: (data) => _AppBarStreak(
+              streak: data.smokeFreeStreakDays,
+              onTap: () => context.push(AppRoutes.streakDetails),
+            ),
+            orElse: () => const SizedBox.shrink(),
+          ),
           IconButton(
             tooltip: 'Log cigarette',
             onPressed: () => context.push(AppRoutes.logging),
@@ -89,6 +127,26 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Future<void> _showMilestoneDialog(ProgressMilestone milestone) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => _MilestoneDialog(milestone: milestone),
+    );
+  }
+
+  Future<void> _rescheduleMilestoneNotifications() async {
+    final preferences = await ref
+        .read(notificationPreferencesRepositoryProvider)
+        .load();
+    final profile = await ref
+        .read(onboardingRepositoryProvider)
+        .loadCompletedProfile();
+    await NotificationService.reschedule(
+      preferences: preferences,
+      quitDate: profile?.quitDate,
+    );
+  }
 }
 
 class _SmokeFreeHero extends StatelessWidget {
@@ -100,7 +158,24 @@ class _SmokeFreeHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final milestoneProgress = _nextMilestoneProgress(data.smokeFreeDuration);
+    final nextMilestone = ProgressCalculations.nextMilestone(
+      data.smokeFreeDuration,
+    );
+    final shownMilestone =
+        nextMilestone ??
+        ProgressCalculations.currentMilestone(data.smokeFreeDuration);
+    final previousMilestone = ProgressCalculations.previousMilestone(
+      shownMilestone,
+    );
+    final previousDuration = previousMilestone?.duration ?? Duration.zero;
+    final segmentDuration = shownMilestone.duration - previousDuration;
+    final segmentElapsed = data.smokeFreeDuration - previousDuration;
+    final milestoneProgress = nextMilestone == null
+        ? 1.0
+        : (segmentElapsed.inSeconds / segmentDuration.inSeconds).clamp(
+            0.0,
+            1.0,
+          );
     final milestonePercent = (milestoneProgress * 100).round().clamp(0, 100);
 
     return Container(
@@ -148,7 +223,9 @@ class _SmokeFreeHero extends StatelessWidget {
           Row(
             children: [
               Text(
-                '20 min milestone',
+                nextMilestone == null
+                    ? '${shownMilestone.title} milestone'
+                    : '${shownMilestone.title} milestone',
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -177,13 +254,102 @@ class _SmokeFreeHero extends StatelessWidget {
       ),
     );
   }
+}
 
-  double _nextMilestoneProgress(Duration duration) {
-    const next = Duration(minutes: 20);
-    if (duration >= next) {
-      return 1;
-    }
-    return duration.inSeconds / next.inSeconds;
+class _MilestoneDialog extends StatelessWidget {
+  const _MilestoneDialog({required this.milestone});
+
+  final ProgressMilestone milestone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Dialog(
+      insetPadding: const EdgeInsets.all(AppSpacing.lg),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            const Positioned(
+              top: 8,
+              left: 26,
+              child: _ConfettiDot(color: AppColors.accentMoney),
+            ),
+            const Positioned(
+              top: 30,
+              right: 24,
+              child: _ConfettiDot(color: AppColors.accentStreak, size: 10),
+            ),
+            const Positioned(
+              bottom: 74,
+              left: 12,
+              child: _ConfettiDot(color: AppColors.primary, size: 8),
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 86,
+                  height: 86,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.emoji_events_rounded,
+                    size: 42,
+                    color: AppColors.accentMoney,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  '${milestone.title} smoke-free',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  milestone.body,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Celebrate this win'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ConfettiDot extends StatelessWidget {
+  const _ConfettiDot({required this.color, this.size = 12});
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: 0.7,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(3),
+        ),
+      ),
+    );
   }
 }
 
@@ -311,6 +477,53 @@ class _TimePill extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AppBarStreak extends StatelessWidget {
+  const _AppBarStreak({required this.streak, required this.onTap});
+
+  final int streak;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.xs),
+      child: Tooltip(
+        message: 'Smoke-free streak',
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.local_fire_department_rounded,
+                  color: AppColors.accentStreak,
+                  size: 22,
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  '$streak',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

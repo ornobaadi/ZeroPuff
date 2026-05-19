@@ -15,7 +15,9 @@ class AchievementRepositoryStub implements AchievementRepository {
   }
 
   @override
-  Future<void> unlockAll(Set<String> keys) async {
+  Future<Set<String>> unlockAll(Set<String> keys) async {
+    final missing = keys.difference(_unlocked);
     _unlocked.addAll(keys);
+    return missing;
   }
 }

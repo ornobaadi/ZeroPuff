@@ -10,5 +10,5 @@ final achievementRepositoryProvider = Provider<AchievementRepository>((ref) {
 abstract class AchievementRepository {
   Future<Set<String>> unlockedKeys();
 
-  Future<void> unlockAll(Set<String> keys);
+  Future<Set<String>> unlockAll(Set<String> keys);
 }

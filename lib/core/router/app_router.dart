@@ -13,6 +13,7 @@ import '../../features/progress/screens/progress_screen.dart';
 import '../../features/rescue/screens/rescue_screen.dart';
 import '../../features/logging/screens/smoking_log_screen.dart';
 import '../../features/shell/app_shell.dart';
+import '../../features/stats/screens/streak_details_screen.dart';
 import '../../repositories/auth_repository.dart';
 import '../../repositories/onboarding_repository.dart';
 import 'app_routes.dart';
@@ -126,6 +127,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.checkIn,
         pageBuilder: (context, state) =>
             _materialPage(state, const DailyCheckInScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.streakDetails,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const StreakDetailsScreen()),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,

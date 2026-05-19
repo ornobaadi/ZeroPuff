@@ -9,6 +9,7 @@ class AppRoutes {
   static const rescue = '/rescue';
   static const logging = '/log-smoke';
   static const checkIn = '/check-in';
+  static const streakDetails = '/streaks';
   static const setupSettings = '/setup-settings';
   static const notificationSettings = '/notification-settings';
 }

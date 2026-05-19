@@ -28,14 +28,14 @@ class AchievementRepositoryIO implements AchievementRepository {
   }
 
   @override
-  Future<void> unlockAll(Set<String> keys) async {
+  Future<Set<String>> unlockAll(Set<String> keys) async {
     if (keys.isEmpty) {
-      return;
+      return const {};
     }
     final existing = await unlockedKeys();
     final missing = keys.difference(existing);
     if (missing.isEmpty) {
-      return;
+      return const {};
     }
 
     final now = DateTime.now();
@@ -58,5 +58,7 @@ class AchievementRepositoryIO implements AchievementRepository {
       await _isar.achievementStates.putAllByAchievementKey(states);
       await _isar.syncQueueItems.putAll(queueItems);
     });
+
+    return missing;
   }
 }

@@ -64,6 +64,7 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
       ),
     );
     ref.invalidate(latestSmokeAtProvider);
+    ref.invalidate(recentSmokingLogsProvider);
     ref.invalidate(homeBaselineProvider);
 
     if (!_isDisposed && mounted) {
