@@ -18,8 +18,8 @@ final unlockedAchievementsProvider = FutureProvider<Set<String>>((ref) async {
     data.smokeFreeDuration,
   );
   final repository = ref.watch(achievementRepositoryProvider);
-  await repository.unlockAll(computed);
-  return repository.unlockedKeys();
+  final stored = await repository.unlockedKeys();
+  return {...stored, ...computed};
 });
 
 class ProgressScreen extends ConsumerWidget {

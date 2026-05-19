@@ -9,6 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../celebrations/milestone_celebration_controller.dart';
+import '../../celebrations/widgets/celebration_dialog.dart';
 import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../services/notifications/notification_service.dart';
@@ -22,21 +23,23 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  String? _shownMilestoneKey;
+  String? _shownCelebrationKey;
 
   @override
   void initState() {
     super.initState();
     ref.listenManual(milestoneCelebrationProvider, (previous, next) {
-      final milestone = next.value;
-      if (milestone == null || milestone.key == _shownMilestoneKey) {
+      final event = next.value;
+      if (event == null || event.key == _shownCelebrationKey) {
         return;
       }
-      _shownMilestoneKey = milestone.key;
+      _shownCelebrationKey = event.key;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _showMilestoneDialog(milestone);
-          _rescheduleMilestoneNotifications();
+          _showCelebrationDialog(event);
+          if (event.kind == CelebrationKind.healthMilestone) {
+            _rescheduleMilestoneNotifications();
+          }
         }
       });
     });
@@ -133,10 +136,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Future<void> _showMilestoneDialog(ProgressMilestone milestone) async {
+  Future<void> _showCelebrationDialog(CelebrationEvent event) async {
     await showDialog<void>(
       context: context,
-      builder: (context) => _MilestoneDialog(milestone: milestone),
+      builder: (context) => CelebrationDialog(event: event),
     );
   }
 
@@ -264,103 +267,6 @@ class _SmokeFreeHero extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MilestoneDialog extends StatelessWidget {
-  const _MilestoneDialog({required this.milestone});
-
-  final ProgressMilestone milestone;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Dialog(
-      insetPadding: const EdgeInsets.all(AppSpacing.lg),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            const Positioned(
-              top: 8,
-              left: 26,
-              child: _ConfettiDot(color: AppColors.accentMoney),
-            ),
-            const Positioned(
-              top: 30,
-              right: 24,
-              child: _ConfettiDot(color: AppColors.accentStreak, size: 10),
-            ),
-            const Positioned(
-              bottom: 74,
-              left: 12,
-              child: _ConfettiDot(color: AppColors.primary, size: 8),
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 86,
-                  height: 86,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.14),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.emoji_events_rounded,
-                    size: 42,
-                    color: AppColors.accentMoney,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  '${milestone.title} smoke-free',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  milestone.body,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Celebrate this win'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ConfettiDot extends StatelessWidget {
-  const _ConfettiDot({required this.color, this.size = 12});
-
-  final Color color;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: 0.7,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.85),
-          borderRadius: BorderRadius.circular(3),
         ),
       ),
     );
