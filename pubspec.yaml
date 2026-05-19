@@ -66,7 +66,6 @@ dev_dependencies:
   isar_community_generator: ^3.3.2
   riverpod_generator: ^4.0.3
   flutter_launcher_icons: ^0.14.4
-  flutter_native_splash: ^2.4.7
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -125,10 +124,10 @@ flutter_native_splash:
   color_dark: "#071C16"
   background_image: assets/branding/bg.png
   background_image_dark: assets/branding/bg.png
-  image: assets/branding/splash.png
-  image_dark: assets/branding/splash.png
+  image: assets/branding/splash_mobile.png
+  image_dark: assets/branding/splash_mobile.png
   android_12:
     color: "#00C883"
     color_dark: "#00C883"
-    image: assets/branding/splash.png
-    image_dark: assets/branding/splash.png
+    image: assets/branding/splash_mobile.png
+    image_dark: assets/branding/splash_mobile.png

@@ -60,13 +60,19 @@ class GoogleSignInController {
       await _ref.read(profileRepositoryProvider).upsertProfile(linkedProfile);
     }
 
-    await _ref.read(syncServiceProvider).syncPending(limit: 100);
+    final syncResult = await _ref
+        .read(syncServiceProvider)
+        .syncPending(limit: 100);
+    final restoreResult = await _ref
+        .read(syncServiceProvider)
+        .restoreRemoteSnapshot(replaceLocal: syncResult.remaining == 0);
 
     _refreshLocalViews();
 
     return GoogleSignInOutcome(
       signedIn: true,
       hasLocalProfile: localProfile != null,
+      restoredRows: restoreResult.restoredRows,
     );
   }
 
@@ -76,6 +82,9 @@ class GoogleSignInController {
     _ref.invalidate(homeDashboardProvider);
     _ref.invalidate(todayCheckInProvider);
     _ref.invalidate(recentCheckInsProvider);
+    _ref.invalidate(recentSmokingLogsProvider);
+    _ref.invalidate(recentCravingsProvider);
+    _ref.invalidate(latestSmokeAtProvider);
     _ref.invalidate(pendingSyncCountProvider);
   }
 }
@@ -84,8 +93,10 @@ class GoogleSignInOutcome {
   const GoogleSignInOutcome({
     required this.signedIn,
     required this.hasLocalProfile,
+    this.restoredRows = 0,
   });
 
   final bool signedIn;
   final bool hasLocalProfile;
+  final int restoredRows;
 }

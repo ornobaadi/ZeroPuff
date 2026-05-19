@@ -74,6 +74,177 @@ class SyncService {
     );
   }
 
+  Future<RemoteRestoreResult> restoreRemoteSnapshot({
+    bool replaceLocal = true,
+  }) async {
+    final client = _client;
+    final user = client?.auth.currentUser;
+    if (client == null || user == null) {
+      return const RemoteRestoreResult(skipped: true);
+    }
+
+    final profileRows = await client
+        .from('profiles')
+        .select()
+        .eq('id', user.id)
+        .limit(1);
+    final cravingRows = await client
+        .from('craving_logs')
+        .select()
+        .eq('user_id', user.id)
+        .order('started_at', ascending: false)
+        .limit(500);
+    final smokingRows = await client
+        .from('smoking_logs')
+        .select()
+        .eq('user_id', user.id)
+        .order('smoked_at', ascending: false)
+        .limit(500);
+    final checkInRows = await client
+        .from('daily_checkins')
+        .select()
+        .eq('user_id', user.id)
+        .order('local_date', ascending: false)
+        .limit(500);
+    final achievementRows = await client
+        .from('achievements')
+        .select()
+        .eq('user_id', user.id)
+        .limit(500);
+    final preferenceRows = await client
+        .from('notification_preferences')
+        .select()
+        .eq('user_id', user.id)
+        .limit(1);
+
+    final profiles = _rows(profileRows);
+    final cravings = _rows(cravingRows);
+    final smokingLogs = _rows(smokingRows);
+    final checkIns = _rows(checkInRows);
+    final achievements = _rows(achievementRows);
+    final preferences = _rows(preferenceRows);
+
+    await _database.writeTxn(() async {
+      if (replaceLocal) {
+        await _database.localProfiles.clear();
+        await _database.cravingRescueSessions.clear();
+        await _database.smokingLogs.clear();
+        await _database.dailyCheckIns.clear();
+        await _database.achievementStates.clear();
+        await _database.notificationPreferences.clear();
+      }
+
+      for (final row in profiles) {
+        final quitDate = _dateTime(row['quit_date']) ?? DateTime.now();
+        final profile = LocalProfile()
+          ..userId = user.id
+          ..displayName = row['display_name']?.toString() ?? ''
+          ..avatarUrl = row['avatar_url']?.toString()
+          ..quitDate = quitDate
+          ..cigarettesPerDay = _int(row['cigarettes_per_day'])
+          ..packPrice = _double(row['pack_price'])
+          ..packSize = _int(row['pack_size'], fallback: 20)
+          ..currencyCode = row['currency_code']?.toString() ?? 'USD'
+          ..currencySymbol = row['currency_symbol']?.toString() ?? r'$'
+          ..triggers = _stringList(row['triggers'])
+          ..quitReason = row['quit_reason']?.toString()
+          ..updatedAt = _dateTime(row['updated_at']) ?? DateTime.now()
+          ..synced = true;
+        await _database.localProfiles.putByUserId(profile);
+      }
+
+      for (final row in cravings) {
+        final sessionId = row['id']?.toString();
+        final startedAt = _dateTime(row['started_at']);
+        if (sessionId == null || startedAt == null) {
+          continue;
+        }
+        final session = CravingRescueSession()
+          ..sessionId = sessionId
+          ..startedAt = startedAt
+          ..completedAt = _dateTime(row['completed_at'])
+          ..intensity = _int(row['intensity'], fallback: 5)
+          ..triggers = _stringList(row['triggers'])
+          ..outcome = row['outcome']?.toString() ?? 'unknown'
+          ..synced = true;
+        await _database.cravingRescueSessions.putBySessionId(session);
+      }
+
+      for (final row in smokingLogs) {
+        final logId = row['id']?.toString();
+        final smokedAt = _dateTime(row['smoked_at']);
+        if (logId == null || smokedAt == null) {
+          continue;
+        }
+        final log = SmokingLog()
+          ..logId = logId
+          ..smokedAt = smokedAt
+          ..count = _int(row['count'], fallback: 1)
+          ..trigger = row['trigger']?.toString() ?? 'other'
+          ..note = row['note']?.toString()
+          ..synced = true;
+        await _database.smokingLogs.putByLogId(log);
+      }
+
+      for (final row in checkIns) {
+        final checkInId = row['id']?.toString();
+        final localDate = row['local_date']?.toString();
+        if (checkInId == null || localDate == null) {
+          continue;
+        }
+        final checkIn = DailyCheckIn()
+          ..checkInId = checkInId
+          ..localDate = localDate
+          ..mood = _int(row['mood'], fallback: 3)
+          ..smokeFreeToday = row['smoke_free_today'] == true
+          ..cigarettesSmoked = _int(row['cigarettes_smoked'])
+          ..note = row['note']?.toString()
+          ..createdAt = _dateTime(row['created_at']) ?? DateTime.now()
+          ..synced = true;
+        await _database.dailyCheckIns.putByCheckInId(checkIn);
+      }
+
+      for (final row in achievements) {
+        final key = row['achievement_key']?.toString();
+        if (key == null || key.isEmpty) {
+          continue;
+        }
+        final achievement = AchievementState()
+          ..achievementKey = key
+          ..unlocked = true
+          ..unlockedAt = _dateTime(row['unlocked_at'])
+          ..synced = true;
+        await _database.achievementStates.putByAchievementKey(achievement);
+      }
+
+      for (final row in preferences) {
+        final timeParts = (row['daily_checkin_time']?.toString() ?? '21:00')
+            .split(':');
+        final preferences = NotificationPreference()
+          ..dailyCheckInEnabled = row['daily_checkin_enabled'] != false
+          ..dailyCheckInHour = int.tryParse(timeParts.first) ?? 21
+          ..dailyCheckInMinute = timeParts.length > 1
+              ? int.tryParse(timeParts[1]) ?? 0
+              : 0
+          ..milestoneReminderEnabled =
+              row['milestone_reminder_enabled'] != false
+          ..streakProtectionEnabled = row['streak_protection_enabled'] != false
+          ..updatedAt = _dateTime(row['updated_at']) ?? DateTime.now()
+          ..synced = true;
+        await _database.notificationPreferences.put(preferences);
+      }
+    });
+
+    return RemoteRestoreResult(
+      profiles: profiles.length,
+      cravingLogs: cravings.length,
+      smokingLogs: smokingLogs.length,
+      dailyCheckIns: checkIns.length,
+      achievements: achievements.length,
+      notificationPreferences: preferences.length,
+    );
+  }
+
   Future<void> _syncItem(
     SupabaseClient client,
     String userId,
@@ -297,6 +468,53 @@ class SyncService {
   }
 
   String _two(int value) => value.toString().padLeft(2, '0');
+
+  List<Map<String, dynamic>> _rows(Object? value) {
+    if (value is List) {
+      return value
+          .whereType<Map>()
+          .map((row) => row.cast<String, dynamic>())
+          .toList();
+    }
+    return const [];
+  }
+
+  DateTime? _dateTime(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is DateTime) {
+      return value.toLocal();
+    }
+    return DateTime.tryParse(value.toString())?.toLocal();
+  }
+
+  int _int(Object? value, {int fallback = 0}) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.round();
+    }
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  double _double(Object? value, {double fallback = 0}) {
+    if (value is double) {
+      return value;
+    }
+    if (value is num) {
+      return value.toDouble();
+    }
+    return double.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  List<String> _stringList(Object? value) {
+    if (value is List) {
+      return value.map((item) => item.toString()).toList();
+    }
+    return const [];
+  }
 }
 
 class SyncRunResult {
@@ -313,4 +531,32 @@ class SyncRunResult {
   final int failed;
   final int remaining;
   final bool skipped;
+}
+
+class RemoteRestoreResult {
+  const RemoteRestoreResult({
+    this.profiles = 0,
+    this.cravingLogs = 0,
+    this.smokingLogs = 0,
+    this.dailyCheckIns = 0,
+    this.achievements = 0,
+    this.notificationPreferences = 0,
+    this.skipped = false,
+  });
+
+  final int profiles;
+  final int cravingLogs;
+  final int smokingLogs;
+  final int dailyCheckIns;
+  final int achievements;
+  final int notificationPreferences;
+  final bool skipped;
+
+  int get restoredRows =>
+      profiles +
+      cravingLogs +
+      smokingLogs +
+      dailyCheckIns +
+      achievements +
+      notificationPreferences;
 }

@@ -29,6 +29,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final theme = Theme.of(context);
     final user = ref.watch(currentUserProvider);
     final isGuest = user == null;
+    final displayName = _displayName(user);
+    final avatarUrl = _avatarUrl(user);
     final pendingSync = ref.watch(pendingSyncCountProvider);
 
     return Scaffold(
@@ -53,19 +55,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    child: Icon(
-                      isGuest
-                          ? Icons.person_outline_rounded
-                          : Icons.person_rounded,
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
+                  _ProfileAvatar(
+                    isGuest: isGuest,
+                    avatarUrl: avatarUrl,
+                    displayName: displayName,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    isGuest ? 'Guest mode' : user.email ?? 'Signed in',
+                    isGuest ? 'Guest mode' : displayName,
                     style: theme.textTheme.headlineSmall,
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -187,12 +184,52 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  String _displayName(dynamic user) {
+    if (user == null) {
+      return 'Guest mode';
+    }
+    final metadata = user.userMetadata as Map<String, dynamic>? ?? const {};
+    for (final key in ['full_name', 'name', 'display_name']) {
+      final value = metadata[key]?.toString().trim();
+      if (value != null && value.isNotEmpty) {
+        return value;
+      }
+    }
+    final email = user.email?.toString();
+    if (email != null && email.isNotEmpty) {
+      return email.split('@').first;
+    }
+    return 'Signed in';
+  }
+
+  String? _avatarUrl(dynamic user) {
+    if (user == null) {
+      return null;
+    }
+    final metadata = user.userMetadata as Map<String, dynamic>? ?? const {};
+    for (final key in ['avatar_url', 'picture']) {
+      final value = metadata[key]?.toString().trim();
+      if (value != null && value.startsWith('http')) {
+        return value;
+      }
+    }
+    return null;
+  }
+
   Future<void> _connectGoogle() async {
     setState(() => _isSyncing = true);
     try {
-      await ref
+      final outcome = await ref
           .read(googleSignInControllerProvider)
           .signInAndLinkGuestProfile();
+      if (mounted) {
+        final message = outcome.restoredRows > 0
+            ? 'Google connected. Restored ${outcome.restoredRows} synced rows.'
+            : 'Google connected. Backup is ready.';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
     } on Object catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -212,7 +249,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final result = await ref
           .read(syncServiceProvider)
           .syncPending(limit: 100);
+      final restore = await ref
+          .read(syncServiceProvider)
+          .restoreRemoteSnapshot(replaceLocal: result.remaining == 0);
       ref.invalidate(pendingSyncCountProvider);
+      ref.invalidate(homeBaselineProvider);
+      ref.invalidate(homeDashboardProvider);
+      ref.invalidate(todayCheckInProvider);
+      ref.invalidate(recentCheckInsProvider);
+      ref.invalidate(recentSmokingLogsProvider);
+      ref.invalidate(recentCravingsProvider);
+      ref.invalidate(latestSmokeAtProvider);
       if (mounted) {
         final message = result.skipped
             ? 'Sign in to sync local changes.'
@@ -220,6 +267,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ? 'Synced ${result.succeeded}. ${result.failed} still need retry.'
             : result.remaining > 0
             ? 'Synced ${result.succeeded}. ${result.remaining} still queued.'
+            : restore.restoredRows > 0
+            ? 'Sync complete. Restored ${restore.restoredRows} synced rows.'
             : 'Sync complete.';
         ScaffoldMessenger.of(
           context,
@@ -288,6 +337,47 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
     }
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({
+    required this.isGuest,
+    required this.avatarUrl,
+    required this.displayName,
+  });
+
+  final bool isGuest;
+  final String? avatarUrl;
+  final String displayName;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final initials = displayName.trim().isEmpty
+        ? '?'
+        : displayName.trim().characters.first.toUpperCase();
+
+    return CircleAvatar(
+      radius: 30,
+      backgroundColor: theme.colorScheme.primaryContainer,
+      backgroundImage: avatarUrl == null ? null : NetworkImage(avatarUrl!),
+      onBackgroundImageError: avatarUrl == null ? null : (_, _) {},
+      child: avatarUrl == null
+          ? isGuest
+                ? Icon(
+                    Icons.person_outline_rounded,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  )
+                : Text(
+                    initials,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  )
+          : null,
+    );
   }
 }
 

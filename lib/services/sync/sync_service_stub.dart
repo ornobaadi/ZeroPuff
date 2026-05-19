@@ -8,6 +8,12 @@ class SyncService {
   Future<SyncRunResult> syncPending({int limit = 25}) async {
     return const SyncRunResult(skipped: true);
   }
+
+  Future<RemoteRestoreResult> restoreRemoteSnapshot({
+    bool replaceLocal = true,
+  }) async {
+    return const RemoteRestoreResult(skipped: true);
+  }
 }
 
 class SyncRunResult {
@@ -23,5 +29,12 @@ class SyncRunResult {
   final int succeeded;
   final int failed;
   final int remaining;
+  final bool skipped;
+}
+
+class RemoteRestoreResult {
+  const RemoteRestoreResult({this.restoredRows = 0, this.skipped = true});
+
+  final int restoredRows;
   final bool skipped;
 }

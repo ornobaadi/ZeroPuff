@@ -134,7 +134,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
       if (mounted) {
         context.go(
-          outcome.hasLocalProfile ? AppRoutes.home : AppRoutes.onboarding,
+          outcome.hasLocalProfile || outcome.restoredRows > 0
+              ? AppRoutes.home
+              : AppRoutes.onboarding,
         );
       }
     } on Object catch (error) {
