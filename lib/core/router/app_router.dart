@@ -8,6 +8,8 @@ import '../../features/home/screens/home_screen.dart';
 import '../../features/journal/screens/quit_journal_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/profile/screens/app_info_screen.dart';
+import '../../features/profile/screens/appearance_settings_screen.dart';
 import '../../features/profile/screens/notification_settings_screen.dart';
 import '../../features/profile/screens/setup_settings_screen.dart';
 import '../../features/progress/screens/progress_screen.dart';
@@ -211,6 +213,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.notificationSettings,
         pageBuilder: (context, state) =>
             _materialPage(state, const NotificationSettingsScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.appearanceSettings,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const AppearanceSettingsScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.appInfo,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const AppInfoScreen()),
       ),
     ],
   );

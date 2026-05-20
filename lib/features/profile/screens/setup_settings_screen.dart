@@ -24,10 +24,10 @@ const _triggerOptions = [
 
 const _currencyOptions = [
   _CurrencyOption('USD', r'$', 'US dollar'),
-  _CurrencyOption('EUR', '€', 'Euro'),
-  _CurrencyOption('GBP', '£', 'British pound'),
-  _CurrencyOption('INR', '₹', 'Indian rupee'),
-  _CurrencyOption('BDT', '৳', 'Bangladeshi taka'),
+  _CurrencyOption('EUR', 'EUR', 'Euro'),
+  _CurrencyOption('GBP', 'GBP', 'British pound'),
+  _CurrencyOption('INR', 'INR', 'Indian rupee'),
+  _CurrencyOption('BDT', 'BDT', 'Bangladeshi taka'),
 ];
 
 final editableProfileProvider = FutureProvider<ProfileData?>((ref) async {
@@ -167,6 +167,12 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
+                _WarningCard(
+                  title: 'Quit date affects the clock',
+                  body:
+                      'Use this only to correct your real start time. Relapse resets should come from logging a cigarette, not by editing this date.',
+                ),
+                const SizedBox(height: AppSpacing.md),
                 _DateTile(date: _quitDate, onTap: _pickQuitDate),
                 const SizedBox(height: AppSpacing.md),
                 _NumberTile(
@@ -179,6 +185,13 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text('Currency', style: theme.textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'This only changes estimates. Your progress history stays intact.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Wrap(
                   spacing: AppSpacing.sm,
@@ -299,6 +312,51 @@ class _DateTile extends StatelessWidget {
       value:
           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
       onTap: onTap,
+    );
+  }
+}
+
+class _WarningCard extends StatelessWidget {
+  const _WarningCard({required this.title, required this.body});
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.18),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded, color: theme.colorScheme.error),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  body,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

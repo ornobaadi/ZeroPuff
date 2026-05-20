@@ -168,6 +168,9 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
       cigarettesAvoided: cigarettesAvoided,
       moneySaved: moneySaved,
       currencySymbol: data.currencySymbol,
+      cigarettesPerDay: cigarettesPerDay,
+      packPrice: packPrice,
+      packSize: packSize,
       smokeFreeDays: smokeFreeDuration.inDays,
       smokeFreeStreakDays: smokeFreeStreakDays,
       checkInStreakDays: checkInStreakDays,
@@ -211,6 +214,9 @@ class HomeDashboardData {
     required this.cigarettesAvoided,
     required this.moneySaved,
     required this.currencySymbol,
+    required this.cigarettesPerDay,
+    required this.packPrice,
+    required this.packSize,
     required this.smokeFreeDays,
     required this.smokeFreeStreakDays,
     required this.checkInStreakDays,
@@ -224,6 +230,9 @@ class HomeDashboardData {
   final int cigarettesAvoided;
   final double moneySaved;
   final String currencySymbol;
+  final int cigarettesPerDay;
+  final double packPrice;
+  final int packSize;
   final int smokeFreeDays;
   final int smokeFreeStreakDays;
   final int checkInStreakDays;

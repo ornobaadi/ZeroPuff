@@ -21,4 +21,6 @@ class AppRoutes {
   static const checkInDetails = '/stats/check-ins';
   static const setupSettings = '/setup-settings';
   static const notificationSettings = '/notification-settings';
+  static const appearanceSettings = '/appearance-settings';
+  static const appInfo = '/app-info';
 }

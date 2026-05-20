@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/calculations/craving_analysis_calculations.dart';
 import '../../../core/calculations/progress_calculations.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -39,6 +41,13 @@ class SmokeFreeDetailsScreen extends ConsumerWidget {
           icon: Icons.calculate_rounded,
           color: AppColors.accentMoney,
         ),
+        _TapInfoCard(
+          title: 'Recovery milestones',
+          body: 'See what has already changed and what marker is coming next.',
+          icon: Icons.favorite_rounded,
+          color: AppColors.accentStreak,
+          onTap: () => context.push(AppRoutes.healthDetails),
+        ),
       ],
     );
   }
@@ -54,36 +63,88 @@ class SavingsDetailsScreen extends ConsumerWidget {
       title: 'Money saved',
       dashboard: dashboard,
       builder: (context, data) {
-        final daily =
-            data.moneySaved /
-            (data.smokeFreeDuration.inDays <= 0
-                ? 1
-                : data.smokeFreeDuration.inDays);
+        final dailyBaseline = data.packSize <= 0
+            ? 0.0
+            : (data.cigarettesPerDay / data.packSize) * data.packPrice;
+        final packsSkipped = data.packSize <= 0
+            ? 0.0
+            : data.cigarettesAvoided / data.packSize;
+        final nextTarget = _nextSavingsTarget(data.moneySaved);
+        final targetProgress = nextTarget == null
+            ? 1.0
+            : (data.moneySaved / nextTarget).clamp(0.0, 1.0);
+        final daysToTarget = nextTarget == null || dailyBaseline <= 0
+            ? null
+            : ((nextTarget - data.moneySaved) / dailyBaseline).ceil().clamp(
+                1,
+                9999,
+              );
+
         return [
           _HeroNumber(
             value:
                 '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
-            label: 'estimated saved',
+            label: 'kept from cigarettes',
             color: AppColors.accentMoney,
             icon: Icons.savings_rounded,
           ),
-          _InfoCard(
-            title: 'This week pace',
-            body:
-                'At this pace, one smoke-free week is about ${data.currencySymbol}${(daily * 7).toStringAsFixed(0)} kept in your pocket.',
-            icon: Icons.trending_up_rounded,
-            color: AppColors.accentMoney,
+          Row(
+            children: [
+              Expanded(
+                child: _MiniStat(
+                  value:
+                      '${data.currencySymbol}${dailyBaseline.toStringAsFixed(0)}',
+                  label: 'old daily spend',
+                  color: AppColors.accentMoney,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _MiniStat(
+                  value: packsSkipped.toStringAsFixed(1),
+                  label: 'packs skipped',
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          _SavingsTargetCard(
+            currencySymbol: data.currencySymbol,
+            target: nextTarget,
+            progress: targetProgress,
+            daysToTarget: daysToTarget,
+          ),
+          _SavingsProjectionCard(
+            currencySymbol: data.currencySymbol,
+            dailyBaseline: dailyBaseline,
           ),
           _InfoCard(
             title: 'How it is calculated',
             body:
-                'Cigarettes avoided divided by pack size, multiplied by your pack price.',
+                'We estimate cigarettes avoided from your old daily pace, then divide by pack size and multiply by your pack price.',
             icon: Icons.calculate_rounded,
             color: AppColors.primary,
+          ),
+          _InfoCard(
+            title: 'Make it feel real',
+            body:
+                'Pick a small reward for the next target. The money is already moving back to you.',
+            icon: Icons.redeem_rounded,
+            color: AppColors.accentStreak,
           ),
         ];
       },
     );
+  }
+
+  double? _nextSavingsTarget(double saved) {
+    const targets = [10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0];
+    for (final target in targets) {
+      if (saved < target) {
+        return target;
+      }
+    }
+    return null;
   }
 }
 
@@ -254,22 +315,487 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
       dashboard: dashboard,
       builder: (context, data) {
         final next = ProgressCalculations.nextMilestone(data.smokeFreeDuration);
+        final current = ProgressCalculations.currentMilestone(
+          data.smokeFreeDuration,
+        );
+        final shown = next ?? current;
+        final previous = ProgressCalculations.previousMilestone(shown);
+        final previousDuration = previous?.duration ?? Duration.zero;
+        final segmentDuration = shown.duration - previousDuration;
+        final segmentElapsed = data.smokeFreeDuration - previousDuration;
+        final progress = next == null
+            ? 1.0
+            : (segmentElapsed.inSeconds / segmentDuration.inSeconds).clamp(
+                0.0,
+                1.0,
+              );
+
         return [
-          if (next != null)
-            _InfoCard(
-              title: 'Next: ${next.title}',
-              body: next.body,
-              icon: Icons.flag_rounded,
-              color: AppColors.accentMoney,
-            ),
+          _HealthHero(
+            current: current,
+            next: next,
+            progress: progress,
+            smokeFreeDuration: data.smokeFreeDuration,
+          ),
+          _InfoCard(
+            title: next == null ? 'All listed markers reached' : 'Next up',
+            body: next == null
+                ? 'You have cleared every current health marker in ZeroPuff.'
+                : '${next.title}: ${next.body}',
+            icon: next == null
+                ? Icons.emoji_events_rounded
+                : Icons.flag_rounded,
+            color: AppColors.accentMoney,
+          ),
+          Text('Recovery map', style: Theme.of(context).textTheme.titleLarge),
           ...ProgressCalculations.healthMilestones.map(
-            (milestone) => _MilestoneRow(
+            (milestone) => _HealthMilestoneCard(
               milestone: milestone,
               active: data.smokeFreeDuration >= milestone.duration,
+              current: current.key == milestone.key,
+              progress: ProgressCalculations.milestoneProgress(
+                smokeFreeDuration: data.smokeFreeDuration,
+                milestone: milestone,
+              ),
             ),
+          ),
+          _InfoCard(
+            title: 'A gentle note',
+            body:
+                'Health timelines are estimates. Your body, history, and care all matter, so use this as encouragement rather than diagnosis.',
+            icon: Icons.favorite_rounded,
+            color: AppColors.accentStreak,
           ),
         ];
       },
+    );
+  }
+}
+
+class _SavingsTargetCard extends StatelessWidget {
+  const _SavingsTargetCard({
+    required this.currencySymbol,
+    required this.target,
+    required this.progress,
+    required this.daysToTarget,
+  });
+
+  final String currencySymbol;
+  final double? target;
+  final double progress;
+  final int? daysToTarget;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final target = this.target;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: BoxDecoration(
+        color: AppColors.accentMoney.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.accentMoney.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.flag_rounded, color: AppColors.accentMoney),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  target == null
+                      ? 'Savings legend'
+                      : 'Next money win: $currencySymbol${target.toStringAsFixed(0)}',
+                  style: theme.textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 12,
+              value: progress,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              color: AppColors.accentMoney,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            target == null
+                ? 'You have crossed every savings target we track for now.'
+                : daysToTarget == null
+                ? 'Keep logging and this target will sharpen.'
+                : daysToTarget == 1
+                ? 'At your old pace, this could land in about a day.'
+                : 'At your old pace, this could land in about $daysToTarget days.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SavingsProjectionCard extends StatelessWidget {
+  const _SavingsProjectionCard({
+    required this.currencySymbol,
+    required this.dailyBaseline,
+  });
+
+  final String currencySymbol;
+  final double dailyBaseline;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.auto_graph_rounded,
+                color: AppColors.accentMoney,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text('Projected savings', style: theme.textTheme.titleMedium),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: _ProjectionTile(
+                  label: 'week',
+                  value:
+                      '$currencySymbol${(dailyBaseline * 7).toStringAsFixed(0)}',
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _ProjectionTile(
+                  label: 'month',
+                  value:
+                      '$currencySymbol${(dailyBaseline * 30).toStringAsFixed(0)}',
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _ProjectionTile(
+                  label: 'year',
+                  value:
+                      '$currencySymbol${(dailyBaseline * 365).toStringAsFixed(0)}',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProjectionTile extends StatelessWidget {
+  const _ProjectionTile({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.accentMoney.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(value, style: theme.textTheme.titleMedium),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HealthHero extends StatelessWidget {
+  const _HealthHero({
+    required this.current,
+    required this.next,
+    required this.progress,
+    required this.smokeFreeDuration,
+  });
+
+  final ProgressMilestone current;
+  final ProgressMilestone? next;
+  final double progress;
+  final Duration smokeFreeDuration;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final next = this.next;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _MilestoneBadge(milestone: current, active: true, size: 88),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Current marker', style: theme.textTheme.labelLarge),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(current.title, style: theme.textTheme.headlineSmall),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      current.body,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            next == null
+                ? '${_durationLabel(smokeFreeDuration)} smoke-free'
+                : '${(progress * 100).round()}% to ${next.title}',
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 12,
+              value: progress,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HealthMilestoneCard extends StatelessWidget {
+  const _HealthMilestoneCard({
+    required this.milestone,
+    required this.active,
+    required this.current,
+    required this.progress,
+  });
+
+  final ProgressMilestone milestone;
+  final bool active;
+  final bool current;
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = active ? AppColors.primary : theme.colorScheme.outline;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: active
+            ? AppColors.primary.withValues(alpha: 0.1)
+            : theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: current
+              ? AppColors.accentMoney.withValues(alpha: 0.42)
+              : color.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          _MilestoneBadge(milestone: milestone, active: active, size: 70),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        milestone.title,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ),
+                    _StatusPill(active: active, current: current),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  milestone.body,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    minHeight: 7,
+                    value: progress,
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                    color: active ? AppColors.primary : AppColors.accentMoney,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  _durationLabel(milestone.duration),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MilestoneBadge extends StatelessWidget {
+  const _MilestoneBadge({
+    required this.milestone,
+    required this.active,
+    required this.size,
+  });
+
+  final ProgressMilestone milestone;
+  final bool active;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final asset = milestone.badgeAsset;
+    final badge = asset == null
+        ? Icon(
+            active ? Icons.favorite_rounded : Icons.lock_rounded,
+            size: size * 0.46,
+            color: active ? AppColors.primary : theme.colorScheme.outline,
+          )
+        : Image.asset(asset, width: size, height: size, fit: BoxFit.contain);
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: ColorFiltered(
+        colorFilter: active
+            ? const ColorFilter.mode(Colors.transparent, BlendMode.dst)
+            : const ColorFilter.matrix(<double>[
+                0.2126,
+                0.7152,
+                0.0722,
+                0,
+                0,
+                0.2126,
+                0.7152,
+                0.0722,
+                0,
+                0,
+                0.2126,
+                0.7152,
+                0.0722,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+              ]),
+        child: Opacity(opacity: active ? 1 : 0.5, child: badge),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.active, required this.current});
+
+  final bool active;
+  final bool current;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final label = current
+        ? 'now'
+        : active
+        ? 'done'
+        : 'next';
+    final color = current
+        ? AppColors.accentMoney
+        : active
+        ? AppColors.primary
+        : theme.colorScheme.outline;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
     );
   }
 }
@@ -1000,52 +1526,77 @@ class _InfoCard extends StatelessWidget {
   }
 }
 
-class _MilestoneRow extends StatelessWidget {
-  const _MilestoneRow({required this.milestone, required this.active});
+class _TapInfoCard extends StatelessWidget {
+  const _TapInfoCard({
+    required this.title,
+    required this.body,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 
-  final ProgressMilestone milestone;
-  final bool active;
+  final String title;
+  final String body;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = active ? AppColors.primary : theme.colorScheme.outline;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: active
-            ? AppColors.primary.withValues(alpha: 0.1)
-            : theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            active ? Icons.check_circle_rounded : Icons.lock_outline_rounded,
-            color: color,
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(milestone.title, style: theme.textTheme.titleMedium),
-                if (milestone.body.isNotEmpty) ...[
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleMedium),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    milestone.body,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    body,
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
       ),
     );
   }
+}
+
+String _durationLabel(Duration duration) {
+  if (duration.inDays >= 365) {
+    final years = duration.inDays ~/ 365;
+    return years == 1 ? '1 year' : '$years years';
+  }
+  if (duration.inDays >= 30) {
+    final months = duration.inDays ~/ 30;
+    return months == 1 ? '1 month' : '$months months';
+  }
+  if (duration.inDays >= 1) {
+    return duration.inDays == 1 ? '1 day' : '${duration.inDays} days';
+  }
+  if (duration.inHours >= 1) {
+    return duration.inHours == 1 ? '1 hour' : '${duration.inHours} hours';
+  }
+  return duration.inMinutes == 1 ? '1 minute' : '${duration.inMinutes} minutes';
 }

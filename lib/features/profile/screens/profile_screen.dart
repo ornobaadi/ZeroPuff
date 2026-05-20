@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../repositories/account_repository.dart';
+import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../../services/notifications/notification_service.dart';
@@ -32,6 +33,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final displayName = _displayName(user);
     final avatarUrl = _avatarUrl(user);
     final pendingSync = ref.watch(pendingSyncCountProvider);
+    final themeMode = ref.watch(themeModeControllerProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('You')),
@@ -69,7 +71,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Text(
                     isGuest
                         ? 'Explore first. Your local progress can be attached to Google when account sync is fully enabled.'
-                        : 'Google is connected. Sync controls and account deletion arrive in the settings phase.',
+                        : 'Google is connected. Your supported progress can be restored after reinstall or on another device.',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -81,9 +83,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Text('Settings', style: theme.textTheme.titleLarge),
             const SizedBox(height: AppSpacing.md),
             _SettingsTile(
+              icon: Icons.palette_outlined,
+              title: 'Appearance',
+              subtitle: 'System, light, or dark mode.',
+              status: _themeModeLabel(themeMode),
+              onTap: () => context.push(AppRoutes.appearanceSettings),
+            ),
+            const SizedBox(height: AppSpacing.componentGap),
+            _SettingsTile(
               icon: Icons.tune_rounded,
               title: 'Setup details',
-              subtitle: 'Quit date, daily baseline, currency, and triggers.',
+              subtitle: 'Quit date, old smoking pace, currency, and triggers.',
               status: 'Edit',
               onTap: () => context.push(AppRoutes.setupSettings),
             ),
@@ -101,9 +111,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               title: 'Account sync',
               subtitle: isGuest
                   ? 'Optional. Guest mode remains available.'
-                  : 'Connected to Google.',
+                  : 'Connected to Google for backup and restore.',
               status: isGuest
-                  ? (_isSyncing ? 'Opening…' : 'Optional')
+                  ? (_isSyncing ? 'Opening...' : 'Optional')
                   : 'Connected',
               onTap: isGuest && !_isSyncing ? _connectGoogle : null,
             ),
@@ -149,6 +159,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               destructive: true,
               onTap: () => _confirmDeleteAccount(isGuest),
             ),
+            const SizedBox(height: AppSpacing.componentGap),
+            _SettingsTile(
+              icon: Icons.info_outline_rounded,
+              title: 'App info and safety',
+              subtitle: 'Version, privacy note, and medical disclaimer.',
+              status: '',
+              onTap: () => context.push(AppRoutes.appInfo),
+            ),
             const SizedBox(height: AppSpacing.sectionGap),
             Container(
               padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -182,6 +200,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  String _themeModeLabel(ThemeMode mode) {
+    return switch (mode) {
+      ThemeMode.light => 'Light',
+      ThemeMode.dark => 'Dark',
+      ThemeMode.system => 'System',
+    };
   }
 
   String _displayName(dynamic user) {
