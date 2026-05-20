@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../models/app_event.dart';
 import '../../../repositories/app_event_repository.dart';
@@ -208,7 +209,10 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
                           child: Text(
                             '$_count',
                             textAlign: TextAlign.center,
-                            style: theme.textTheme.displayMedium,
+                            style: AppTypography.statNumber.copyWith(
+                              fontSize: 46,
+                              color: theme.colorScheme.onSurface,
+                            ),
                           ),
                         ),
                         IconButton.filledTonal(

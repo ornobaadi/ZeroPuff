@@ -5,71 +5,71 @@ class ProgressCalculations {
     ProgressMilestone(
       key: '20_minutes',
       title: '20 minutes',
-      body: 'Pulse and blood pressure begin to settle.',
+      body: 'Heart rate and blood pressure begin moving down from the spike.',
       duration: Duration(minutes: 20),
       badgeAsset: 'assets/badges/20min.png',
     ),
     ProgressMilestone(
-      key: '8_hours',
-      title: '8 hours',
-      body: 'Oxygen levels get more room to recover.',
-      duration: Duration(hours: 8),
-      badgeAsset: 'assets/badges/8h.png',
-    ),
-    ProgressMilestone(
-      key: '24_hours',
-      title: '24 hours',
-      body: 'The first full-day marker becomes visible.',
-      duration: Duration(hours: 24),
-      badgeAsset: 'assets/badges/24h.png',
-    ),
-    ProgressMilestone(
-      key: '48_hours',
-      title: '48 hours',
-      body: 'Taste and smell may start feeling sharper.',
-      duration: Duration(hours: 48),
-      badgeAsset: 'assets/badges/48h.png',
-    ),
-    ProgressMilestone(
-      key: '72_hours',
-      title: '72 hours',
-      body: 'Breathing can begin to feel easier.',
-      duration: Duration(hours: 72),
-    ),
-    ProgressMilestone(
-      key: '1_week',
-      title: '1 week',
-      body: 'A full week of practice, data, and recovery.',
-      duration: Duration(days: 7),
-      badgeAsset: 'assets/badges/1w.png',
+      key: '12_hours',
+      title: '12 hours',
+      body: 'Carbon monoxide in your blood drops toward a normal range.',
+      duration: Duration(hours: 12),
     ),
     ProgressMilestone(
       key: '2_weeks',
       title: '2 weeks',
-      body: 'Circulation and routine stability keep building.',
+      body: 'Circulation can improve, and lung function may begin increasing.',
       duration: Duration(days: 14),
       badgeAsset: 'assets/badges/2w.png',
     ),
     ProgressMilestone(
       key: '1_month',
       title: '1 month',
-      body: 'The new pattern has real weight now.',
+      body:
+          'Coughing and shortness of breath may start easing as airways heal.',
       duration: Duration(days: 30),
       badgeAsset: 'assets/badges/1m.png',
     ),
     ProgressMilestone(
       key: '3_months',
       title: '3 months',
-      body: 'Craving patterns can feel more predictable and manageable.',
+      body: 'Circulation and lung function can keep getting stronger.',
       duration: Duration(days: 90),
       badgeAsset: 'assets/badges/3m.png',
     ),
     ProgressMilestone(
+      key: '9_months',
+      title: '9 months',
+      body:
+          'Breathing, coughing, and airway irritation may be noticeably better.',
+      duration: Duration(days: 270),
+    ),
+    ProgressMilestone(
       key: '1_year',
       title: '1 year',
-      body: 'A year of decisions, data, and momentum.',
+      body: 'Heart-disease risk has dropped sharply compared with continuing.',
       duration: Duration(days: 365),
       badgeAsset: 'assets/badges/1y.png',
+    ),
+    ProgressMilestone(
+      key: '5_years',
+      title: '5 years',
+      body:
+          'Stroke and several cancer risks keep falling with time smoke-free.',
+      duration: Duration(days: 365 * 5),
+    ),
+    ProgressMilestone(
+      key: '10_years',
+      title: '10 years',
+      body:
+          'Risk of dying from lung cancer is about half that of someone still smoking.',
+      duration: Duration(days: 365 * 10),
+    ),
+    ProgressMilestone(
+      key: '15_years',
+      title: '15 years',
+      body: 'Coronary heart disease risk can approach that of a non-smoker.',
+      duration: Duration(days: 365 * 15),
     ),
   ];
 

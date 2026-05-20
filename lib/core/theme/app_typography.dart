@@ -11,6 +11,15 @@ class AppTypography {
     letterSpacing: 0,
   );
 
+  static TextStyle get statNumber => GoogleFonts.getFont(
+    'Geist',
+    fontSize: 30,
+    fontWeight: FontWeight.w800,
+    height: 1.05,
+    letterSpacing: 0,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+
   static TextStyle get liveCounter => GoogleFonts.spaceMono(
     fontSize: 48,
     fontWeight: FontWeight.w700,

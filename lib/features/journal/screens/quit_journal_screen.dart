@@ -7,6 +7,7 @@ import '../../../core/calculations/journal_calculations.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../providers/journal_providers.dart';
 
 class QuitJournalScreen extends ConsumerWidget {
@@ -205,7 +206,10 @@ class _DayMetric extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             value,
-            style: theme.textTheme.headlineSmall?.copyWith(color: color),
+            style: AppTypography.statNumber.copyWith(
+              fontSize: 28,
+              color: color,
+            ),
           ),
         ],
       ),

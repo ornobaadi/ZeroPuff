@@ -29,7 +29,7 @@ void main() {
         const Duration(hours: 1),
       );
 
-      expect(milestone?.key, '8_hours');
+      expect(milestone?.key, '12_hours');
     });
 
     test('moves past the first milestone after it is completed', () {
@@ -37,7 +37,7 @@ void main() {
         const Duration(minutes: 22),
       );
 
-      expect(milestone?.key, '8_hours');
+      expect(milestone?.key, '12_hours');
     });
 
     test('maps health milestone keys to synced achievement keys', () {

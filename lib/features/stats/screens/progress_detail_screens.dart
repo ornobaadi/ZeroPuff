@@ -311,7 +311,7 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(homeDashboardProvider);
     return _DetailScaffold(
-      title: 'Health milestones',
+      title: 'Health improvements',
       dashboard: dashboard,
       builder: (context, data) {
         final next = ProgressCalculations.nextMilestone(data.smokeFreeDuration);
@@ -365,6 +365,13 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
                 'Health timelines are estimates. Your body, history, and care all matter, so use this as encouragement rather than diagnosis.',
             icon: Icons.favorite_rounded,
             color: AppColors.accentStreak,
+          ),
+          _InfoCard(
+            title: 'What this is based on',
+            body:
+                'This timeline follows public-health guidance from CDC, American Cancer Society, and American Heart Association, simplified for daily motivation.',
+            icon: Icons.verified_outlined,
+            color: AppColors.primary,
           ),
         ];
       },
@@ -565,6 +572,7 @@ class _HealthHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final next = this.next;
+    final reachedCurrent = smokeFreeDuration >= current.duration;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
@@ -579,18 +587,27 @@ class _HealthHero extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _MilestoneBadge(milestone: current, active: true, size: 88),
+              _MilestoneBadge(
+                milestone: current,
+                active: reachedCurrent,
+                size: 88,
+              ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Current marker', style: theme.textTheme.labelLarge),
+                    Text(
+                      reachedCurrent ? 'Current marker' : 'First target',
+                      style: theme.textTheme.labelLarge,
+                    ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(current.title, style: theme.textTheme.headlineSmall),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      current.body,
+                      reachedCurrent
+                          ? current.body
+                          : 'Your first body-recovery marker begins at 20 smoke-free minutes.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -875,7 +892,8 @@ class _CravingEmptyState extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Text(
             '$totalCravings / 3 logs',
-            style: theme.textTheme.headlineLarge?.copyWith(
+            style: AppTypography.statNumber.copyWith(
+              fontSize: 30,
               color: AppColors.accentCraving,
               fontWeight: FontWeight.w900,
             ),
@@ -936,7 +954,8 @@ class _CompactHeroNumber extends StatelessWidget {
           const SizedBox(width: AppSpacing.md),
           Text(
             value,
-            style: theme.textTheme.headlineLarge?.copyWith(
+            style: AppTypography.statNumber.copyWith(
+              fontSize: 30,
               color: color,
               fontWeight: FontWeight.w900,
             ),
@@ -1010,7 +1029,13 @@ class _MiniStat extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(value, style: theme.textTheme.headlineSmall),
+            child: Text(
+              value,
+              style: AppTypography.statNumber.copyWith(
+                fontSize: 26,
+                color: color,
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -1154,10 +1179,23 @@ class _AchievementGrid extends StatelessWidget {
             return _AchievementBadgeCard(
               achievement: achievement,
               unlocked: unlocked.contains(achievement.key),
+              onTap: unlocked.contains(achievement.key)
+                  ? () => _showAchievementDialog(context, achievement)
+                  : null,
             );
           },
         );
       },
+    );
+  }
+
+  void _showAchievementDialog(
+    BuildContext context,
+    ProgressMilestone achievement,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => _AchievementDetailDialog(achievement: achievement),
     );
   }
 }
@@ -1207,62 +1245,115 @@ class _AchievementBadgeCard extends StatelessWidget {
   const _AchievementBadgeCard({
     required this.achievement,
     required this.unlocked,
+    required this.onTap,
   });
 
   final ProgressMilestone achievement;
   final bool unlocked;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: unlocked
-            ? AppColors.primary.withValues(alpha: 0.1)
-            : theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
           color: unlocked
-              ? AppColors.primary.withValues(alpha: 0.24)
-              : theme.colorScheme.outlineVariant,
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: unlocked
+                ? AppColors.primary.withValues(alpha: 0.24)
+                : theme.colorScheme.outlineVariant,
+          ),
         ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _DetailBadgeImage(
-            achievement: achievement,
-            unlocked: unlocked,
-            size: 116,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            achievement.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: unlocked
-                  ? theme.colorScheme.onSurface
-                  : theme.colorScheme.onSurfaceVariant,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _DetailBadgeImage(
+              achievement: achievement,
+              unlocked: unlocked,
+              size: 116,
             ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Expanded(
-            child: Text(
-              achievement.body,
-              maxLines: 3,
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              achievement.title,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: unlocked
+                    ? theme.colorScheme.onSurface
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                achievement.body,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AchievementDetailDialog extends StatelessWidget {
+  const _AchievementDetailDialog({required this.achievement});
+
+  final ProgressMilestone achievement;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Dialog(
+      insetPadding: const EdgeInsets.all(AppSpacing.pagePadding),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _DetailBadgeImage(
+              achievement: achievement,
+              unlocked: true,
+              size: 190,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              achievement.title,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              achievement.body,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Nice'),
+            ),
+          ],
+        ),
       ),
     );
   }

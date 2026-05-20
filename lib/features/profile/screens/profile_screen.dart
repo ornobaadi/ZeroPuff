@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -93,7 +94,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _SettingsTile(
               icon: Icons.tune_rounded,
               title: 'Setup details',
-              subtitle: 'Quit date, old smoking pace, currency, and triggers.',
+              subtitle: 'Quit date, smoking pace, currency, and triggers.',
               status: 'Edit',
               onTap: () => context.push(AppRoutes.setupSettings),
             ),
@@ -168,32 +169,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onTap: () => context.push(AppRoutes.appInfo),
             ),
             const SizedBox(height: AppSpacing.sectionGap),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.cardPadding),
-              decoration: BoxDecoration(
-                color: AppColors.accentCraving.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: AppColors.accentCraving.withValues(alpha: 0.18),
+            Center(
+              child: Text(
+                '${AppConstants.appName} ${AppConstants.appVersionLabel}',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.privacy_tip_outlined,
-                    color: AppColors.accentCraving,
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Text(
-                      'ZeroPuff should never shame you into using it. Account features are for backup and sync, not for permission to start.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ],

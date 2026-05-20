@@ -6,6 +6,7 @@ import '../../../core/calculations/progress_calculations.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../repositories/achievement_repository.dart';
 
@@ -118,6 +119,11 @@ class ProgressScreen extends ConsumerWidget {
                   onTap: () => context.push(AppRoutes.cravingAnalysis),
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
+                _HealthImprovementsCard(
+                  smokeFreeDuration: data.smokeFreeDuration,
+                  onTap: () => context.push(AppRoutes.healthDetails),
+                ),
+                const SizedBox(height: AppSpacing.sectionGap),
                 _AchievementShowcaseCard(
                   achievements: ProgressCalculations.achievements,
                   unlocked: unlocked,
@@ -140,6 +146,106 @@ class ProgressScreen extends ConsumerWidget {
               Text(error.toString()),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HealthImprovementsCard extends StatelessWidget {
+  const _HealthImprovementsCard({
+    required this.smokeFreeDuration,
+    required this.onTap,
+  });
+
+  final Duration smokeFreeDuration;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final current = ProgressCalculations.currentMilestone(smokeFreeDuration);
+    final next = ProgressCalculations.nextMilestone(smokeFreeDuration);
+    final hasReachedFirst =
+        smokeFreeDuration >=
+        ProgressCalculations.healthMilestones.first.duration;
+    final shown = next ?? current;
+    final progress = next == null
+        ? 1.0
+        : ProgressCalculations.milestoneProgress(
+            smokeFreeDuration: smokeFreeDuration,
+            milestone: shown,
+          );
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(28),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Icon(
+                    Icons.favorite_rounded,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Health improvements',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        next == null
+                            ? 'Every listed recovery marker is unlocked.'
+                            : 'Next: ${next.title}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              hasReachedFirst
+                  ? current.body
+                  : 'Your first body-recovery marker begins at 20 smoke-free minutes.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                minHeight: 9,
+                value: progress,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -326,7 +432,10 @@ class _ProgressStat extends StatelessWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Text(value, style: theme.textTheme.headlineSmall),
+              child: Text(
+                value,
+                style: AppTypography.statNumber.copyWith(color: color),
+              ),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
