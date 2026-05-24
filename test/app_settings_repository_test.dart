@@ -21,5 +21,22 @@ void main() {
 
       expect(await repository.loadThemeMode(), ThemeMode.dark);
     });
+
+    test('defaults haptics to enabled', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      final enabled = await const AppSettingsRepository().loadHapticsEnabled();
+
+      expect(enabled, isTrue);
+    });
+
+    test('persists haptics preference', () async {
+      SharedPreferences.setMockInitialValues({});
+      const repository = AppSettingsRepository();
+
+      await repository.saveHapticsEnabled(false);
+
+      expect(await repository.loadHapticsEnabled(), isFalse);
+    });
   });
 }

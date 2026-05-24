@@ -10,6 +10,7 @@ import '../../../repositories/account_repository.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../repositories/profile_repository.dart';
+import '../../../services/haptics/haptic_service.dart';
 import '../../../services/notifications/notification_service.dart';
 import '../../../services/sync/sync_service.dart';
 import '../../auth/controllers/google_sign_in_controller.dart';
@@ -36,6 +37,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final avatarUrl = _avatarUrl(user);
     final pendingSync = ref.watch(pendingSyncCountProvider);
     final themeMode = ref.watch(themeModeControllerProvider);
+    final hapticsEnabled = ref.watch(hapticsEnabledControllerProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('You')),
@@ -105,6 +107,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               subtitle: 'System, light, or dark mode.',
               status: _themeModeLabel(themeMode),
               onTap: () => context.push(AppRoutes.appearanceSettings),
+            ),
+            const SizedBox(height: AppSpacing.componentGap),
+            _SwitchSettingsTile(
+              icon: Icons.vibration_rounded,
+              title: 'Haptics',
+              subtitle: 'Gentle taps for rescue steps and key actions.',
+              value: hapticsEnabled,
+              onChanged: (enabled) async {
+                await ref
+                    .read(hapticsEnabledControllerProvider.notifier)
+                    .setEnabled(enabled);
+                await HapticService.light(enabled: enabled);
+              },
             ),
             const SizedBox(height: AppSpacing.componentGap),
             _SettingsTile(
@@ -490,6 +505,89 @@ class _SettingsTile extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SwitchSettingsTile extends StatelessWidget {
+  const _SwitchSettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(30),
+      onTap: () => onChanged(!value),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: isDark ? theme.colorScheme.outlineVariant : Colors.white,
+          ),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: AppColors.navInk.withValues(alpha: 0.05),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: value
+                    ? AppColors.primary.withValues(alpha: 0.12)
+                    : theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                icon,
+                color: value
+                    ? AppColors.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Switch(value: value, onChanged: onChanged),
           ],
         ),
       ),

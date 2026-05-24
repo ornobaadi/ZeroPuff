@@ -230,13 +230,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       runSpacing: AppSpacing.sm,
                       children: _triggerOptions.map((trigger) {
                         final selected = _triggers.contains(trigger);
-                        return FilterChip(
-                          avatar: selected
-                              ? const Icon(Icons.check_rounded, size: 16)
-                              : null,
-                          label: Text(trigger),
+                        return _OnboardingTriggerChip(
+                          label: trigger,
                           selected: selected,
-                          onSelected: (_) => _toggleTrigger(trigger),
+                          onTap: () => _toggleTrigger(trigger),
                         );
                       }).toList(),
                     ),
@@ -658,6 +655,71 @@ class _NumberStepper extends StatelessWidget {
     if (next != null) {
       onChanged(next.clamp(min, max));
     }
+  }
+}
+
+class _OnboardingTriggerChip extends StatelessWidget {
+  const _OnboardingTriggerChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final background = selected
+        ? AppColors.primaryLight
+        : isDark
+        ? AppColors.surfaceCardDark
+        : AppColors.surfaceElevated;
+    final foreground = selected
+        ? AppColors.textPrimary
+        : theme.colorScheme.onSurface;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        constraints: const BoxConstraints(minHeight: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: selected
+                ? AppColors.primaryLight
+                : theme.colorScheme.outlineVariant,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (selected) ...[
+              const Icon(
+                Icons.check_rounded,
+                size: 16,
+                color: AppColors.textPrimary,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+            ],
+            Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: foreground,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

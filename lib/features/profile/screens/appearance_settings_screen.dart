@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../repositories/app_settings_repository.dart';
+import '../../../services/haptics/haptic_service.dart';
 
 class AppearanceSettingsScreen extends ConsumerWidget {
   const AppearanceSettingsScreen({super.key});
@@ -12,6 +13,14 @@ class AppearanceSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final mode = ref.watch(themeModeControllerProvider);
+    final hapticsEnabled = ref.watch(hapticsEnabledControllerProvider);
+
+    Future<void> setMode(ThemeMode nextMode) async {
+      await ref
+          .read(themeModeControllerProvider.notifier)
+          .setThemeMode(nextMode);
+      await HapticService.selection(enabled: hapticsEnabled);
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Appearance')),
@@ -52,9 +61,7 @@ class AppearanceSettingsScreen extends ConsumerWidget {
               title: 'System',
               subtitle: 'Match your phone automatically.',
               selected: mode == ThemeMode.system,
-              onTap: () => ref
-                  .read(themeModeControllerProvider.notifier)
-                  .setThemeMode(ThemeMode.system),
+              onTap: () => setMode(ThemeMode.system),
             ),
             const SizedBox(height: AppSpacing.componentGap),
             _ThemeModeTile(
@@ -62,9 +69,7 @@ class AppearanceSettingsScreen extends ConsumerWidget {
               title: 'Light',
               subtitle: 'Warm cream surfaces for daytime use.',
               selected: mode == ThemeMode.light,
-              onTap: () => ref
-                  .read(themeModeControllerProvider.notifier)
-                  .setThemeMode(ThemeMode.light),
+              onTap: () => setMode(ThemeMode.light),
             ),
             const SizedBox(height: AppSpacing.componentGap),
             _ThemeModeTile(
@@ -72,9 +77,7 @@ class AppearanceSettingsScreen extends ConsumerWidget {
               title: 'Dark',
               subtitle: 'Calm green-black surfaces for night use.',
               selected: mode == ThemeMode.dark,
-              onTap: () => ref
-                  .read(themeModeControllerProvider.notifier)
-                  .setThemeMode(ThemeMode.dark),
+              onTap: () => setMode(ThemeMode.dark),
             ),
           ],
         ),

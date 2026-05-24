@@ -9,6 +9,11 @@ final appSettingsRepositoryProvider = Provider<AppSettingsRepository>((ref) {
 final themeModeControllerProvider =
     NotifierProvider<ThemeModeController, ThemeMode>(ThemeModeController.new);
 
+final hapticsEnabledControllerProvider =
+    NotifierProvider<HapticsEnabledController, bool>(
+      HapticsEnabledController.new,
+    );
+
 class ThemeModeController extends Notifier<ThemeMode> {
   @override
   ThemeMode build() {
@@ -27,10 +32,28 @@ class ThemeModeController extends Notifier<ThemeMode> {
   }
 }
 
+class HapticsEnabledController extends Notifier<bool> {
+  @override
+  bool build() {
+    _load();
+    return true;
+  }
+
+  Future<void> _load() async {
+    state = await ref.read(appSettingsRepositoryProvider).loadHapticsEnabled();
+  }
+
+  Future<void> setEnabled(bool enabled) async {
+    state = enabled;
+    await ref.read(appSettingsRepositoryProvider).saveHapticsEnabled(enabled);
+  }
+}
+
 class AppSettingsRepository {
   const AppSettingsRepository();
 
   static const _themeModeKey = 'app.theme_mode';
+  static const _hapticsEnabledKey = 'app.haptics_enabled';
 
   Future<ThemeMode> loadThemeMode() async {
     final preferences = await SharedPreferences.getInstance();
@@ -40,6 +63,16 @@ class AppSettingsRepository {
   Future<void> saveThemeMode(ThemeMode mode) async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(_themeModeKey, mode.name);
+  }
+
+  Future<bool> loadHapticsEnabled() async {
+    final preferences = await SharedPreferences.getInstance();
+    return preferences.getBool(_hapticsEnabledKey) ?? true;
+  }
+
+  Future<void> saveHapticsEnabled(bool enabled) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_hapticsEnabledKey, enabled);
   }
 
   ThemeMode _parseThemeMode(String? value) {
