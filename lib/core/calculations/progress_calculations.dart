@@ -7,20 +7,21 @@ class ProgressCalculations {
       title: '20 minutes',
       body: 'Heart rate and blood pressure begin moving down from the spike.',
       duration: Duration(minutes: 20),
-      badgeAsset: 'assets/badges/20min.png',
+      badgeAsset: 'assets/health/1.png',
     ),
     ProgressMilestone(
       key: '12_hours',
       title: '12 hours',
       body: 'Carbon monoxide in your blood drops toward a normal range.',
       duration: Duration(hours: 12),
+      badgeAsset: 'assets/health/2.png',
     ),
     ProgressMilestone(
       key: '2_weeks',
       title: '2 weeks',
       body: 'Circulation can improve, and lung function may begin increasing.',
       duration: Duration(days: 14),
-      badgeAsset: 'assets/badges/2w.png',
+      badgeAsset: 'assets/health/3.png',
     ),
     ProgressMilestone(
       key: '1_month',
@@ -28,14 +29,14 @@ class ProgressCalculations {
       body:
           'Coughing and shortness of breath may start easing as airways heal.',
       duration: Duration(days: 30),
-      badgeAsset: 'assets/badges/1m.png',
+      badgeAsset: 'assets/health/4.png',
     ),
     ProgressMilestone(
       key: '3_months',
       title: '3 months',
       body: 'Circulation and lung function can keep getting stronger.',
       duration: Duration(days: 90),
-      badgeAsset: 'assets/badges/3m.png',
+      badgeAsset: 'assets/health/5.png',
     ),
     ProgressMilestone(
       key: '9_months',
@@ -43,13 +44,14 @@ class ProgressCalculations {
       body:
           'Breathing, coughing, and airway irritation may be noticeably better.',
       duration: Duration(days: 270),
+      badgeAsset: 'assets/health/6.png',
     ),
     ProgressMilestone(
       key: '1_year',
       title: '1 year',
       body: 'Heart-disease risk has dropped sharply compared with continuing.',
       duration: Duration(days: 365),
-      badgeAsset: 'assets/badges/1y.png',
+      badgeAsset: 'assets/health/7.png',
     ),
     ProgressMilestone(
       key: '5_years',
@@ -57,6 +59,7 @@ class ProgressCalculations {
       body:
           'Stroke and several cancer risks keep falling with time smoke-free.',
       duration: Duration(days: 365 * 5),
+      badgeAsset: 'assets/health/8.png',
     ),
     ProgressMilestone(
       key: '10_years',
@@ -64,12 +67,14 @@ class ProgressCalculations {
       body:
           'Risk of dying from lung cancer is about half that of someone still smoking.',
       duration: Duration(days: 365 * 10),
+      badgeAsset: 'assets/health/9.png',
     ),
     ProgressMilestone(
       key: '15_years',
       title: '15 years',
       body: 'Coronary heart disease risk can approach that of a non-smoker.',
       duration: Duration(days: 365 * 15),
+      badgeAsset: 'assets/health/10.png',
     ),
   ];
 

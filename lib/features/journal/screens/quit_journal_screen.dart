@@ -22,7 +22,12 @@ class QuitJournalScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Quit Journal')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.pagePadding),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.pagePadding,
+            AppSpacing.pagePadding,
+            AppSpacing.pagePadding,
+            120,
+          ),
           children: journal.when(
             data: (data) => [
               Text('Your quit journal', style: theme.textTheme.headlineMedium),
@@ -151,7 +156,7 @@ class _RecoveryNoteCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
         color: AppColors.relapse.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(color: AppColors.relapse.withValues(alpha: 0.14)),
       ),
       child: Row(
@@ -186,13 +191,16 @@ class _DayMetric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? color.withValues(alpha: 0.16) : Colors.white,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +238,7 @@ class _EmptyDayCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Row(
@@ -344,7 +352,7 @@ class _TimelineEntry extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(26),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Row(
@@ -437,6 +445,7 @@ class _StatPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -444,9 +453,11 @@ class _StatPill extends StatelessWidget {
         vertical: AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: isDark ? color.withValues(alpha: 0.16) : Colors.white,
+        ),
       ),
       child: Column(
         children: [
@@ -493,8 +504,20 @@ class _MonthCalendar extends ConsumerWidget {
       padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(34),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? theme.colorScheme.outlineVariant
+              : Colors.white,
+        ),
+        boxShadow: [
+          if (theme.brightness == Brightness.light)
+            BoxShadow(
+              color: AppColors.navInk.withValues(alpha: 0.08),
+              blurRadius: 22,
+              offset: const Offset(0, 10),
+            ),
+        ],
       ),
       child: Column(
         children: [

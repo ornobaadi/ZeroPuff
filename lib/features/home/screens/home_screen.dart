@@ -71,7 +71,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.pagePadding),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.pagePadding,
+            AppSpacing.pagePadding,
+            AppSpacing.pagePadding,
+            120,
+          ),
           children: dashboard.when(
             data: (data) => [
               _SmokeFreeHero(
@@ -188,14 +193,26 @@ class _SmokeFreeHero extends StatelessWidget {
     final milestonePercent = (milestoneProgress * 100).round().clamp(0, 100);
 
     return InkWell(
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(32),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.cardPadding),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceCardDark : AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(
+            color: isDark
+                ? AppColors.primary.withValues(alpha: 0.22)
+                : Colors.white,
+          ),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: AppColors.navInk.withValues(alpha: 0.08),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,9 +306,13 @@ class _FlipTimer extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark
             ? Colors.black.withValues(alpha: 0.14)
-            : AppColors.surfaceElevated,
+            : AppColors.surface,
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        border: Border.all(
+          color: isDark
+              ? theme.colorScheme.outlineVariant
+              : AppColors.navBlue.withValues(alpha: 0.55),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -457,16 +478,29 @@ class _QuickLogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(28),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.cardPadding),
         decoration: BoxDecoration(
-          color: AppColors.relapse.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.relapse.withValues(alpha: 0.14)),
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: isDark
+                ? AppColors.relapse.withValues(alpha: 0.12)
+                : Colors.white,
+          ),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: AppColors.navInk.withValues(alpha: 0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+          ],
         ),
         child: Row(
           children: [
@@ -509,16 +543,17 @@ class _TodayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     final title = checkedIn ? 'Check-in complete' : 'Daily check-in';
     final body = checkedIn
         ? (smokeFreeToday == true
               ? 'Today is marked smoke-free.'
               : 'Today is logged honestly. That still counts.')
-              : 'One minute: Log your daily progress.';
+        : 'One minute: Log your daily progress.';
 
     return InkWell(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(28),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -526,12 +561,22 @@ class _TodayCard extends StatelessWidget {
           color: checkedIn
               ? AppColors.primary.withValues(alpha: 0.1)
               : theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: checkedIn
-                ? AppColors.primary.withValues(alpha: 0.2)
-                : theme.colorScheme.outlineVariant,
+            color: isDark
+                ? (checkedIn
+                      ? AppColors.primary.withValues(alpha: 0.2)
+                      : theme.colorScheme.outlineVariant)
+                : Colors.white,
           ),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: AppColors.navInk.withValues(alpha: 0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+          ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -614,7 +659,7 @@ class _BreathingCravingButtonState extends State<_BreathingCravingButton>
           minimumSize: const Size.fromHeight(72),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(28),
           ),
         ),
         child: Row(
@@ -656,16 +701,27 @@ class _MetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(28),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.cardPadding),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: isDark ? color.withValues(alpha: 0.2) : Colors.white,
+          ),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: AppColors.navInk.withValues(alpha: 0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../models/profile_data.dart';
@@ -200,6 +201,10 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
                     return ChoiceChip(
                       label: Text('${currency.symbol} ${currency.code}'),
                       selected: _currency.code == currency.code,
+                      labelStyle: _chipLabelStyle(
+                        context,
+                        _currency.code == currency.code,
+                      ),
                       onSelected: (_) => setState(() => _currency = currency),
                     );
                   }).toList(),
@@ -233,6 +238,7 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
                     return FilterChip(
                       label: Text(trigger),
                       selected: selected,
+                      labelStyle: _chipLabelStyle(context, selected),
                       onSelected: (_) => _toggleTrigger(trigger),
                     );
                   }).toList(),
@@ -295,6 +301,19 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
         _triggers.add(trigger);
       }
     });
+  }
+
+  TextStyle? _chipLabelStyle(BuildContext context, bool selected) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return theme.textTheme.labelMedium?.copyWith(
+      color: selected
+          ? AppColors.textPrimary
+          : isDark
+          ? AppColors.textPrimaryDark
+          : theme.colorScheme.onSurface,
+      fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
+    );
   }
 }
 

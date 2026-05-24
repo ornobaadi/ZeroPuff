@@ -38,10 +38,12 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        backgroundColor: scheme.surface,
+        backgroundColor: Colors.transparent,
         foregroundColor: scheme.onSurface,
         titleTextStyle: AppTypography.textTheme.titleLarge?.copyWith(
           color: scheme.onSurface,
+          fontSize: 28,
+          fontWeight: FontWeight.w800,
         ),
       ),
       cardTheme: CardThemeData(
@@ -105,27 +107,28 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: isDark
-            ? AppColors.surfaceElevatedDark.withValues(alpha: 0.9)
+            ? AppColors.surfaceCardDark
             : AppColors.surfaceElevated,
-        selectedColor: isDark
-            ? AppColors.primaryLight.withValues(alpha: 0.92)
-            : AppColors.primaryLight,
-        checkmarkColor: isDark ? AppColors.textPrimary : AppColors.primaryDark,
+        selectedColor: isDark ? AppColors.primaryLight : AppColors.primaryLight,
+        checkmarkColor: AppColors.textPrimary,
         labelStyle: AppTypography.textTheme.labelMedium?.copyWith(
-          color: scheme.onSurface,
+          color: isDark ? AppColors.textPrimaryDark : scheme.onSurface,
         ),
         secondaryLabelStyle: AppTypography.textTheme.labelMedium?.copyWith(
-          color: isDark ? AppColors.textPrimary : AppColors.primaryDark,
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w800,
         ),
-        side: BorderSide.none,
+        side: BorderSide(
+          color: isDark
+              ? AppColors.primaryLight.withValues(alpha: 0.08)
+              : Colors.transparent,
+        ),
         shape: const RoundedRectangleBorder(borderRadius: AppShapes.chip),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       ),
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
-        backgroundColor: isDark
-            ? AppColors.surfaceCardDark
-            : AppColors.surfaceCard,
+        backgroundColor: Colors.transparent,
         indicatorColor: AppColors.primaryLight,
         height: 72,
         surfaceTintColor: Colors.transparent,

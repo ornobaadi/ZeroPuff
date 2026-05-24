@@ -29,6 +29,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDarkTheme = theme.brightness == Brightness.dark;
     final user = ref.watch(currentUserProvider);
     final isGuest = user == null;
     final displayName = _displayName(user);
@@ -40,7 +41,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       appBar: AppBar(title: const Text('You')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.pagePadding),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.pagePadding,
+            AppSpacing.pagePadding,
+            AppSpacing.pagePadding,
+            120,
+          ),
           children: [
             Container(
               padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -48,12 +54,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 color: isGuest
                     ? AppColors.primary.withValues(alpha: 0.1)
                     : theme.cardTheme.color,
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(34),
                 border: Border.all(
                   color: isGuest
                       ? AppColors.primary.withValues(alpha: 0.18)
-                      : theme.colorScheme.outlineVariant,
+                      : isDarkTheme
+                      ? theme.colorScheme.outlineVariant
+                      : Colors.white,
                 ),
+                boxShadow: [
+                  if (!isDarkTheme)
+                    BoxShadow(
+                      color: AppColors.navInk.withValues(alpha: 0.06),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,16 +424,27 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(30),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: isDark ? theme.colorScheme.outlineVariant : Colors.white,
+          ),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: AppColors.navInk.withValues(alpha: 0.05),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+          ],
         ),
         child: Row(
           children: [
