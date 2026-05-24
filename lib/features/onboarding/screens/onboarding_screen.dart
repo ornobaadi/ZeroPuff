@@ -10,21 +10,23 @@ import '../../../models/app_event.dart';
 import '../../../models/onboarding_data.dart';
 import '../../../models/profile_data.dart';
 import '../../../repositories/app_event_repository.dart';
+import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../../services/device/device_identity_service.dart';
+import '../../../services/haptics/haptic_service.dart';
 import '../../../services/notifications/notification_service.dart';
 
 const _triggerOptions = [
-  'stress',
-  'bored',
-  'social',
-  'after food',
-  'coffee',
-  'routine',
-  'other',
+  _TriggerOption('stress', 'Stressed', Icons.bolt_rounded),
+  _TriggerOption('bored', 'Bored', Icons.hourglass_empty_rounded),
+  _TriggerOption('social', 'Social pressure', Icons.groups_rounded),
+  _TriggerOption('after food', 'After food', Icons.restaurant_rounded),
+  _TriggerOption('coffee', 'Coffee', Icons.local_cafe_rounded),
+  _TriggerOption('routine', 'Routine', Icons.repeat_rounded),
+  _TriggerOption('other', 'Something else', Icons.more_horiz_rounded),
 ];
 
 const _currencyOptions = [
@@ -122,6 +124,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           icon: Icons.wb_sunny_outlined,
                           selected: _isSameDate(_quitDate, DateTime.now()),
                           onTap: () {
+                            _selectionHaptic();
                             setState(() => _quitDate = DateTime.now());
                           },
                         ),
@@ -134,6 +137,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             DateTime.now().subtract(const Duration(days: 1)),
                           ),
                           onTap: () {
+                            _selectionHaptic();
                             setState(() {
                               _quitDate = DateTime.now().subtract(
                                 const Duration(days: 1),
@@ -179,6 +183,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               ),
                               selected: _currency.code == currency.code,
                               onSelected: (_) {
+                                _selectionHaptic();
                                 setState(() => _currency = currency);
                               },
                             );
@@ -191,6 +196,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           min: 0,
                           max: 80,
                           onChanged: (value) {
+                            _selectionHaptic();
                             setState(() => _cigarettesPerDay = value);
                           },
                         ),
@@ -203,6 +209,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           prefix: _currency.symbol,
                           step: _currency.largePriceStep ? 10 : 1,
                           onChanged: (value) {
+                            _selectionHaptic();
                             setState(() => _packPrice = value);
                           },
                         ),
@@ -213,6 +220,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           min: 1,
                           max: 60,
                           onChanged: (value) {
+                            _selectionHaptic();
                             setState(() => _packSize = value);
                           },
                         ),
@@ -229,11 +237,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       spacing: AppSpacing.sm,
                       runSpacing: AppSpacing.sm,
                       children: _triggerOptions.map((trigger) {
-                        final selected = _triggers.contains(trigger);
+                        final selected = _triggers.contains(trigger.value);
                         return _OnboardingTriggerChip(
-                          label: trigger,
+                          option: trigger,
                           selected: selected,
-                          onTap: () => _toggleTrigger(trigger),
+                          onTap: () => _toggleTrigger(trigger.value),
                         );
                       }).toList(),
                     ),
@@ -295,11 +303,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       lastDate: DateTime(now.year + 1),
     );
     if (picked != null) {
+      _selectionHaptic();
       setState(() => _quitDate = picked);
     }
   }
 
   void _toggleTrigger(String trigger) {
+    _selectionHaptic();
     setState(() {
       if (_triggers.contains(trigger) && _triggers.length > 1) {
         _triggers.remove(trigger);
@@ -310,6 +320,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _previous() async {
+    _selectionHaptic();
     setState(() => _step -= 1);
     await _pageController.previousPage(
       duration: const Duration(milliseconds: 260),
@@ -318,6 +329,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _next() async {
+    if (_step == 3) {
+      _mediumHaptic();
+    } else {
+      _lightHaptic();
+    }
     await _saveDraft(completed: _step == 3);
     if (_step < 3) {
       setState(() => _step += 1);
@@ -410,6 +426,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   bool _isSameDate(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  bool get _hapticsEnabled => ref.read(hapticsEnabledControllerProvider);
+
+  void _selectionHaptic() {
+    HapticService.selection(enabled: _hapticsEnabled);
+  }
+
+  void _lightHaptic() {
+    HapticService.light(enabled: _hapticsEnabled);
+  }
+
+  void _mediumHaptic() {
+    HapticService.medium(enabled: _hapticsEnabled);
   }
 }
 
@@ -660,12 +690,12 @@ class _NumberStepper extends StatelessWidget {
 
 class _OnboardingTriggerChip extends StatelessWidget {
   const _OnboardingTriggerChip({
-    required this.label,
+    required this.option,
     required this.selected,
     required this.onTap,
   });
 
-  final String label;
+  final _TriggerOption option;
   final bool selected;
   final VoidCallback onTap;
 
@@ -708,9 +738,12 @@ class _OnboardingTriggerChip extends StatelessWidget {
                 color: AppColors.textPrimary,
               ),
               const SizedBox(width: AppSpacing.xs),
+            ] else ...[
+              Icon(option.icon, size: 16, color: AppColors.primary),
+              const SizedBox(width: AppSpacing.xs),
             ],
             Text(
-              label,
+              option.label,
               style: theme.textTheme.labelMedium?.copyWith(
                 color: foreground,
                 fontWeight: FontWeight.w800,
@@ -721,6 +754,14 @@ class _OnboardingTriggerChip extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TriggerOption {
+  const _TriggerOption(this.value, this.label, this.icon);
+
+  final String value;
+  final String label;
+  final IconData icon;
 }
 
 class _CurrencyOption {

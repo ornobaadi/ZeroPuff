@@ -9,6 +9,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('ZeroPuff'), findsOneWidget);
-    expect(find.text('Private by default'), findsOneWidget);
+    expect(find.text('Rescue first, private by default'), findsOneWidget);
   });
 }

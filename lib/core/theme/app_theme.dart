@@ -133,7 +133,11 @@ class AppTheme {
         height: 72,
         surfaceTintColor: Colors.transparent,
         labelTextStyle: WidgetStatePropertyAll(
-          AppTypography.textTheme.labelSmall,
+          AppTypography.textTheme.headlineSmall?.copyWith(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            height: 1,
+          ),
         ),
       ),
       snackBarTheme: SnackBarThemeData(

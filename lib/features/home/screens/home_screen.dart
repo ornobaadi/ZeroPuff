@@ -8,10 +8,12 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../repositories/app_settings_repository.dart';
 import '../../celebrations/milestone_celebration_controller.dart';
 import '../../celebrations/widgets/celebration_dialog.dart';
 import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
+import '../../../services/haptics/haptic_service.dart';
 import '../../../services/notifications/notification_service.dart';
 import '../providers/home_dashboard_provider.dart';
 
@@ -58,13 +60,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           dashboard.maybeWhen(
             data: (data) => _AppBarStreak(
               streak: data.smokeFreeStreakDays,
-              onTap: () => context.push(AppRoutes.streakDetails),
+              onTap: () => _openRoute(AppRoutes.streakDetails),
             ),
             orElse: () => const SizedBox.shrink(),
           ),
           IconButton(
             tooltip: 'Log cigarette',
-            onPressed: () => context.push(AppRoutes.logging),
+            onPressed: () => _openRoute(AppRoutes.logging, stronger: true),
             icon: const Icon(Icons.edit_note_rounded),
           ),
         ],
@@ -81,17 +83,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             data: (data) => [
               _SmokeFreeHero(
                 data: data,
-                onTap: () => context.push(AppRoutes.smokeFreeDetails),
+                onTap: () => _openRoute(AppRoutes.smokeFreeDetails),
               ),
               const SizedBox(height: AppSpacing.md),
               _TodayCard(
                 checkedIn: data.todayCheckIn != null,
                 smokeFreeToday: data.todayCheckIn?.smokeFreeToday,
-                onTap: () => context.push(AppRoutes.checkIn),
+                onTap: () => _openRoute(AppRoutes.checkIn),
               ),
               const SizedBox(height: AppSpacing.lg),
               _BreathingCravingButton(
-                onPressed: () => context.push(AppRoutes.rescue),
+                onPressed: () => _openRoute(AppRoutes.rescue, stronger: true),
               ),
               const SizedBox(height: AppSpacing.sectionGap),
               Row(
@@ -103,7 +105,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       suffix: 'cigarettes',
                       color: AppColors.primary,
                       icon: Icons.smoke_free_rounded,
-                      onTap: () => context.push(AppRoutes.avoidedDetails),
+                      onTap: () => _openRoute(AppRoutes.avoidedDetails),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
@@ -115,13 +117,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       suffix: 'estimated',
                       color: AppColors.accentMoney,
                       icon: Icons.savings_rounded,
-                      onTap: () => context.push(AppRoutes.savingsDetails),
+                      onTap: () => _openRoute(AppRoutes.savingsDetails),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
-              _QuickLogCard(onTap: () => context.push(AppRoutes.logging)),
+              _QuickLogCard(
+                onTap: () => _openRoute(AppRoutes.logging, stronger: true),
+              ),
             ],
             loading: () => [
               const SizedBox(height: 160),
@@ -142,10 +146,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _showCelebrationDialog(CelebrationEvent event) async {
+    HapticService.success(enabled: ref.read(hapticsEnabledControllerProvider));
     await showDialog<void>(
       context: context,
       builder: (context) => CelebrationDialog(event: event),
     );
+  }
+
+  void _openRoute(String route, {bool stronger = false}) {
+    final enabled = ref.read(hapticsEnabledControllerProvider);
+    if (stronger) {
+      HapticService.light(enabled: enabled);
+    } else {
+      HapticService.selection(enabled: enabled);
+    }
+    context.push(route);
   }
 
   Future<void> _rescheduleMilestoneNotifications() async {

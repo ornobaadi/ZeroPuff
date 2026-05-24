@@ -106,7 +106,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               title: 'Appearance',
               subtitle: 'System, light, or dark mode.',
               status: _themeModeLabel(themeMode),
-              onTap: () => context.push(AppRoutes.appearanceSettings),
+              onTap: () => _openRoute(AppRoutes.appearanceSettings),
             ),
             const SizedBox(height: AppSpacing.componentGap),
             _SwitchSettingsTile(
@@ -127,7 +127,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               title: 'Setup details',
               subtitle: 'Quit date, smoking pace, currency, and triggers.',
               status: 'Edit',
-              onTap: () => context.push(AppRoutes.setupSettings),
+              onTap: () => _openRoute(AppRoutes.setupSettings),
             ),
             const SizedBox(height: AppSpacing.componentGap),
             _SettingsTile(
@@ -135,7 +135,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               title: 'Reminders',
               subtitle: 'Daily check-in, milestone, and 11 PM nudges.',
               status: 'Edit',
-              onTap: () => context.push(AppRoutes.notificationSettings),
+              onTap: () => _openRoute(AppRoutes.notificationSettings),
             ),
             const SizedBox(height: AppSpacing.componentGap),
             _SettingsTile(
@@ -147,7 +147,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               status: isGuest
                   ? (_isSyncing ? 'Opening...' : 'Optional')
                   : 'Connected',
-              onTap: isGuest && !_isSyncing ? _connectGoogle : null,
+              onTap: isGuest && !_isSyncing
+                  ? () {
+                      _lightHaptic();
+                      _connectGoogle();
+                    }
+                  : null,
             ),
             if (!isGuest) ...[
               const SizedBox(height: AppSpacing.componentGap),
@@ -162,7 +167,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   error: (_, _) => 'Could not check local changes.',
                 ),
                 status: _isManualSyncing ? 'Syncing' : 'Retry',
-                onTap: _isManualSyncing ? null : _syncNow,
+                onTap: _isManualSyncing
+                    ? null
+                    : () {
+                        _lightHaptic();
+                        _syncNow();
+                      },
               ),
             ],
             if (!isGuest) ...[
@@ -173,6 +183,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 subtitle: 'Keep local data on this device.',
                 status: '',
                 onTap: () async {
+                  _mediumHaptic();
                   await ref.read(authRepositoryProvider).signOut();
                   ref.invalidate(currentUserProvider);
                   ref.invalidate(homeBaselineProvider);
@@ -189,7 +200,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   : 'Erase local data and remove synced profile rows.',
               status: '',
               destructive: true,
-              onTap: () => _confirmDeleteAccount(isGuest),
+              onTap: () {
+                _mediumHaptic();
+                _confirmDeleteAccount(isGuest);
+              },
             ),
             const SizedBox(height: AppSpacing.componentGap),
             _SettingsTile(
@@ -197,7 +211,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               title: 'App info and safety',
               subtitle: 'Version, privacy note, and medical disclaimer.',
               status: '',
-              onTap: () => context.push(AppRoutes.appInfo),
+              onTap: () => _openRoute(AppRoutes.appInfo),
             ),
             const SizedBox(height: AppSpacing.sectionGap),
             Center(
@@ -220,6 +234,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ThemeMode.dark => 'Dark',
       ThemeMode.system => 'System',
     };
+  }
+
+  bool get _hapticsEnabled => ref.read(hapticsEnabledControllerProvider);
+
+  void _openRoute(String route) {
+    HapticService.selection(enabled: _hapticsEnabled);
+    context.push(route);
+  }
+
+  void _lightHaptic() {
+    HapticService.light(enabled: _hapticsEnabled);
+  }
+
+  void _mediumHaptic() {
+    HapticService.medium(enabled: _hapticsEnabled);
   }
 
   String _displayName(dynamic user) {

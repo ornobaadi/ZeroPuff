@@ -193,9 +193,11 @@ class _FloatingNavDestination extends StatelessWidget {
                       padding: const EdgeInsets.only(left: AppSpacing.sm),
                       child: Text(
                         item.label,
-                        style: AppTypography.textTheme.titleMedium?.copyWith(
+                        style: AppTypography.textTheme.headlineSmall?.copyWith(
                           color: selectedColor,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          height: 1,
                         ),
                       ),
                     )

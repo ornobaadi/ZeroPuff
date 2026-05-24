@@ -9,7 +9,9 @@ import '../../../core/theme/app_typography.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../models/app_event.dart';
 import '../../../repositories/app_event_repository.dart';
+import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/smoking_log_repository.dart';
+import '../../../services/haptics/haptic_service.dart';
 
 const _triggers = [
   'stress',
@@ -55,6 +57,7 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
   }
 
   Future<void> _submitLog() async {
+    _mediumHaptic();
     final repository = ref.read(smokingLogRepositoryProvider);
     final eventRepository = ref.read(appEventRepositoryProvider);
     final note = _noteController.text.trim().isEmpty
@@ -200,7 +203,10 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
                       children: [
                         IconButton.filledTonal(
                           onPressed: _count > 1
-                              ? () => setState(() => _count--)
+                              ? () {
+                                  _selectionHaptic();
+                                  setState(() => _count--);
+                                }
                               : null,
                           icon: const Icon(Icons.remove_rounded),
                         ),
@@ -216,7 +222,10 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
                           ),
                         ),
                         IconButton.filledTonal(
-                          onPressed: () => setState(() => _count++),
+                          onPressed: () {
+                            _selectionHaptic();
+                            setState(() => _count++);
+                          },
                           icon: const Icon(Icons.add_rounded),
                         ),
                       ],
@@ -237,6 +246,7 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
                         selected: _trigger == trigger,
                         onSelected: (selected) {
                           if (selected) {
+                            _selectionHaptic();
                             setState(() => _trigger = trigger);
                           }
                         },
@@ -251,7 +261,10 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   _TimeSelector(
                     smokedAt: _smokedAt,
-                    onChanged: (value) => setState(() => _smokedAt = value),
+                    onChanged: (value) {
+                      _selectionHaptic();
+                      setState(() => _smokedAt = value);
+                    },
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   TextField(
@@ -277,6 +290,16 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
               ),
       ),
     );
+  }
+
+  bool get _hapticsEnabled => ref.read(hapticsEnabledControllerProvider);
+
+  void _selectionHaptic() {
+    HapticService.selection(enabled: _hapticsEnabled);
+  }
+
+  void _mediumHaptic() {
+    HapticService.medium(enabled: _hapticsEnabled);
   }
 }
 

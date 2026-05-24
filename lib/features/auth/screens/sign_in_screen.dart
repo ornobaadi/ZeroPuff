@@ -9,6 +9,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../repositories/app_settings_repository.dart';
+import '../../../services/haptics/haptic_service.dart';
 import '../controllers/google_sign_in_controller.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -54,7 +56,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
-                      'Private by default',
+                      'Rescue first, private by default',
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: theme.colorScheme.onPrimaryContainer,
                       ),
@@ -67,7 +69,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             Text(AppConstants.appName, style: theme.textTheme.displayLarge),
             const SizedBox(height: AppSpacing.md),
             Text(
-              AppConstants.appTagline,
+              'Open it at the craving moment. Delay the decision, breathe, then log only what matters.',
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 fontFamily: theme.textTheme.bodyLarge?.fontFamily,
@@ -76,15 +78,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ),
             const SizedBox(height: AppSpacing.xxl),
             const _PromiseCard(
-              icon: Icons.timer_outlined,
-              title: 'Two minutes first',
-              body: 'Open the app during a craving and delay the decision.',
+              icon: Icons.air_rounded,
+              title: 'A two-minute pause',
+              body: 'Guided steps help the urge cool before you choose.',
             ),
             const SizedBox(height: AppSpacing.componentGap),
             const _PromiseCard(
-              icon: Icons.storage_rounded,
-              title: 'Use it before an account',
-              body: 'Your setup stays on this device until you decide to sync.',
+              icon: Icons.lock_outline_rounded,
+              title: 'Start without pressure',
+              body: 'Guest mode works now. Google is only for backup and sync.',
             ),
             const SizedBox(height: AppSpacing.xxl),
             FilledButton.icon(
@@ -101,7 +103,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             OutlinedButton.icon(
-              onPressed: () => context.go(AppRoutes.onboarding),
+              onPressed: () {
+                _lightHaptic();
+                context.go(AppRoutes.onboarding);
+              },
               icon: const Icon(Icons.arrow_forward_rounded),
               label: const Text('Start as guest'),
             ),
@@ -113,7 +118,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Text(
-                'Sign in only when you want backup and cross-device sync. Account-only features will ask at the moment they need it.',
+                'No public feed. No shame score. Your quit data stays local unless you choose backup.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -126,6 +131,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Future<void> _signIn() async {
+    _lightHaptic();
     setState(() => _isSigningIn = true);
     try {
       final outcome = await ref
@@ -150,6 +156,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         setState(() => _isSigningIn = false);
       }
     }
+  }
+
+  bool get _hapticsEnabled => ref.read(hapticsEnabledControllerProvider);
+
+  void _lightHaptic() {
+    HapticService.light(enabled: _hapticsEnabled);
   }
 }
 

@@ -10,6 +10,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../features/progress/screens/progress_screen.dart';
+import '../../../repositories/app_settings_repository.dart';
+import '../../../services/haptics/haptic_service.dart';
 
 class SmokeFreeDetailsScreen extends ConsumerWidget {
   const SmokeFreeDetailsScreen({super.key});
@@ -310,6 +312,7 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(homeDashboardProvider);
+    final hapticsEnabled = ref.watch(hapticsEnabledControllerProvider);
     return _DetailScaffold(
       title: 'Health improvements',
       dashboard: dashboard,
@@ -357,6 +360,12 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
                 smokeFreeDuration: data.smokeFreeDuration,
                 milestone: milestone,
               ),
+              onTap: data.smokeFreeDuration >= milestone.duration
+                  ? () {
+                      HapticService.light(enabled: hapticsEnabled);
+                      _showHealthMilestoneDialog(context, milestone);
+                    }
+                  : null,
             ),
           ),
           _InfoCard(
@@ -375,6 +384,16 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
           ),
         ];
       },
+    );
+  }
+
+  void _showHealthMilestoneDialog(
+    BuildContext context,
+    ProgressMilestone milestone,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => _HealthMilestoneDetailDialog(milestone: milestone),
     );
   }
 }
@@ -646,78 +665,149 @@ class _HealthMilestoneCard extends StatelessWidget {
     required this.active,
     required this.current,
     required this.progress,
+    required this.onTap,
   });
 
   final ProgressMilestone milestone;
   final bool active;
   final bool current;
   final double progress;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = active ? AppColors.primary : theme.colorScheme.outline;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: active
-            ? AppColors.primary.withValues(alpha: 0.1)
-            : theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: current
-              ? AppColors.accentMoney.withValues(alpha: 0.42)
-              : color.withValues(alpha: 0.2),
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: active
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: current
+                ? AppColors.accentMoney.withValues(alpha: 0.42)
+                : color.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Row(
+          children: [
+            _MilestoneBadge(milestone: milestone, active: active, size: 70),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          milestone.title,
+                          style: theme.textTheme.titleMedium,
+                        ),
+                      ),
+                      _StatusPill(active: active, current: current),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    milestone.body,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      minHeight: 7,
+                      value: progress,
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
+                      color: active ? AppColors.primary : AppColors.accentMoney,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _durationLabel(milestone.duration),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      if (active)
+                        Icon(
+                          Icons.open_in_full_rounded,
+                          size: 15,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      child: Row(
-        children: [
-          _MilestoneBadge(milestone: milestone, active: active, size: 70),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        milestone.title,
-                        style: theme.textTheme.titleMedium,
-                      ),
-                    ),
-                    _StatusPill(active: active, current: current),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  milestone.body,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    minHeight: 7,
-                    value: progress,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    color: active ? AppColors.primary : AppColors.accentMoney,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  _durationLabel(milestone.duration),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+    );
+  }
+}
+
+class _HealthMilestoneDetailDialog extends StatelessWidget {
+  const _HealthMilestoneDetailDialog({required this.milestone});
+
+  final ProgressMilestone milestone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Dialog(
+      insetPadding: const EdgeInsets.all(AppSpacing.pagePadding),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _MilestoneBadge(milestone: milestone, active: true, size: 190),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              milestone.title,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall,
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Unlocked at ${_durationLabel(milestone.duration)} smoke-free',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              milestone.body,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Nice'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1133,6 +1223,7 @@ class AchievementsDetailsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(homeDashboardProvider);
     final unlocked = ref.watch(unlockedAchievementsProvider).value ?? const {};
+    final hapticsEnabled = ref.watch(hapticsEnabledControllerProvider);
     final catalogUnlocked = ProgressCalculations.achievements
         .where((achievement) => unlocked.contains(achievement.key))
         .length;
@@ -1147,6 +1238,7 @@ class AchievementsDetailsScreen extends ConsumerWidget {
         _AchievementGrid(
           achievements: ProgressCalculations.achievements,
           unlocked: unlocked,
+          hapticsEnabled: hapticsEnabled,
         ),
       ],
     );
@@ -1154,10 +1246,15 @@ class AchievementsDetailsScreen extends ConsumerWidget {
 }
 
 class _AchievementGrid extends StatelessWidget {
-  const _AchievementGrid({required this.achievements, required this.unlocked});
+  const _AchievementGrid({
+    required this.achievements,
+    required this.unlocked,
+    required this.hapticsEnabled,
+  });
 
   final List<ProgressMilestone> achievements;
   final Set<String> unlocked;
+  final bool hapticsEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -1180,7 +1277,10 @@ class _AchievementGrid extends StatelessWidget {
               achievement: achievement,
               unlocked: unlocked.contains(achievement.key),
               onTap: unlocked.contains(achievement.key)
-                  ? () => _showAchievementDialog(context, achievement)
+                  ? () {
+                      HapticService.light(enabled: hapticsEnabled);
+                      _showAchievementDialog(context, achievement);
+                    }
                   : null,
             );
           },
