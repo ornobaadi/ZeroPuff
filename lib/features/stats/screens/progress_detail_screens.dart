@@ -19,6 +19,7 @@ class SmokeFreeDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(homeDashboardProvider);
+    final hapticsEnabled = ref.watch(hapticsEnabledControllerProvider);
     return _DetailScaffold(
       title: 'Smoke-free time',
       dashboard: dashboard,
@@ -48,7 +49,10 @@ class SmokeFreeDetailsScreen extends ConsumerWidget {
           body: 'See what has already changed and what marker is coming next.',
           icon: Icons.favorite_rounded,
           color: AppColors.accentStreak,
-          onTap: () => context.push(AppRoutes.healthDetails),
+          onTap: () {
+            HapticService.selection(enabled: hapticsEnabled);
+            context.push(AppRoutes.healthDetails);
+          },
         ),
       ],
     );

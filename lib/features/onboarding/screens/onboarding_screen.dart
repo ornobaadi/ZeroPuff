@@ -37,6 +37,9 @@ const _currencyOptions = [
   _CurrencyOption('BDT', '৳', 'Bangladeshi taka'),
 ];
 
+const _totalOnboardingSteps = 5;
+const _lastOnboardingStep = _totalOnboardingSteps - 1;
+
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -91,13 +94,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       borderRadius: BorderRadius.circular(999),
                       child: LinearProgressIndicator(
                         minHeight: 8,
-                        value: (_step + 1) / 4,
+                        value: (_step + 1) / _totalOnboardingSteps,
                       ),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Text(
-                    '${_step + 1}/4',
+                    '${_step + 1}/$_totalOnboardingSteps',
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -262,6 +265,37 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       ),
                     ),
                   ),
+                  _StepPane(
+                    icon: Icons.notifications_active_outlined,
+                    eyebrow: 'Helpful nudges',
+                    title: 'Let ZeroPuff remind you at the right moment',
+                    subtitle:
+                        'Cravings often arrive when motivation is quiet. Smart reminders help you notice progress before autopilot takes over.',
+                    body: const Column(
+                      children: [
+                        _NotificationBenefitCard(
+                          icon: Icons.savings_outlined,
+                          title: 'Progress, not spam',
+                          body:
+                              'Reminders can mention money saved, cigarettes avoided, or your current streak.',
+                        ),
+                        SizedBox(height: AppSpacing.md),
+                        _NotificationBenefitCard(
+                          icon: Icons.fact_check_outlined,
+                          title: 'Skips irrelevant check-ins',
+                          body:
+                              'If today is already recorded, ZeroPuff moves the nudge to tomorrow.',
+                        ),
+                        SizedBox(height: AppSpacing.md),
+                        _NotificationBenefitCard(
+                          icon: Icons.nightlight_round,
+                          title: 'A gentle evening backup',
+                          body:
+                              'If the day is still blank, one reminder helps protect your timeline.',
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -274,7 +308,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: FilledButton.icon(
             onPressed: _isSaving ? null : _next,
             icon: Icon(
-              _step == 3 ? Icons.check_rounded : Icons.arrow_forward_rounded,
+              _step == _lastOnboardingStep
+                  ? Icons.notifications_active_rounded
+                  : Icons.arrow_forward_rounded,
             ),
             label: Text(_buttonLabel()),
           ),
@@ -287,7 +323,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (_isSaving) {
       return 'Saving';
     }
-    return _step == 3 ? 'Finish setup' : 'Continue';
+    return _step == _lastOnboardingStep
+        ? 'Enable reminders & finish'
+        : 'Continue';
   }
 
   String _dateLabel(DateTime date) {
@@ -329,13 +367,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _next() async {
-    if (_step == 3) {
+    if (_step == _lastOnboardingStep) {
       _mediumHaptic();
     } else {
       _lightHaptic();
     }
-    await _saveDraft(completed: _step == 3);
-    if (_step < 3) {
+    await _saveDraft(completed: false);
+    if (_step < _lastOnboardingStep) {
       setState(() => _step += 1);
       await _pageController.nextPage(
         duration: const Duration(milliseconds: 260),
@@ -368,6 +406,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _complete() async {
     setState(() => _isSaving = true);
     try {
+      final notificationsGranted =
+          await NotificationService.requestPermission();
       final user = ref.read(currentUserProvider);
       final profile = ProfileData(
         userId: user?.id ?? DeviceIdentityService.guestUserId,
@@ -395,7 +435,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await ref
           .read(appEventRepositoryProvider)
           .track(const AppEvent(eventName: 'onboarding_completed'));
-      await _setupNotifications(profile.quitDate);
+      await _setupNotifications(profile, notificationsGranted);
 
       if (mounted) {
         context.go(AppRoutes.home);
@@ -413,14 +453,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  Future<void> _setupNotifications(DateTime quitDate) async {
-    await NotificationService.requestPermission();
+  Future<void> _setupNotifications(
+    ProfileData profile,
+    bool notificationsGranted,
+  ) async {
+    final nextPreferences = NotificationPreferences(
+      dailyCheckInEnabled: notificationsGranted,
+      milestoneReminderEnabled: notificationsGranted,
+      streakProtectionEnabled: notificationsGranted,
+    );
     final preferences = await ref
         .read(notificationPreferencesRepositoryProvider)
-        .save(const NotificationPreferences());
+        .save(nextPreferences);
+    final now = DateTime.now();
+    final smokeFreeDuration = now.isBefore(profile.quitDate)
+        ? Duration.zero
+        : now.difference(profile.quitDate);
     await NotificationService.reschedule(
       preferences: preferences,
-      quitDate: quitDate,
+      quitDate: profile.quitDate,
+      snapshot: NotificationScheduleSnapshot(
+        smokeFreeDuration: smokeFreeDuration,
+        currencySymbol: profile.currencySymbol,
+      ),
     );
   }
 
@@ -573,6 +628,61 @@ class _ChoiceTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _NotificationBenefitCard extends StatelessWidget {
+  const _NotificationBenefitCard({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: AppColors.primary),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  body,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

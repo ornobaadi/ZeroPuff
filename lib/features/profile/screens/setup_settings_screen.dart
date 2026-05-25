@@ -116,6 +116,7 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
       await NotificationService.reschedule(
         preferences: notificationPreferences,
         quitDate: profile.quitDate,
+        snapshot: _notificationSnapshot(),
       );
       ref.invalidate(homeBaselineProvider);
       ref.invalidate(editableProfileProvider);
@@ -277,6 +278,22 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  NotificationScheduleSnapshot _notificationSnapshot() {
+    final dashboard = ref.read(homeDashboardProvider).value;
+    if (dashboard == null) {
+      return const NotificationScheduleSnapshot();
+    }
+    return NotificationScheduleSnapshot(
+      todayCheckedIn: dashboard.todayCheckIn != null,
+      smokeFreeDuration: dashboard.smokeFreeDuration,
+      smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
+      checkInStreakDays: dashboard.checkInStreakDays,
+      cigarettesAvoided: dashboard.cigarettesAvoided,
+      moneySaved: dashboard.moneySaved,
+      currencySymbol: dashboard.currencySymbol,
     );
   }
 

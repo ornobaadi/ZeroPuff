@@ -8,6 +8,7 @@ import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../../services/notifications/notification_service.dart';
+import '../../home/providers/home_dashboard_provider.dart';
 
 final editableNotificationPreferencesProvider =
     FutureProvider<NotificationPreferences>((ref) async {
@@ -41,9 +42,21 @@ class _NotificationSettingsScreenState
       final profile = await ref
           .read(onboardingRepositoryProvider)
           .loadCompletedProfile();
+      final dashboard = ref.read(homeDashboardProvider).value;
       await NotificationService.reschedule(
         preferences: saved,
         quitDate: profile?.quitDate,
+        snapshot: dashboard == null
+            ? const NotificationScheduleSnapshot()
+            : NotificationScheduleSnapshot(
+                todayCheckedIn: dashboard.todayCheckIn != null,
+                smokeFreeDuration: dashboard.smokeFreeDuration,
+                smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
+                checkInStreakDays: dashboard.checkInStreakDays,
+                cigarettesAvoided: dashboard.cigarettesAvoided,
+                moneySaved: dashboard.moneySaved,
+                currencySymbol: dashboard.currencySymbol,
+              ),
       );
 
       final user = ref.read(currentUserProvider);
@@ -132,7 +145,7 @@ class _NotificationSettingsScreenState
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        'Local reminders stay on this device. They are nudges, not pressure.',
+                        'Local reminders adapt to your progress and pause when today is already recorded.',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -143,8 +156,9 @@ class _NotificationSettingsScreenState
                 const SizedBox(height: AppSpacing.sectionGap),
                 _ReminderTile(
                   icon: Icons.fact_check_outlined,
-                  title: 'Daily check-in',
-                  subtitle: 'Ask once a day at $checkInTime.',
+                  title: 'Progress check-in',
+                  subtitle:
+                      'A personal nudge around $checkInTime if today still needs a record.',
                   value: data.dailyCheckInEnabled,
                   saving: _saving,
                   onChanged: (value) =>
@@ -157,8 +171,8 @@ class _NotificationSettingsScreenState
                 const SizedBox(height: AppSpacing.componentGap),
                 _ReminderTile(
                   icon: Icons.flag_outlined,
-                  title: 'First milestone',
-                  subtitle: 'A small nudge near the 20 minute mark.',
+                  title: 'Health milestones',
+                  subtitle: 'Celebrate the next body-recovery marker.',
                   value: data.milestoneReminderEnabled,
                   saving: _saving,
                   onChanged: (value) =>
@@ -168,7 +182,7 @@ class _NotificationSettingsScreenState
                 _ReminderTile(
                   icon: Icons.nightlight_round,
                   title: 'Streak protection',
-                  subtitle: 'A quiet 11 PM reminder if today is unrecorded.',
+                  subtitle: 'A later evening backup only if today is blank.',
                   value: data.streakProtectionEnabled,
                   saving: _saving,
                   onChanged: (value) =>

@@ -305,9 +305,21 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
     final profile = await ref
         .read(onboardingRepositoryProvider)
         .loadCompletedProfile();
+    final dashboard = ref.read(homeDashboardProvider).value;
     await NotificationService.reschedule(
       preferences: preferences,
       quitDate: profile?.quitDate,
+      snapshot: dashboard == null
+          ? const NotificationScheduleSnapshot()
+          : NotificationScheduleSnapshot(
+              todayCheckedIn: dashboard.todayCheckIn != null,
+              smokeFreeDuration: dashboard.smokeFreeDuration,
+              smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
+              checkInStreakDays: dashboard.checkInStreakDays,
+              cigarettesAvoided: dashboard.cigarettesAvoided,
+              moneySaved: dashboard.moneySaved,
+              currencySymbol: dashboard.currencySymbol,
+            ),
     );
   }
 

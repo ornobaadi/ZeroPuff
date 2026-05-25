@@ -11,6 +11,9 @@ class NotificationService {
   static const int dailyCheckInId = 1001;
   static const int milestoneReminderId = 1002;
   static const int streakProtectionId = 1003;
+  static const int _dailyCheckInBaseId = 1100;
+  static const int _streakProtectionBaseId = 1200;
+  static const int _rollingReminderDays = 7;
 
   static final FlutterLocalNotificationsPlugin plugin =
       FlutterLocalNotificationsPlugin();
@@ -45,26 +48,32 @@ class NotificationService {
   static Future<void> reschedule({
     required NotificationPreferences preferences,
     DateTime? quitDate,
+    NotificationScheduleSnapshot snapshot =
+        const NotificationScheduleSnapshot(),
   }) async {
     await cancelScheduledReminders();
 
     if (preferences.dailyCheckInEnabled) {
-      await _scheduleDaily(
-        id: dailyCheckInId,
+      final copy = _dailyCheckInCopy(snapshot);
+      await _scheduleRollingOneShots(
+        baseId: _dailyCheckInBaseId,
         hour: preferences.dailyCheckInHour,
         minute: preferences.dailyCheckInMinute,
-        title: 'A quiet check-in?',
-        body: 'One honest tap is enough for today.',
+        skipToday: snapshot.todayCheckedIn,
+        title: copy.title,
+        body: copy.body,
       );
     }
 
     if (preferences.streakProtectionEnabled) {
-      await _scheduleDaily(
-        id: streakProtectionId,
-        hour: 23,
-        minute: 0,
-        title: 'Keep today recorded',
-        body: 'Log a check-in or cigarette so your timeline stays honest.',
+      final copy = _streakProtectionCopy(snapshot);
+      await _scheduleRollingOneShots(
+        baseId: _streakProtectionBaseId,
+        hour: 22,
+        minute: 15,
+        skipToday: snapshot.todayCheckedIn,
+        title: copy.title,
+        body: copy.body,
       );
     }
 
@@ -99,40 +108,161 @@ class NotificationService {
     await plugin.cancel(id: dailyCheckInId);
     await plugin.cancel(id: milestoneReminderId);
     await plugin.cancel(id: streakProtectionId);
+    for (var index = 0; index < _rollingReminderDays; index++) {
+      await plugin.cancel(id: _dailyCheckInBaseId + index);
+      await plugin.cancel(id: _streakProtectionBaseId + index);
+    }
   }
 
-  static Future<void> _scheduleDaily({
-    required int id,
+  static Future<void> _scheduleRollingOneShots({
+    required int baseId,
     required int hour,
     required int minute,
+    required bool skipToday,
     required String title,
     required String body,
   }) async {
-    await plugin.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: _nextTime(hour: hour, minute: minute),
-      notificationDetails: _details(),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
+    final firstOffset = _firstReminderOffset(
+      hour: hour,
+      minute: minute,
+      skipToday: skipToday,
     );
+    for (var index = 0; index < _rollingReminderDays; index++) {
+      await plugin.zonedSchedule(
+        id: baseId + index,
+        title: title,
+        body: body,
+        scheduledDate: _timeOnDayOffset(
+          hour: hour,
+          minute: minute,
+          daysFromToday: firstOffset + index,
+        ),
+        notificationDetails: _details(),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    }
   }
 
-  static tz.TZDateTime _nextTime({required int hour, required int minute}) {
+  static int _firstReminderOffset({
+    required int hour,
+    required int minute,
+    required bool skipToday,
+  }) {
+    if (skipToday) {
+      return 1;
+    }
+    final nextToday = _timeOnDayOffset(
+      hour: hour,
+      minute: minute,
+      daysFromToday: 0,
+    );
+    return nextToday.isAfter(tz.TZDateTime.now(tz.local)) ? 0 : 1;
+  }
+
+  static tz.TZDateTime _timeOnDayOffset({
+    required int hour,
+    required int minute,
+    required int daysFromToday,
+  }) {
     final now = tz.TZDateTime.now(tz.local);
-    var scheduled = tz.TZDateTime(
+    return tz.TZDateTime(
       tz.local,
       now.year,
       now.month,
       now.day,
       hour,
       minute,
-    );
-    if (!scheduled.isAfter(now)) {
-      scheduled = scheduled.add(const Duration(days: 1));
+    ).add(Duration(days: daysFromToday));
+  }
+
+  static _NotificationCopy _dailyCheckInCopy(
+    NotificationScheduleSnapshot snapshot,
+  ) {
+    final progress = _progressLine(snapshot);
+    if (snapshot.smokeFreeStreakDays >= 2) {
+      return _NotificationCopy(
+        title: 'Protect your ${snapshot.smokeFreeStreakDays}-day streak',
+        body: '$progress One quick check-in keeps the record yours.',
+      );
     }
-    return scheduled;
+    if (snapshot.moneySaved >= 1) {
+      return _NotificationCopy(
+        title: 'You have saved ${_money(snapshot)} so far',
+        body:
+            'Log today before the day gets noisy. Your progress is adding up.',
+      );
+    }
+    if (snapshot.cigarettesAvoided > 0) {
+      return _NotificationCopy(
+        title: '${snapshot.cigarettesAvoided} cigarettes not smoked',
+        body: 'Mark today honestly and keep that number moving.',
+      );
+    }
+    return const _NotificationCopy(
+      title: 'One honest check-in',
+      body: 'No judgement. Just mark what happened and keep going.',
+    );
+  }
+
+  static _NotificationCopy _streakProtectionCopy(
+    NotificationScheduleSnapshot snapshot,
+  ) {
+    if (snapshot.smokeFreeStreakDays >= 2) {
+      return _NotificationCopy(
+        title: 'Do not leave today blank',
+        body:
+            'Your ${snapshot.smokeFreeStreakDays}-day streak deserves one honest tap before bed.',
+      );
+    }
+    if (snapshot.moneySaved >= 1) {
+      return _NotificationCopy(
+        title: 'Close the day with proof',
+        body:
+            'You have kept ${_money(snapshot)} away from cigarettes. Record today in ZeroPuff.',
+      );
+    }
+    return const _NotificationCopy(
+      title: 'Close today gently',
+      body: 'A check-in or log keeps your timeline honest. That is enough.',
+    );
+  }
+
+  static String _progressLine(NotificationScheduleSnapshot snapshot) {
+    if (snapshot.moneySaved >= 1) {
+      return '${_money(snapshot)} saved.';
+    }
+    if (snapshot.cigarettesAvoided > 0) {
+      return '${snapshot.cigarettesAvoided} cigarettes avoided.';
+    }
+    final smokeFree = _durationLabel(snapshot.smokeFreeDuration);
+    if (smokeFree != null) {
+      return '$smokeFree smoke-free.';
+    }
+    return 'Your progress still counts.';
+  }
+
+  static String _money(NotificationScheduleSnapshot snapshot) {
+    final amount = snapshot.moneySaved >= 100
+        ? snapshot.moneySaved.toStringAsFixed(0)
+        : snapshot.moneySaved.toStringAsFixed(
+            snapshot.moneySaved.truncateToDouble() == snapshot.moneySaved
+                ? 0
+                : 2,
+          );
+    return '${snapshot.currencySymbol}$amount';
+  }
+
+  static String? _durationLabel(Duration duration) {
+    if (duration.inDays >= 1) {
+      return '${duration.inDays} ${duration.inDays == 1 ? 'day' : 'days'}';
+    }
+    if (duration.inHours >= 1) {
+      return '${duration.inHours} ${duration.inHours == 1 ? 'hour' : 'hours'}';
+    }
+    if (duration.inMinutes >= 20) {
+      return '${duration.inMinutes} minutes';
+    }
+    return null;
   }
 
   static NotificationDetails _details() {
@@ -146,4 +276,31 @@ class NotificationService {
     const ios = DarwinNotificationDetails();
     return const NotificationDetails(android: android, iOS: ios);
   }
+}
+
+class NotificationScheduleSnapshot {
+  const NotificationScheduleSnapshot({
+    this.todayCheckedIn = false,
+    this.smokeFreeDuration = Duration.zero,
+    this.smokeFreeStreakDays = 0,
+    this.checkInStreakDays = 0,
+    this.cigarettesAvoided = 0,
+    this.moneySaved = 0,
+    this.currencySymbol = r'$',
+  });
+
+  final bool todayCheckedIn;
+  final Duration smokeFreeDuration;
+  final int smokeFreeStreakDays;
+  final int checkInStreakDays;
+  final int cigarettesAvoided;
+  final double moneySaved;
+  final String currencySymbol;
+}
+
+class _NotificationCopy {
+  const _NotificationCopy({required this.title, required this.body});
+
+  final String title;
+  final String body;
 }

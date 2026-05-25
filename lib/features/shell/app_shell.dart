@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../../repositories/app_settings_repository.dart';
+import '../../services/haptics/haptic_service.dart';
 import '../../services/sync/sync_service.dart';
 
 class AppShell extends ConsumerStatefulWidget {
@@ -17,6 +20,8 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  bool _showingExitDialog = false;
+
   @override
   void initState() {
     super.initState();
@@ -34,26 +39,106 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      body: Stack(
-        children: [
-          Positioned.fill(child: widget.navigationShell),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _FloatingNavigationBar(
-              selectedIndex: widget.navigationShell.currentIndex,
-              onDestinationSelected: (index) {
-                widget.navigationShell.goBranch(
-                  index,
-                  initialLocation: index == widget.navigationShell.currentIndex,
-                );
-              },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop || _showingExitDialog) {
+          return;
+        }
+        _showingExitDialog = true;
+        HapticService.medium(
+          enabled: ref.read(hapticsEnabledControllerProvider),
+        );
+        final shouldClose = await _confirmCloseApp();
+        _showingExitDialog = false;
+        if (shouldClose && mounted) {
+          await HapticService.medium(
+            enabled: ref.read(hapticsEnabledControllerProvider),
+          );
+          await SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        extendBody: true,
+        body: Stack(
+          children: [
+            Positioned.fill(child: widget.navigationShell),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _FloatingNavigationBar(
+                selectedIndex: widget.navigationShell.currentIndex,
+                onDestinationSelected: (index) {
+                  HapticService.selection(
+                    enabled: ref.read(hapticsEnabledControllerProvider),
+                  );
+                  widget.navigationShell.goBranch(
+                    index,
+                    initialLocation:
+                        index == widget.navigationShell.currentIndex,
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _confirmCloseApp() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => const _CloseAppDialog(),
+    );
+    return confirmed ?? false;
+  }
+}
+
+class _CloseAppDialog extends StatelessWidget {
+  const _CloseAppDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Dialog(
+      insetPadding: const EdgeInsets.all(AppSpacing.pagePadding),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Close ZeroPuff?', style: theme.textTheme.headlineSmall),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Your progress is safe. Close the app only if you are done for now.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Stay'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Close'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

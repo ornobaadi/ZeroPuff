@@ -7,7 +7,10 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/daily_checkin_repository.dart';
+import '../../../repositories/notification_preferences_repository.dart';
+import '../../../repositories/onboarding_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
+import '../../../services/notifications/notification_service.dart';
 
 const _moods = [
   _MoodOption(
@@ -106,6 +109,7 @@ class _DailyCheckInScreenState extends ConsumerState<DailyCheckInScreen> {
           );
       ref.invalidate(todayCheckInProvider);
       ref.invalidate(recentCheckInsProvider);
+      await _rescheduleNotificationsAfterCheckIn();
       if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -229,6 +233,31 @@ class _DailyCheckInScreenState extends ConsumerState<DailyCheckInScreen> {
     return _moods.firstWhere(
       (mood) => mood.value == _mood,
       orElse: () => _moods[2],
+    );
+  }
+
+  Future<void> _rescheduleNotificationsAfterCheckIn() async {
+    final preferences = await ref
+        .read(notificationPreferencesRepositoryProvider)
+        .load();
+    final profile = await ref
+        .read(onboardingRepositoryProvider)
+        .loadCompletedProfile();
+    final dashboard = ref.read(homeDashboardProvider).value;
+    await NotificationService.reschedule(
+      preferences: preferences,
+      quitDate: profile?.quitDate,
+      snapshot: dashboard == null
+          ? const NotificationScheduleSnapshot(todayCheckedIn: true)
+          : NotificationScheduleSnapshot(
+              todayCheckedIn: true,
+              smokeFreeDuration: dashboard.smokeFreeDuration,
+              smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
+              checkInStreakDays: dashboard.checkInStreakDays,
+              cigarettesAvoided: dashboard.cigarettesAvoided,
+              moneySaved: dashboard.moneySaved,
+              currencySymbol: dashboard.currencySymbol,
+            ),
     );
   }
 }

@@ -69,8 +69,8 @@ class NotificationPreferencesRepository {
 class NotificationPreferences {
   const NotificationPreferences({
     this.dailyCheckInEnabled = true,
-    this.dailyCheckInHour = 21,
-    this.dailyCheckInMinute = 0,
+    this.dailyCheckInHour = 20,
+    this.dailyCheckInMinute = 30,
     this.milestoneReminderEnabled = true,
     this.streakProtectionEnabled = true,
   });

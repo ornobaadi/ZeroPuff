@@ -9,6 +9,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../repositories/achievement_repository.dart';
+import '../../../repositories/app_settings_repository.dart';
+import '../../../services/haptics/haptic_service.dart';
 
 final unlockedAchievementsProvider = FutureProvider<Set<String>>((ref) async {
   final data = ref.watch(homeDashboardProvider).value;
@@ -37,6 +39,12 @@ class ProgressScreen extends ConsumerWidget {
     final recentCheckIns = ref.watch(recentCheckInsProvider);
     final recentCravings = ref.watch(recentCravingsProvider);
     final unlockedAchievements = ref.watch(unlockedAchievementsProvider);
+    final hapticsEnabled = ref.watch(hapticsEnabledControllerProvider);
+
+    void openDetail(String route) {
+      HapticService.selection(enabled: hapticsEnabled);
+      context.push(route);
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Progress')),
@@ -72,13 +80,13 @@ class ProgressScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.sectionGap),
                 _HealthImprovementsCard(
                   smokeFreeDuration: data.smokeFreeDuration,
-                  onTap: () => context.push(AppRoutes.healthDetails),
+                  onTap: () => openDetail(AppRoutes.healthDetails),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 _AchievementShowcaseCard(
                   achievements: ProgressCalculations.achievements,
                   unlocked: unlocked,
-                  onTap: () => context.push(AppRoutes.achievementsDetails),
+                  onTap: () => openDetail(AppRoutes.achievementsDetails),
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
                 Text('Quick stats', style: theme.textTheme.titleLarge),
@@ -91,7 +99,7 @@ class ProgressScreen extends ConsumerWidget {
                         value: '${data.smokeFreeDays}d',
                         icon: Icons.air_rounded,
                         color: AppColors.primary,
-                        onTap: () => context.push(AppRoutes.smokeFreeDetails),
+                        onTap: () => openDetail(AppRoutes.smokeFreeDetails),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -102,7 +110,7 @@ class ProgressScreen extends ConsumerWidget {
                             '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
                         icon: Icons.savings_rounded,
                         color: AppColors.accentMoney,
-                        onTap: () => context.push(AppRoutes.savingsDetails),
+                        onTap: () => openDetail(AppRoutes.savingsDetails),
                       ),
                     ),
                   ],
@@ -116,7 +124,7 @@ class ProgressScreen extends ConsumerWidget {
                         value: '${data.cigarettesAvoided}',
                         icon: Icons.smoke_free_rounded,
                         color: AppColors.accentStreak,
-                        onTap: () => context.push(AppRoutes.avoidedDetails),
+                        onTap: () => openDetail(AppRoutes.avoidedDetails),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -126,7 +134,7 @@ class ProgressScreen extends ConsumerWidget {
                         value: '${recent.length}',
                         icon: Icons.fact_check_rounded,
                         color: AppColors.accentCraving,
-                        onTap: () => context.push(AppRoutes.checkInDetails),
+                        onTap: () => openDetail(AppRoutes.checkInDetails),
                       ),
                     ),
                   ],
@@ -134,7 +142,7 @@ class ProgressScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 _CravingAnalysisCard(
                   cravingCount: cravings.length,
-                  onTap: () => context.push(AppRoutes.cravingAnalysis),
+                  onTap: () => openDetail(AppRoutes.cravingAnalysis),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 _CheckInSummary(

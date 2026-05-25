@@ -133,7 +133,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _SettingsTile(
               icon: Icons.notifications_none_rounded,
               title: 'Reminders',
-              subtitle: 'Daily check-in, milestone, and 11 PM nudges.',
+              subtitle: 'Progress, milestone, and evening backup nudges.',
               status: 'Edit',
               onTap: () => _openRoute(AppRoutes.notificationSettings),
             ),
@@ -357,24 +357,75 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _confirmDeleteAccount(bool isGuest) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete ZeroPuff data?'),
-        content: Text(
-          isGuest
-              ? 'This removes your guest progress, logs, check-ins, and settings from this device.'
-              : 'This removes local data and attempts to delete your synced profile/settings rows. Full auth-user deletion needs the later secure Edge Function.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+      builder: (dialogContext) {
+        final theme = Theme.of(dialogContext);
+        return Dialog(
+          insetPadding: const EdgeInsets.all(AppSpacing.pagePadding),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: AppColors.relapse.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColors.relapse,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Delete ZeroPuff data?',
+                  style: theme.textTheme.headlineSmall,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  isGuest
+                      ? 'This removes your guest progress, logs, check-ins, and settings from this device.'
+                      : 'This removes local data and attempts to delete your synced profile/settings rows. Full auth-user deletion needs the later secure Edge Function.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          _lightHaptic();
+                          Navigator.of(dialogContext).pop(false);
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.relapse,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () {
+                          _mediumHaptic();
+                          Navigator.of(dialogContext).pop(true);
+                        },
+                        child: const Text('Delete'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+        );
+      },
     );
     if (confirmed != true) {
       return;

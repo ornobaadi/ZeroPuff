@@ -26,6 +26,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? _shownCelebrationKey;
+  String? _lastNotificationRefreshKey;
 
   @override
   void initState() {
@@ -40,7 +41,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (mounted) {
           _showCelebrationDialog(event);
           if (event.kind == CelebrationKind.healthMilestone) {
-            _rescheduleMilestoneNotifications();
+            _rescheduleNotifications();
           }
         }
       });
@@ -52,6 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final dashboard = ref.watch(homeDashboardProvider);
     ref.watch(milestoneCelebrationProvider);
+    dashboard.whenData(_queueNotificationRefresh);
 
     return Scaffold(
       appBar: AppBar(
@@ -163,16 +165,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     context.push(route);
   }
 
-  Future<void> _rescheduleMilestoneNotifications() async {
+  void _queueNotificationRefresh(HomeDashboardData data) {
+    final now = DateTime.now();
+    final key =
+        '${now.year}-${now.month}-${now.day}:'
+        '${data.todayCheckIn?.checkInId ?? 'open'}:'
+        '${data.smokeFreeStreakDays}:'
+        '${data.cigarettesAvoided}:'
+        '${data.moneySaved.floor()}';
+    if (_lastNotificationRefreshKey == key) {
+      return;
+    }
+    _lastNotificationRefreshKey = key;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _rescheduleNotifications(data);
+      }
+    });
+  }
+
+  Future<void> _rescheduleNotifications([HomeDashboardData? data]) async {
     final preferences = await ref
         .read(notificationPreferencesRepositoryProvider)
         .load();
     final profile = await ref
         .read(onboardingRepositoryProvider)
         .loadCompletedProfile();
+    final dashboard = data ?? ref.read(homeDashboardProvider).value;
     await NotificationService.reschedule(
       preferences: preferences,
       quitDate: profile?.quitDate,
+      snapshot: dashboard == null
+          ? const NotificationScheduleSnapshot()
+          : NotificationScheduleSnapshot(
+              todayCheckedIn: dashboard.todayCheckIn != null,
+              smokeFreeDuration: dashboard.smokeFreeDuration,
+              smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
+              checkInStreakDays: dashboard.checkInStreakDays,
+              cigarettesAvoided: dashboard.cigarettesAvoided,
+              moneySaved: dashboard.moneySaved,
+              currencySymbol: dashboard.currencySymbol,
+            ),
     );
   }
 }
