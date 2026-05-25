@@ -24,6 +24,25 @@ class LocalProfile {
 }
 
 @collection
+class LocalSmokingWindow {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true, replace: true)
+  late String windowId;
+
+  late String userId;
+  String label = 'usual';
+  int startMinutes = 18 * 60;
+  int endMinutes = 23 * 60;
+  List<int> daysOfWeek = [1, 2, 3, 4, 5, 6, 7];
+  bool enabled = true;
+  bool isPrimary = true;
+  String source = 'onboarding';
+  late DateTime updatedAt;
+  bool synced = false;
+}
+
+@collection
 class OnboardingDraft {
   Id id = Isar.autoIncrement;
 
@@ -35,6 +54,8 @@ class OnboardingDraft {
   String currencySymbol = r'$';
   List<String> triggers = [];
   String? quitReason;
+  int smokeWindowStartMinutes = 18 * 60;
+  int smokeWindowEndMinutes = 23 * 60;
   int currentStep = 0;
   bool completed = false;
   late DateTime updatedAt;
@@ -108,6 +129,7 @@ class NotificationPreference {
   int dailyCheckInMinute = 0;
   bool milestoneReminderEnabled = true;
   bool streakProtectionEnabled = true;
+  bool dangerWindowEnabled = true;
   late DateTime updatedAt;
   bool synced = false;
 }

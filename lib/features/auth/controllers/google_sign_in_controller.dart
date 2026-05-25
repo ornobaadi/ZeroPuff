@@ -51,6 +51,7 @@ class GoogleSignInController {
         currencyCode: localProfile.currencyCode,
         currencySymbol: localProfile.currencySymbol,
         triggers: localProfile.triggers,
+        usualSmokingWindow: localProfile.usualSmokingWindow,
         quitReason: localProfile.quitReason,
       );
 

@@ -66,6 +66,13 @@ class AppInfoScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             _InfoBlock(
+              icon: Icons.verified_outlined,
+              title: 'Stats and sources',
+              body:
+                  'Life won back is estimated from avoided cigarettes using UCL research on life expectancy per cigarette. Health milestones are simplified from public-health guidance including CDC. These are motivation tools, not personal medical predictions.',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _InfoBlock(
               icon: Icons.privacy_tip_outlined,
               title: 'Privacy note',
               body:

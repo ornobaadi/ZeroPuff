@@ -32,7 +32,8 @@ class _NotificationSettingsScreenState
     try {
       if (preferences.dailyCheckInEnabled ||
           preferences.milestoneReminderEnabled ||
-          preferences.streakProtectionEnabled) {
+          preferences.streakProtectionEnabled ||
+          preferences.dangerWindowEnabled) {
         await NotificationService.requestPermission();
       }
 
@@ -46,6 +47,7 @@ class _NotificationSettingsScreenState
       await NotificationService.reschedule(
         preferences: saved,
         quitDate: profile?.quitDate,
+        smokingWindow: profile?.usualSmokingWindow,
         snapshot: dashboard == null
             ? const NotificationScheduleSnapshot()
             : NotificationScheduleSnapshot(
@@ -177,6 +179,17 @@ class _NotificationSettingsScreenState
                   saving: _saving,
                   onChanged: (value) =>
                       _save(data.copyWith(milestoneReminderEnabled: value)),
+                ),
+                const SizedBox(height: AppSpacing.componentGap),
+                _ReminderTile(
+                  icon: Icons.schedule_rounded,
+                  title: 'Danger window',
+                  subtitle:
+                      'A small nudge before your usual smoking window starts.',
+                  value: data.dangerWindowEnabled,
+                  saving: _saving,
+                  onChanged: (value) =>
+                      _save(data.copyWith(dangerWindowEnabled: value)),
                 ),
                 const SizedBox(height: AppSpacing.componentGap),
                 _ReminderTile(

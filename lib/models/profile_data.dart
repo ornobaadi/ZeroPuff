@@ -1,3 +1,5 @@
+import 'smoking_window_data.dart';
+
 class ProfileData {
   const ProfileData({
     required this.userId,
@@ -9,6 +11,7 @@ class ProfileData {
     required this.currencyCode,
     required this.currencySymbol,
     required this.triggers,
+    required this.usualSmokingWindow,
     this.avatarUrl,
     this.quitReason,
   });
@@ -23,5 +26,6 @@ class ProfileData {
   final String currencyCode;
   final String currencySymbol;
   final List<String> triggers;
+  final SmokingWindowData usualSmokingWindow;
   final String? quitReason;
 }

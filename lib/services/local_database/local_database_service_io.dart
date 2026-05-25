@@ -24,6 +24,7 @@ class LocalDatabaseService {
     _instance = await Isar.open(
       [
         LocalProfileSchema,
+        LocalSmokingWindowSchema,
         OnboardingDraftSchema,
         CravingRescueSessionSchema,
         SmokingLogSchema,

@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../models/profile_data.dart';
+import '../../../models/smoking_window_data.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
@@ -48,6 +49,8 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
   int _cigarettesPerDay = 10;
   int _packPrice = 12;
   int _packSize = 20;
+  int _smokeWindowStartMinutes = 18 * 60;
+  int _smokeWindowEndMinutes = 23 * 60;
   _CurrencyOption _currency = _currencyOptions.first;
   final Set<String> _triggers = {'stress'};
   final _reasonController = TextEditingController();
@@ -77,12 +80,19 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
       ..clear()
       ..addAll(profile.triggers.isEmpty ? const ['stress'] : profile.triggers);
     _reasonController.text = profile.quitReason ?? '';
+    _smokeWindowStartMinutes = profile.usualSmokingWindow.startMinutes;
+    _smokeWindowEndMinutes = profile.usualSmokingWindow.endMinutes;
   }
 
   Future<void> _save(ProfileData? existing) async {
     setState(() => _saving = true);
     try {
       final user = ref.read(currentUserProvider);
+      final profileWindow = SmokingWindowData(
+        startMinutes: _smokeWindowStartMinutes,
+        endMinutes: _smokeWindowEndMinutes,
+        source: 'settings',
+      );
       final profile = ProfileData(
         userId:
             existing?.userId ?? user?.id ?? DeviceIdentityService.guestUserId,
@@ -101,6 +111,7 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
         currencyCode: _currency.code,
         currencySymbol: _currency.symbol,
         triggers: _triggers.toList(),
+        usualSmokingWindow: profileWindow,
         quitReason: _reasonController.text.trim().isEmpty
             ? null
             : _reasonController.text.trim(),
@@ -116,6 +127,7 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
       await NotificationService.reschedule(
         preferences: notificationPreferences,
         quitDate: profile.quitDate,
+        smokingWindow: profile.usualSmokingWindow,
         snapshot: _notificationSnapshot(),
       );
       ref.invalidate(homeBaselineProvider);
@@ -163,7 +175,7 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Changing these numbers recalculates Home and Progress immediately.',
+                  'Changing these numbers recalculates cigarettes not smoked, money won back, life won back, projections, and reminders immediately.',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -227,6 +239,39 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
                   min: 1,
                   max: 60,
                   onChanged: (value) => setState(() => _packSize = value),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _SmokingWindowSettingsCard(
+                  startMinutes: _smokeWindowStartMinutes,
+                  endMinutes: _smokeWindowEndMinutes,
+                  onRangeChanged: (start, end) => setState(() {
+                    _smokeWindowStartMinutes = start;
+                    _smokeWindowEndMinutes = end;
+                  }),
+                  onPickStart: () => _pickSmokeWindowTime(
+                    initialMinutes: _smokeWindowStartMinutes,
+                    onPicked: (minutes) => setState(() {
+                      _smokeWindowStartMinutes = minutes;
+                      if (_smokeWindowEndMinutes <= minutes) {
+                        _smokeWindowEndMinutes = (minutes + 60).clamp(
+                          0,
+                          24 * 60,
+                        );
+                      }
+                    }),
+                  ),
+                  onPickEnd: () => _pickSmokeWindowTime(
+                    initialMinutes: _smokeWindowEndMinutes,
+                    onPicked: (minutes) => setState(() {
+                      _smokeWindowEndMinutes = minutes;
+                      if (_smokeWindowStartMinutes >= minutes) {
+                        _smokeWindowStartMinutes = (minutes - 60).clamp(
+                          0,
+                          24 * 60,
+                        );
+                      }
+                    }),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 Text('Triggers', style: theme.textTheme.titleMedium),
@@ -310,6 +355,23 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
     }
   }
 
+  Future<void> _pickSmokeWindowTime({
+    required int initialMinutes,
+    required ValueChanged<int> onPicked,
+  }) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: (initialMinutes ~/ 60).clamp(0, 23),
+        minute: initialMinutes.remainder(60),
+      ),
+    );
+    if (picked == null) {
+      return;
+    }
+    onPicked(picked.hour * 60 + picked.minute);
+  }
+
   void _toggleTrigger(String trigger) {
     setState(() {
       if (_triggers.contains(trigger) && _triggers.length > 1) {
@@ -330,6 +392,132 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
           ? AppColors.textPrimaryDark
           : theme.colorScheme.onSurface,
       fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
+    );
+  }
+}
+
+class _SmokingWindowSettingsCard extends StatelessWidget {
+  const _SmokingWindowSettingsCard({
+    required this.startMinutes,
+    required this.endMinutes,
+    required this.onRangeChanged,
+    required this.onPickStart,
+    required this.onPickEnd,
+  });
+
+  final int startMinutes;
+  final int endMinutes;
+  final void Function(int startMinutes, int endMinutes) onRangeChanged;
+  final VoidCallback onPickStart;
+  final VoidCallback onPickEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final start = startMinutes.clamp(0, 24 * 60);
+    final end = endMinutes.clamp(0, 24 * 60);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.schedule_rounded,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Usual smoke window',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Used for future danger-window reminders and AI context.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: _TimeChoiceButton(
+                  label: 'From',
+                  value: SmokingWindowData.labelForMinutes(start),
+                  onTap: onPickStart,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _TimeChoiceButton(
+                  label: 'To',
+                  value: SmokingWindowData.labelForMinutes(end),
+                  onTap: onPickEnd,
+                ),
+              ),
+            ],
+          ),
+          RangeSlider(
+            values: RangeValues(start.toDouble(), end.toDouble()),
+            min: 0,
+            max: 24 * 60,
+            divisions: 48,
+            onChanged: (next) {
+              onRangeChanged(next.start.round(), next.end.round());
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimeChoiceButton extends StatelessWidget {
+  const _TimeChoiceButton({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return OutlinedButton(
+      onPressed: onTap,
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          FittedBox(child: Text(value)),
+        ],
+      ),
     );
   }
 }
@@ -447,27 +635,80 @@ class _NumberTile extends StatelessWidget {
     final controller = TextEditingController(text: value.toString());
     final next = await showDialog<int>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(label),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(prefixText: prefix),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+      builder: (context) {
+        final theme = Theme.of(context);
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 56),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 340),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(label, style: theme.textTheme.headlineSmall),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: controller,
+                        autofocus: true,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        decoration: InputDecoration(
+                          prefixText: prefix,
+                          filled: true,
+                          helperText: 'Allowed range: $min-$max',
+                        ),
+                        onSubmitted: (_) {
+                          Navigator.of(
+                            context,
+                          ).pop(int.tryParse(controller.text.trim()));
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            Navigator.of(
+                              context,
+                            ).pop(int.tryParse(controller.text.trim()));
+                          },
+                          child: const Text('Save'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop(int.tryParse(controller.text.trim()));
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+        );
+      },
     );
     controller.dispose();
     if (next != null) {

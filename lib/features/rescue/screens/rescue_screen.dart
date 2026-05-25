@@ -309,6 +309,7 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
     await NotificationService.reschedule(
       preferences: preferences,
       quitDate: profile?.quitDate,
+      smokingWindow: profile?.usualSmokingWindow,
       snapshot: dashboard == null
           ? const NotificationScheduleSnapshot()
           : NotificationScheduleSnapshot(

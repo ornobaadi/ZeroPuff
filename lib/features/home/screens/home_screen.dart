@@ -18,7 +18,9 @@ import '../../../services/notifications/notification_service.dart';
 import '../providers/home_dashboard_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.enableNotificationRefresh = true});
+
+  final bool enableNotificationRefresh;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -53,7 +55,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final dashboard = ref.watch(homeDashboardProvider);
     ref.watch(milestoneCelebrationProvider);
-    dashboard.whenData(_queueNotificationRefresh);
+    if (widget.enableNotificationRefresh) {
+      dashboard.whenData(_queueNotificationRefresh);
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -98,29 +102,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onPressed: () => _openRoute(AppRoutes.rescue, stronger: true),
               ),
               const SizedBox(height: AppSpacing.sectionGap),
-              Row(
-                children: [
-                  Expanded(
-                    child: _MetricCard(
-                      label: 'Not smoked',
-                      value: '${data.cigarettesAvoided}',
-                      suffix: 'cigarettes',
-                      color: AppColors.primary,
-                      icon: Icons.smoke_free_rounded,
-                      onTap: () => _openRoute(AppRoutes.avoidedDetails),
-                    ),
+              _StatsGrid(
+                cards: [
+                  _MetricCard(
+                    label: 'Not smoked',
+                    value: '${data.cigarettesAvoided}',
+                    suffix: 'cigarettes',
+                    color: AppColors.primary,
+                    icon: Icons.smoke_free_rounded,
+                    onTap: () => _openRoute(AppRoutes.avoidedDetails),
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: _MetricCard(
-                      label: 'Saved',
-                      value:
-                          '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
-                      suffix: 'estimated',
-                      color: AppColors.accentMoney,
-                      icon: Icons.savings_rounded,
-                      onTap: () => _openRoute(AppRoutes.savingsDetails),
-                    ),
+                  _MetricCard(
+                    label: 'Money won back',
+                    value:
+                        '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
+                    suffix: 'estimated',
+                    color: AppColors.accentMoney,
+                    icon: Icons.savings_rounded,
+                    onTap: () => _openRoute(AppRoutes.savingsDetails),
+                  ),
+                  _MetricCard(
+                    label: 'Life won back',
+                    value: data.lifeWonBackLabel,
+                    suffix: 'estimated',
+                    color: AppColors.accentStreak,
+                    icon: Icons.favorite_rounded,
+                    onTap: () => _openRoute(AppRoutes.healthDetails),
+                  ),
+                  _MetricCard(
+                    label: 'Smoke-free streak',
+                    value: '${data.smokeFreeStreakDays}',
+                    suffix: data.smokeFreeStreakDays == 1 ? 'day' : 'days',
+                    color: AppColors.accentCraving,
+                    icon: Icons.local_fire_department_rounded,
+                    onTap: () => _openRoute(AppRoutes.streakDetails),
                   ),
                 ],
               ),
@@ -195,6 +210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await NotificationService.reschedule(
       preferences: preferences,
       quitDate: profile?.quitDate,
+      smokingWindow: profile?.usualSmokingWindow,
       snapshot: dashboard == null
           ? const NotificationScheduleSnapshot()
           : NotificationScheduleSnapshot(
@@ -206,6 +222,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               moneySaved: dashboard.moneySaved,
               currencySymbol: dashboard.currencySymbol,
             ),
+    );
+  }
+}
+
+class _StatsGrid extends StatelessWidget {
+  const _StatsGrid({required this.cards});
+
+  final List<Widget> cards;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, _) {
+        final children = <Widget>[];
+        for (var index = 0; index < cards.length; index += 2) {
+          children.add(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: cards[index]),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: index + 1 < cards.length
+                      ? cards[index + 1]
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          );
+          if (index + 2 < cards.length) {
+            children.add(const SizedBox(height: AppSpacing.md));
+          }
+        }
+        return Column(children: children);
+      },
     );
   }
 }

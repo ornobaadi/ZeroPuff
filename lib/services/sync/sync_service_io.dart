@@ -5,6 +5,7 @@ import 'package:isar_community/isar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/local_models.dart';
+import '../../models/smoking_window_data.dart';
 import '../../repositories/sync_queue_repository_io.dart';
 import '../local_database/local_database_service_io.dart';
 import '../supabase/supabase_service.dart';
@@ -116,6 +117,12 @@ class SyncService {
         .select()
         .eq('user_id', user.id)
         .limit(1);
+    final smokingWindowRows = await client
+        .from('user_smoking_windows')
+        .select()
+        .eq('user_id', user.id)
+        .order('is_primary', ascending: false)
+        .limit(10);
 
     final profiles = _rows(profileRows);
     final cravings = _rows(cravingRows);
@@ -123,6 +130,7 @@ class SyncService {
     final checkIns = _rows(checkInRows);
     final achievements = _rows(achievementRows);
     final preferences = _rows(preferenceRows);
+    final smokingWindows = _rows(smokingWindowRows);
 
     await _database.writeTxn(() async {
       if (replaceLocal) {
@@ -132,6 +140,7 @@ class SyncService {
         await _database.dailyCheckIns.clear();
         await _database.achievementStates.clear();
         await _database.notificationPreferences.clear();
+        await _database.localSmokingWindows.clear();
       }
 
       for (final row in profiles) {
@@ -229,9 +238,37 @@ class SyncService {
           ..milestoneReminderEnabled =
               row['milestone_reminder_enabled'] != false
           ..streakProtectionEnabled = row['streak_protection_enabled'] != false
+          ..dangerWindowEnabled = row['danger_window_enabled'] != false
           ..updatedAt = _dateTime(row['updated_at']) ?? DateTime.now()
           ..synced = true;
         await _database.notificationPreferences.put(preferences);
+      }
+
+      for (final row in smokingWindows) {
+        final startMinutes = SmokingWindowData.minutesFromSql(
+          row['start_time'],
+        );
+        final endMinutes = SmokingWindowData.minutesFromSql(row['end_time']);
+        if (startMinutes == null || endMinutes == null) {
+          continue;
+        }
+        final window = LocalSmokingWindow()
+          ..windowId =
+              row['id']?.toString() ?? SmokingWindowData.primaryWindowId
+          ..userId = user.id
+          ..label = row['label']?.toString() ?? 'usual'
+          ..startMinutes = startMinutes
+          ..endMinutes = endMinutes
+          ..daysOfWeek = _intList(row['days_of_week'])
+          ..enabled = row['enabled'] != false
+          ..isPrimary = row['is_primary'] != false
+          ..source = row['source']?.toString() ?? 'onboarding'
+          ..updatedAt = _dateTime(row['updated_at']) ?? DateTime.now()
+          ..synced = true;
+        if (window.isPrimary) {
+          window.windowId = SmokingWindowData.primaryWindowId;
+        }
+        await _database.localSmokingWindows.putByWindowId(window);
       }
     });
 
@@ -242,6 +279,7 @@ class SyncService {
       dailyCheckIns: checkIns.length,
       achievements: achievements.length,
       notificationPreferences: preferences.length,
+      smokingWindows: smokingWindows.length,
     );
   }
 
@@ -263,6 +301,8 @@ class SyncService {
         await _syncAchievement(client, userId, item.entityId);
       case 'notification_preferences':
         await _syncNotificationPreferences(client, userId);
+      case 'smoking_window':
+        await _syncSmokingWindow(client, userId, item.entityId);
       case 'app_event':
         await _syncAppEvent(client, userId, item.entityId);
       default:
@@ -433,12 +473,67 @@ class SyncService {
           '${_two(preferences.dailyCheckInHour)}:${_two(preferences.dailyCheckInMinute)}:00',
       'milestone_reminder_enabled': preferences.milestoneReminderEnabled,
       'streak_protection_enabled': preferences.streakProtectionEnabled,
+      'danger_window_enabled': preferences.dangerWindowEnabled,
       'updated_at': preferences.updatedAt.toUtc().toIso8601String(),
     });
 
     preferences.synced = true;
     await _database.writeTxn(
       () => _database.notificationPreferences.put(preferences),
+    );
+  }
+
+  Future<void> _syncSmokingWindow(
+    SupabaseClient client,
+    String userId,
+    String windowId,
+  ) async {
+    final window = await _database.localSmokingWindows
+        .filter()
+        .windowIdEqualTo(windowId)
+        .findFirst();
+    if (window == null) {
+      return;
+    }
+
+    final existing = await client
+        .from('user_smoking_windows')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_primary', true)
+        .maybeSingle();
+    final payload = {
+      'user_id': userId,
+      'label': window.label,
+      'start_time': SmokingWindowData(
+        startMinutes: window.startMinutes,
+        endMinutes: window.endMinutes,
+      ).startTimeSql,
+      'end_time': SmokingWindowData(
+        startMinutes: window.startMinutes,
+        endMinutes: window.endMinutes,
+      ).endTimeSql,
+      'days_of_week': window.daysOfWeek,
+      'enabled': window.enabled,
+      'is_primary': true,
+      'source': window.source,
+      'updated_at': window.updatedAt.toUtc().toIso8601String(),
+    };
+    final remoteId = existing?['id']?.toString();
+    if (remoteId == null) {
+      await client.from('user_smoking_windows').insert(payload);
+    } else {
+      await client
+          .from('user_smoking_windows')
+          .update(payload)
+          .eq('id', remoteId);
+    }
+
+    window
+      ..userId = userId
+      ..synced = true;
+    await _database.writeTxn(
+      () => _database.localSmokingWindows.putByWindowId(window),
     );
   }
 
@@ -515,6 +610,13 @@ class SyncService {
     }
     return const [];
   }
+
+  List<int> _intList(Object? value) {
+    if (value is List) {
+      return value.map(_int).where((item) => item >= 1 && item <= 7).toList();
+    }
+    return const [1, 2, 3, 4, 5, 6, 7];
+  }
 }
 
 class SyncRunResult {
@@ -541,6 +643,7 @@ class RemoteRestoreResult {
     this.dailyCheckIns = 0,
     this.achievements = 0,
     this.notificationPreferences = 0,
+    this.smokingWindows = 0,
     this.skipped = false,
   });
 
@@ -550,6 +653,7 @@ class RemoteRestoreResult {
   final int dailyCheckIns;
   final int achievements;
   final int notificationPreferences;
+  final int smokingWindows;
   final bool skipped;
 
   int get restoredRows =>
@@ -558,5 +662,6 @@ class RemoteRestoreResult {
       smokingLogs +
       dailyCheckIns +
       achievements +
-      notificationPreferences;
+      notificationPreferences +
+      smokingWindows;
 }

@@ -54,6 +54,13 @@ class SmokeFreeDetailsScreen extends ConsumerWidget {
             context.push(AppRoutes.healthDetails);
           },
         ),
+        _InfoCard(
+          title: 'Life won back',
+          body:
+              'Because of those avoided cigarettes, you have protected about ${data.lifeWonBackLabel} of life. This is an estimate, not a medical prediction.',
+          icon: Icons.favorite_rounded,
+          color: AppColors.primary,
+        ),
       ],
     );
   }
@@ -66,7 +73,7 @@ class SavingsDetailsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(homeDashboardProvider);
     return _DetailScaffold(
-      title: 'Money saved',
+      title: 'Money won back',
       dashboard: dashboard,
       builder: (context, data) {
         final dailyBaseline = data.packSize <= 0
@@ -90,7 +97,7 @@ class SavingsDetailsScreen extends ConsumerWidget {
           _HeroNumber(
             value:
                 '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
-            label: 'kept from cigarettes',
+            label: 'won back from cigarettes',
             color: AppColors.accentMoney,
             icon: Icons.savings_rounded,
           ),
@@ -176,6 +183,13 @@ class AvoidedDetailsScreen extends ConsumerWidget {
               'This is an estimate based on your old daily baseline and how long you have been smoke-free.',
           icon: Icons.insights_rounded,
           color: AppColors.accentStreak,
+        ),
+        _InfoCard(
+          title: 'Life won back',
+          body:
+              'Those avoided cigarettes equal about ${data.lifeWonBackLabel} of estimated healthy time protected.',
+          icon: Icons.favorite_rounded,
+          color: AppColors.primary,
         ),
         _InfoCard(
           title: 'Next action',
@@ -338,6 +352,12 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
               );
 
         return [
+          _HeroNumber(
+            value: data.lifeWonBackLabel,
+            label: 'estimated healthy time protected',
+            color: AppColors.primary,
+            icon: Icons.favorite_rounded,
+          ),
           _HealthHero(
             current: current,
             next: next,
@@ -380,9 +400,16 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
             color: AppColors.accentStreak,
           ),
           _InfoCard(
+            title: 'Life won back estimate',
+            body:
+                'ZeroPuff estimates life won back as avoided cigarettes x 20 minutes. This is a population-level estimate, not a medical prediction.',
+            icon: Icons.calculate_rounded,
+            color: AppColors.accentMoney,
+          ),
+          _InfoCard(
             title: 'What this is based on',
             body:
-                'This timeline follows public-health guidance from CDC, American Cancer Society, and American Heart Association, simplified for daily motivation.',
+                'The life estimate follows UCL research on life expectancy per cigarette. Health benefits follow public-health guidance from CDC and related clinical sources.',
             icon: Icons.verified_outlined,
             color: AppColors.primary,
           ),
@@ -437,7 +464,7 @@ class _SavingsTargetCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   target == null
-                      ? 'Savings legend'
+                      ? 'Money win legend'
                       : 'Next money win: $currencySymbol${target.toStringAsFixed(0)}',
                   style: theme.textTheme.titleMedium,
                 ),
@@ -457,7 +484,7 @@ class _SavingsTargetCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             target == null
-                ? 'You have crossed every savings target we track for now.'
+                ? 'You have crossed every money target we track for now.'
                 : daysToTarget == null
                 ? 'Keep logging and this target will sharpen.'
                 : daysToTarget == 1
@@ -503,7 +530,10 @@ class _SavingsProjectionCard extends StatelessWidget {
                 color: AppColors.accentMoney,
               ),
               const SizedBox(width: AppSpacing.sm),
-              Text('Projected savings', style: theme.textTheme.titleMedium),
+              Text(
+                'Projected money won back',
+                style: theme.textTheme.titleMedium,
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),

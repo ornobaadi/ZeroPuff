@@ -2386,6 +2386,1768 @@ extension LocalProfileQueryProperty
 // coverage:ignore-file
 // ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
 
+extension GetLocalSmokingWindowCollection on Isar {
+  IsarCollection<LocalSmokingWindow> get localSmokingWindows =>
+      this.collection();
+}
+
+const LocalSmokingWindowSchema = CollectionSchema(
+  name: r'LocalSmokingWindow',
+  id: -8856052144802550899,
+  properties: {
+    r'daysOfWeek': PropertySchema(
+      id: 0,
+      name: r'daysOfWeek',
+      type: IsarType.longList,
+    ),
+    r'enabled': PropertySchema(id: 1, name: r'enabled', type: IsarType.bool),
+    r'endMinutes': PropertySchema(
+      id: 2,
+      name: r'endMinutes',
+      type: IsarType.long,
+    ),
+    r'isPrimary': PropertySchema(
+      id: 3,
+      name: r'isPrimary',
+      type: IsarType.bool,
+    ),
+    r'label': PropertySchema(id: 4, name: r'label', type: IsarType.string),
+    r'source': PropertySchema(id: 5, name: r'source', type: IsarType.string),
+    r'startMinutes': PropertySchema(
+      id: 6,
+      name: r'startMinutes',
+      type: IsarType.long,
+    ),
+    r'synced': PropertySchema(id: 7, name: r'synced', type: IsarType.bool),
+    r'updatedAt': PropertySchema(
+      id: 8,
+      name: r'updatedAt',
+      type: IsarType.dateTime,
+    ),
+    r'userId': PropertySchema(id: 9, name: r'userId', type: IsarType.string),
+    r'windowId': PropertySchema(
+      id: 10,
+      name: r'windowId',
+      type: IsarType.string,
+    ),
+  },
+
+  estimateSize: _localSmokingWindowEstimateSize,
+  serialize: _localSmokingWindowSerialize,
+  deserialize: _localSmokingWindowDeserialize,
+  deserializeProp: _localSmokingWindowDeserializeProp,
+  idName: r'id',
+  indexes: {
+    r'windowId': IndexSchema(
+      id: -2469326706667829164,
+      name: r'windowId',
+      unique: true,
+      replace: true,
+      properties: [
+        IndexPropertySchema(
+          name: r'windowId',
+          type: IndexType.hash,
+          caseSensitive: true,
+        ),
+      ],
+    ),
+  },
+  links: {},
+  embeddedSchemas: {},
+
+  getId: _localSmokingWindowGetId,
+  getLinks: _localSmokingWindowGetLinks,
+  attach: _localSmokingWindowAttach,
+  version: '3.3.2',
+);
+
+int _localSmokingWindowEstimateSize(
+  LocalSmokingWindow object,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  var bytesCount = offsets.last;
+  bytesCount += 3 + object.daysOfWeek.length * 8;
+  bytesCount += 3 + object.label.length * 3;
+  bytesCount += 3 + object.source.length * 3;
+  bytesCount += 3 + object.userId.length * 3;
+  bytesCount += 3 + object.windowId.length * 3;
+  return bytesCount;
+}
+
+void _localSmokingWindowSerialize(
+  LocalSmokingWindow object,
+  IsarWriter writer,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  writer.writeLongList(offsets[0], object.daysOfWeek);
+  writer.writeBool(offsets[1], object.enabled);
+  writer.writeLong(offsets[2], object.endMinutes);
+  writer.writeBool(offsets[3], object.isPrimary);
+  writer.writeString(offsets[4], object.label);
+  writer.writeString(offsets[5], object.source);
+  writer.writeLong(offsets[6], object.startMinutes);
+  writer.writeBool(offsets[7], object.synced);
+  writer.writeDateTime(offsets[8], object.updatedAt);
+  writer.writeString(offsets[9], object.userId);
+  writer.writeString(offsets[10], object.windowId);
+}
+
+LocalSmokingWindow _localSmokingWindowDeserialize(
+  Id id,
+  IsarReader reader,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  final object = LocalSmokingWindow();
+  object.daysOfWeek = reader.readLongList(offsets[0]) ?? [];
+  object.enabled = reader.readBool(offsets[1]);
+  object.endMinutes = reader.readLong(offsets[2]);
+  object.id = id;
+  object.isPrimary = reader.readBool(offsets[3]);
+  object.label = reader.readString(offsets[4]);
+  object.source = reader.readString(offsets[5]);
+  object.startMinutes = reader.readLong(offsets[6]);
+  object.synced = reader.readBool(offsets[7]);
+  object.updatedAt = reader.readDateTime(offsets[8]);
+  object.userId = reader.readString(offsets[9]);
+  object.windowId = reader.readString(offsets[10]);
+  return object;
+}
+
+P _localSmokingWindowDeserializeProp<P>(
+  IsarReader reader,
+  int propertyId,
+  int offset,
+  Map<Type, List<int>> allOffsets,
+) {
+  switch (propertyId) {
+    case 0:
+      return (reader.readLongList(offset) ?? []) as P;
+    case 1:
+      return (reader.readBool(offset)) as P;
+    case 2:
+      return (reader.readLong(offset)) as P;
+    case 3:
+      return (reader.readBool(offset)) as P;
+    case 4:
+      return (reader.readString(offset)) as P;
+    case 5:
+      return (reader.readString(offset)) as P;
+    case 6:
+      return (reader.readLong(offset)) as P;
+    case 7:
+      return (reader.readBool(offset)) as P;
+    case 8:
+      return (reader.readDateTime(offset)) as P;
+    case 9:
+      return (reader.readString(offset)) as P;
+    case 10:
+      return (reader.readString(offset)) as P;
+    default:
+      throw IsarError('Unknown property with id $propertyId');
+  }
+}
+
+Id _localSmokingWindowGetId(LocalSmokingWindow object) {
+  return object.id;
+}
+
+List<IsarLinkBase<dynamic>> _localSmokingWindowGetLinks(
+  LocalSmokingWindow object,
+) {
+  return [];
+}
+
+void _localSmokingWindowAttach(
+  IsarCollection<dynamic> col,
+  Id id,
+  LocalSmokingWindow object,
+) {
+  object.id = id;
+}
+
+extension LocalSmokingWindowByIndex on IsarCollection<LocalSmokingWindow> {
+  Future<LocalSmokingWindow?> getByWindowId(String windowId) {
+    return getByIndex(r'windowId', [windowId]);
+  }
+
+  LocalSmokingWindow? getByWindowIdSync(String windowId) {
+    return getByIndexSync(r'windowId', [windowId]);
+  }
+
+  Future<bool> deleteByWindowId(String windowId) {
+    return deleteByIndex(r'windowId', [windowId]);
+  }
+
+  bool deleteByWindowIdSync(String windowId) {
+    return deleteByIndexSync(r'windowId', [windowId]);
+  }
+
+  Future<List<LocalSmokingWindow?>> getAllByWindowId(
+    List<String> windowIdValues,
+  ) {
+    final values = windowIdValues.map((e) => [e]).toList();
+    return getAllByIndex(r'windowId', values);
+  }
+
+  List<LocalSmokingWindow?> getAllByWindowIdSync(List<String> windowIdValues) {
+    final values = windowIdValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'windowId', values);
+  }
+
+  Future<int> deleteAllByWindowId(List<String> windowIdValues) {
+    final values = windowIdValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'windowId', values);
+  }
+
+  int deleteAllByWindowIdSync(List<String> windowIdValues) {
+    final values = windowIdValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'windowId', values);
+  }
+
+  Future<Id> putByWindowId(LocalSmokingWindow object) {
+    return putByIndex(r'windowId', object);
+  }
+
+  Id putByWindowIdSync(LocalSmokingWindow object, {bool saveLinks = true}) {
+    return putByIndexSync(r'windowId', object, saveLinks: saveLinks);
+  }
+
+  Future<List<Id>> putAllByWindowId(List<LocalSmokingWindow> objects) {
+    return putAllByIndex(r'windowId', objects);
+  }
+
+  List<Id> putAllByWindowIdSync(
+    List<LocalSmokingWindow> objects, {
+    bool saveLinks = true,
+  }) {
+    return putAllByIndexSync(r'windowId', objects, saveLinks: saveLinks);
+  }
+}
+
+extension LocalSmokingWindowQueryWhereSort
+    on QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QWhere> {
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterWhere> anyId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(const IdWhereClause.any());
+    });
+  }
+}
+
+extension LocalSmokingWindowQueryWhere
+    on QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QWhereClause> {
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterWhereClause>
+  idEqualTo(Id id) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterWhereClause>
+  idNotEqualTo(Id id) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            )
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            )
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterWhereClause>
+  idGreaterThan(Id id, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.greaterThan(lower: id, includeLower: include),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterWhereClause>
+  idLessThan(Id id, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.lessThan(upper: id, includeUpper: include),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterWhereClause>
+  idBetween(
+    Id lowerId,
+    Id upperId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterWhereClause>
+  windowIdEqualTo(String windowId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'windowId', value: [windowId]),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterWhereClause>
+  windowIdNotEqualTo(String windowId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'windowId',
+                lower: [],
+                upper: [windowId],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'windowId',
+                lower: [windowId],
+                includeLower: false,
+                upper: [],
+              ),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'windowId',
+                lower: [windowId],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'windowId',
+                lower: [],
+                upper: [windowId],
+                includeUpper: false,
+              ),
+            );
+      }
+    });
+  }
+}
+
+extension LocalSmokingWindowQueryFilter
+    on QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QFilterCondition> {
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  daysOfWeekElementEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'daysOfWeek', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  daysOfWeekElementGreaterThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'daysOfWeek',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  daysOfWeekElementLessThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'daysOfWeek',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  daysOfWeekElementBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'daysOfWeek',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  daysOfWeekLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'daysOfWeek', length, true, length, true);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  daysOfWeekIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'daysOfWeek', 0, true, 0, true);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  daysOfWeekIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'daysOfWeek', 0, false, 999999, true);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  daysOfWeekLengthLessThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'daysOfWeek', 0, true, length, include);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  daysOfWeekLengthGreaterThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'daysOfWeek', length, include, 999999, true);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  daysOfWeekLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'daysOfWeek',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  enabledEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'enabled', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  endMinutesEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'endMinutes', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  endMinutesGreaterThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'endMinutes',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  endMinutesLessThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'endMinutes',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  endMinutesBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'endMinutes',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  idEqualTo(Id value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  idGreaterThan(Id value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  idLessThan(Id value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  idBetween(
+    Id lower,
+    Id upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  isPrimaryEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isPrimary', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  labelEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'label',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  labelGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'label',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  labelLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'label',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  labelBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'label',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  labelStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'label',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  labelEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'label',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  labelContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'label',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  labelMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'label',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  labelIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'label', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  labelIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'label', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  sourceEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'source',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  sourceGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'source',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  sourceLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'source',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  sourceBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'source',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  sourceStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'source',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  sourceEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'source',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  sourceContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'source',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  sourceMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'source',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  sourceIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'source', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  sourceIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'source', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  startMinutesEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'startMinutes', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  startMinutesGreaterThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'startMinutes',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  startMinutesLessThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'startMinutes',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  startMinutesBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'startMinutes',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  syncedEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'synced', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  updatedAtEqualTo(DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'updatedAt', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  updatedAtGreaterThan(DateTime value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'updatedAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  updatedAtLessThan(DateTime value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'updatedAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  updatedAtBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'updatedAt',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  userIdEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'userId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  userIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'userId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  userIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'userId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  userIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'userId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  userIdStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'userId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  userIdEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'userId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  userIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'userId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  userIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'userId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  userIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'userId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  userIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'userId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  windowIdEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'windowId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  windowIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'windowId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  windowIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'windowId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  windowIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'windowId',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  windowIdStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'windowId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  windowIdEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'windowId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  windowIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'windowId',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  windowIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'windowId',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  windowIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'windowId', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterFilterCondition>
+  windowIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'windowId', value: ''),
+      );
+    });
+  }
+}
+
+extension LocalSmokingWindowQueryObject
+    on QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QFilterCondition> {}
+
+extension LocalSmokingWindowQueryLinks
+    on QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QFilterCondition> {}
+
+extension LocalSmokingWindowQuerySortBy
+    on QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QSortBy> {
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enabled', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByEndMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'endMinutes', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByEndMinutesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'endMinutes', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByIsPrimary() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPrimary', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByIsPrimaryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPrimary', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByLabel() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'label', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByLabelDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'label', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortBySource() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'source', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortBySourceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'source', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByStartMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'startMinutes', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByStartMinutesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'startMinutes', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortBySynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'synced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortBySyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'synced', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByWindowId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'windowId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  sortByWindowIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'windowId', Sort.desc);
+    });
+  }
+}
+
+extension LocalSmokingWindowQuerySortThenBy
+    on QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QSortThenBy> {
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enabled', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByEndMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'endMinutes', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByEndMinutesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'endMinutes', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenById() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByIsPrimary() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPrimary', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByIsPrimaryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPrimary', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByLabel() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'label', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByLabelDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'label', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenBySource() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'source', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenBySourceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'source', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByStartMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'startMinutes', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByStartMinutesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'startMinutes', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenBySynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'synced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenBySyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'synced', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'userId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByWindowId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'windowId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QAfterSortBy>
+  thenByWindowIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'windowId', Sort.desc);
+    });
+  }
+}
+
+extension LocalSmokingWindowQueryWhereDistinct
+    on QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct> {
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct>
+  distinctByDaysOfWeek() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'daysOfWeek');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct>
+  distinctByEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'enabled');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct>
+  distinctByEndMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'endMinutes');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct>
+  distinctByIsPrimary() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isPrimary');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct>
+  distinctByLabel({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'label', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct>
+  distinctBySource({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'source', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct>
+  distinctByStartMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'startMinutes');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct>
+  distinctBySynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'synced');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct>
+  distinctByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'updatedAt');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct>
+  distinctByUserId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'userId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QDistinct>
+  distinctByWindowId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'windowId', caseSensitive: caseSensitive);
+    });
+  }
+}
+
+extension LocalSmokingWindowQueryProperty
+    on QueryBuilder<LocalSmokingWindow, LocalSmokingWindow, QQueryProperty> {
+  QueryBuilder<LocalSmokingWindow, int, QQueryOperations> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, List<int>, QQueryOperations>
+  daysOfWeekProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'daysOfWeek');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, bool, QQueryOperations> enabledProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'enabled');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, int, QQueryOperations> endMinutesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'endMinutes');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, bool, QQueryOperations> isPrimaryProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isPrimary');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, String, QQueryOperations> labelProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'label');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, String, QQueryOperations> sourceProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'source');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, int, QQueryOperations>
+  startMinutesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'startMinutes');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, bool, QQueryOperations> syncedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'synced');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, DateTime, QQueryOperations>
+  updatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'updatedAt');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, String, QQueryOperations> userIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'userId');
+    });
+  }
+
+  QueryBuilder<LocalSmokingWindow, String, QQueryOperations>
+  windowIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'windowId');
+    });
+  }
+}
+
+// coverage:ignore-file
+// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
+
 extension GetOnboardingDraftCollection on Isar {
   IsarCollection<OnboardingDraft> get onboardingDrafts => this.collection();
 }
@@ -2435,13 +4197,23 @@ const OnboardingDraftSchema = CollectionSchema(
       name: r'quitReason',
       type: IsarType.string,
     ),
-    r'triggers': PropertySchema(
+    r'smokeWindowEndMinutes': PropertySchema(
       id: 9,
+      name: r'smokeWindowEndMinutes',
+      type: IsarType.long,
+    ),
+    r'smokeWindowStartMinutes': PropertySchema(
+      id: 10,
+      name: r'smokeWindowStartMinutes',
+      type: IsarType.long,
+    ),
+    r'triggers': PropertySchema(
+      id: 11,
       name: r'triggers',
       type: IsarType.stringList,
     ),
     r'updatedAt': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
@@ -2501,8 +4273,10 @@ void _onboardingDraftSerialize(
   writer.writeLong(offsets[6], object.packSize);
   writer.writeDateTime(offsets[7], object.quitDate);
   writer.writeString(offsets[8], object.quitReason);
-  writer.writeStringList(offsets[9], object.triggers);
-  writer.writeDateTime(offsets[10], object.updatedAt);
+  writer.writeLong(offsets[9], object.smokeWindowEndMinutes);
+  writer.writeLong(offsets[10], object.smokeWindowStartMinutes);
+  writer.writeStringList(offsets[11], object.triggers);
+  writer.writeDateTime(offsets[12], object.updatedAt);
 }
 
 OnboardingDraft _onboardingDraftDeserialize(
@@ -2522,8 +4296,10 @@ OnboardingDraft _onboardingDraftDeserialize(
   object.packSize = reader.readLongOrNull(offsets[6]);
   object.quitDate = reader.readDateTimeOrNull(offsets[7]);
   object.quitReason = reader.readStringOrNull(offsets[8]);
-  object.triggers = reader.readStringList(offsets[9]) ?? [];
-  object.updatedAt = reader.readDateTime(offsets[10]);
+  object.smokeWindowEndMinutes = reader.readLong(offsets[9]);
+  object.smokeWindowStartMinutes = reader.readLong(offsets[10]);
+  object.triggers = reader.readStringList(offsets[11]) ?? [];
+  object.updatedAt = reader.readDateTime(offsets[12]);
   return object;
 }
 
@@ -2553,8 +4329,12 @@ P _onboardingDraftDeserializeProp<P>(
     case 8:
       return (reader.readStringOrNull(offset)) as P;
     case 9:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readLong(offset)) as P;
     case 10:
+      return (reader.readLong(offset)) as P;
+    case 11:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 12:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -3533,6 +5313,122 @@ extension OnboardingDraftQueryFilter
   }
 
   QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  smokeWindowEndMinutesEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'smokeWindowEndMinutes',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  smokeWindowEndMinutesGreaterThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'smokeWindowEndMinutes',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  smokeWindowEndMinutesLessThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'smokeWindowEndMinutes',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  smokeWindowEndMinutesBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'smokeWindowEndMinutes',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  smokeWindowStartMinutesEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'smokeWindowStartMinutes',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  smokeWindowStartMinutesGreaterThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'smokeWindowStartMinutes',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  smokeWindowStartMinutesLessThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'smokeWindowStartMinutes',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  smokeWindowStartMinutesBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'smokeWindowStartMinutes',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
   triggersElementEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -3917,6 +5813,34 @@ extension OnboardingDraftQuerySortBy
   }
 
   QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterSortBy>
+  sortBySmokeWindowEndMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'smokeWindowEndMinutes', Sort.asc);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterSortBy>
+  sortBySmokeWindowEndMinutesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'smokeWindowEndMinutes', Sort.desc);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterSortBy>
+  sortBySmokeWindowStartMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'smokeWindowStartMinutes', Sort.asc);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterSortBy>
+  sortBySmokeWindowStartMinutesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'smokeWindowStartMinutes', Sort.desc);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterSortBy>
   sortByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
@@ -4072,6 +5996,34 @@ extension OnboardingDraftQuerySortThenBy
   }
 
   QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterSortBy>
+  thenBySmokeWindowEndMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'smokeWindowEndMinutes', Sort.asc);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterSortBy>
+  thenBySmokeWindowEndMinutesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'smokeWindowEndMinutes', Sort.desc);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterSortBy>
+  thenBySmokeWindowStartMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'smokeWindowStartMinutes', Sort.asc);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterSortBy>
+  thenBySmokeWindowStartMinutesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'smokeWindowStartMinutes', Sort.desc);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterSortBy>
   thenByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
@@ -4155,6 +6107,20 @@ extension OnboardingDraftQueryWhereDistinct
   }
 
   QueryBuilder<OnboardingDraft, OnboardingDraft, QDistinct>
+  distinctBySmokeWindowEndMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'smokeWindowEndMinutes');
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QDistinct>
+  distinctBySmokeWindowStartMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'smokeWindowStartMinutes');
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QDistinct>
   distinctByTriggers() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'triggers');
@@ -4233,6 +6199,20 @@ extension OnboardingDraftQueryProperty
   quitReasonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'quitReason');
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, int, QQueryOperations>
+  smokeWindowEndMinutesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'smokeWindowEndMinutes');
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, int, QQueryOperations>
+  smokeWindowStartMinutesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'smokeWindowStartMinutes');
     });
   }
 
@@ -9466,19 +11446,24 @@ const NotificationPreferenceSchema = CollectionSchema(
       name: r'dailyCheckInMinute',
       type: IsarType.long,
     ),
-    r'milestoneReminderEnabled': PropertySchema(
+    r'dangerWindowEnabled': PropertySchema(
       id: 3,
+      name: r'dangerWindowEnabled',
+      type: IsarType.bool,
+    ),
+    r'milestoneReminderEnabled': PropertySchema(
+      id: 4,
       name: r'milestoneReminderEnabled',
       type: IsarType.bool,
     ),
     r'streakProtectionEnabled': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'streakProtectionEnabled',
       type: IsarType.bool,
     ),
-    r'synced': PropertySchema(id: 5, name: r'synced', type: IsarType.bool),
+    r'synced': PropertySchema(id: 6, name: r'synced', type: IsarType.bool),
     r'updatedAt': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
@@ -9517,10 +11502,11 @@ void _notificationPreferenceSerialize(
   writer.writeBool(offsets[0], object.dailyCheckInEnabled);
   writer.writeLong(offsets[1], object.dailyCheckInHour);
   writer.writeLong(offsets[2], object.dailyCheckInMinute);
-  writer.writeBool(offsets[3], object.milestoneReminderEnabled);
-  writer.writeBool(offsets[4], object.streakProtectionEnabled);
-  writer.writeBool(offsets[5], object.synced);
-  writer.writeDateTime(offsets[6], object.updatedAt);
+  writer.writeBool(offsets[3], object.dangerWindowEnabled);
+  writer.writeBool(offsets[4], object.milestoneReminderEnabled);
+  writer.writeBool(offsets[5], object.streakProtectionEnabled);
+  writer.writeBool(offsets[6], object.synced);
+  writer.writeDateTime(offsets[7], object.updatedAt);
 }
 
 NotificationPreference _notificationPreferenceDeserialize(
@@ -9533,11 +11519,12 @@ NotificationPreference _notificationPreferenceDeserialize(
   object.dailyCheckInEnabled = reader.readBool(offsets[0]);
   object.dailyCheckInHour = reader.readLong(offsets[1]);
   object.dailyCheckInMinute = reader.readLong(offsets[2]);
+  object.dangerWindowEnabled = reader.readBool(offsets[3]);
   object.id = id;
-  object.milestoneReminderEnabled = reader.readBool(offsets[3]);
-  object.streakProtectionEnabled = reader.readBool(offsets[4]);
-  object.synced = reader.readBool(offsets[5]);
-  object.updatedAt = reader.readDateTime(offsets[6]);
+  object.milestoneReminderEnabled = reader.readBool(offsets[4]);
+  object.streakProtectionEnabled = reader.readBool(offsets[5]);
+  object.synced = reader.readBool(offsets[6]);
+  object.updatedAt = reader.readDateTime(offsets[7]);
   return object;
 }
 
@@ -9561,6 +11548,8 @@ P _notificationPreferenceDeserializeProp<P>(
     case 5:
       return (reader.readBool(offset)) as P;
     case 6:
+      return (reader.readBool(offset)) as P;
+    case 7:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -9857,6 +11846,19 @@ extension NotificationPreferenceQueryFilter
     NotificationPreference,
     QAfterFilterCondition
   >
+  dangerWindowEnabledEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'dangerWindowEnabled', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<
+    NotificationPreference,
+    NotificationPreference,
+    QAfterFilterCondition
+  >
   idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -10101,6 +12103,20 @@ extension NotificationPreferenceQuerySortBy
   }
 
   QueryBuilder<NotificationPreference, NotificationPreference, QAfterSortBy>
+  sortByDangerWindowEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dangerWindowEnabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NotificationPreference, NotificationPreference, QAfterSortBy>
+  sortByDangerWindowEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dangerWindowEnabled', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NotificationPreference, NotificationPreference, QAfterSortBy>
   sortByMilestoneReminderEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'milestoneReminderEnabled', Sort.asc);
@@ -10207,6 +12223,20 @@ extension NotificationPreferenceQuerySortThenBy
   }
 
   QueryBuilder<NotificationPreference, NotificationPreference, QAfterSortBy>
+  thenByDangerWindowEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dangerWindowEnabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NotificationPreference, NotificationPreference, QAfterSortBy>
+  thenByDangerWindowEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dangerWindowEnabled', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NotificationPreference, NotificationPreference, QAfterSortBy>
   thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -10301,6 +12331,13 @@ extension NotificationPreferenceQueryWhereDistinct
   }
 
   QueryBuilder<NotificationPreference, NotificationPreference, QDistinct>
+  distinctByDangerWindowEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'dangerWindowEnabled');
+    });
+  }
+
+  QueryBuilder<NotificationPreference, NotificationPreference, QDistinct>
   distinctByMilestoneReminderEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'milestoneReminderEnabled');
@@ -10360,6 +12397,13 @@ extension NotificationPreferenceQueryProperty
   dailyCheckInMinuteProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'dailyCheckInMinute');
+    });
+  }
+
+  QueryBuilder<NotificationPreference, bool, QQueryOperations>
+  dangerWindowEnabledProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'dangerWindowEnabled');
     });
   }
 

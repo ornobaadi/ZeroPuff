@@ -105,7 +105,7 @@ class ProgressScreen extends ConsumerWidget {
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: _ProgressStat(
-                        label: 'Saved',
+                        label: 'Money won back',
                         value:
                             '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
                         icon: Icons.savings_rounded,
@@ -135,6 +135,31 @@ class ProgressScreen extends ConsumerWidget {
                         icon: Icons.fact_check_rounded,
                         color: AppColors.accentCraving,
                         onTap: () => openDetail(AppRoutes.checkInDetails),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ProgressStat(
+                        label: 'Life won back',
+                        value: data.lifeWonBackLabel,
+                        icon: Icons.favorite_rounded,
+                        color: AppColors.primary,
+                        onTap: () => openDetail(AppRoutes.healthDetails),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: _ProgressStat(
+                        label: 'Health markers',
+                        value:
+                            '${ProgressCalculations.unlockedHealthMilestoneKeys(data.smokeFreeDuration).length}',
+                        icon: Icons.health_and_safety_rounded,
+                        color: AppColors.accentStreak,
+                        onTap: () => openDetail(AppRoutes.healthDetails),
                       ),
                     ),
                   ],

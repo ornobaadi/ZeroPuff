@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/profile_data.dart';
+import '../models/smoking_window_data.dart';
 import 'notification_preferences_repository.dart';
 import '../services/supabase/supabase_service.dart';
 
@@ -54,6 +55,11 @@ class ProfileRepository {
       'user_id': profile.userId,
       'updated_at': DateTime.now().toIso8601String(),
     });
+
+    await _upsertPrimarySmokingWindow(
+      userId: profile.userId,
+      window: profile.usualSmokingWindow,
+    );
   }
 
   Future<void> upsertNotificationPreferences({
@@ -72,6 +78,7 @@ class ProfileRepository {
           '${_two(preferences.dailyCheckInHour)}:${_two(preferences.dailyCheckInMinute)}:00',
       'milestone_reminder_enabled': preferences.milestoneReminderEnabled,
       'streak_protection_enabled': preferences.streakProtectionEnabled,
+      'danger_window_enabled': preferences.dangerWindowEnabled,
       'updated_at': DateTime.now().toIso8601String(),
     });
   }
@@ -87,6 +94,41 @@ class ProfileRepository {
         .delete()
         .eq('user_id', userId);
     await client.from('profiles').delete().eq('id', userId);
+  }
+
+  Future<void> _upsertPrimarySmokingWindow({
+    required String userId,
+    required SmokingWindowData window,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      return;
+    }
+
+    final existing = await client
+        .from('user_smoking_windows')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_primary', true)
+        .maybeSingle();
+    final payload = {
+      'user_id': userId,
+      'label': window.label,
+      'start_time': window.startTimeSql,
+      'end_time': window.endTimeSql,
+      'days_of_week': window.daysOfWeek,
+      'enabled': window.enabled,
+      'is_primary': true,
+      'source': window.source,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+
+    final id = existing?['id']?.toString();
+    if (id == null) {
+      await client.from('user_smoking_windows').insert(payload);
+    } else {
+      await client.from('user_smoking_windows').update(payload).eq('id', id);
+    }
   }
 
   String _two(int value) => value.toString().padLeft(2, '0');

@@ -1,3 +1,5 @@
+import 'smoking_window_data.dart';
+
 class OnboardingData {
   const OnboardingData({
     this.quitDate,
@@ -8,9 +10,12 @@ class OnboardingData {
     this.currencySymbol = r'$',
     this.triggers = const [],
     this.quitReason,
+    SmokingWindowData? usualSmokingWindow,
     this.currentStep = 0,
     this.completed = false,
-  });
+  }) : usualSmokingWindow =
+           usualSmokingWindow ??
+           const SmokingWindowData(startMinutes: 18 * 60, endMinutes: 23 * 60);
 
   final DateTime? quitDate;
   final int? cigarettesPerDay;
@@ -20,6 +25,7 @@ class OnboardingData {
   final String currencySymbol;
   final List<String> triggers;
   final String? quitReason;
+  final SmokingWindowData usualSmokingWindow;
   final int currentStep;
   final bool completed;
 
@@ -32,6 +38,7 @@ class OnboardingData {
     String? currencySymbol,
     List<String>? triggers,
     String? quitReason,
+    SmokingWindowData? usualSmokingWindow,
     int? currentStep,
     bool? completed,
   }) {
@@ -44,6 +51,7 @@ class OnboardingData {
       currencySymbol: currencySymbol ?? this.currencySymbol,
       triggers: triggers ?? this.triggers,
       quitReason: quitReason ?? this.quitReason,
+      usualSmokingWindow: usualSmokingWindow ?? this.usualSmokingWindow,
       currentStep: currentStep ?? this.currentStep,
       completed: completed ?? this.completed,
     );

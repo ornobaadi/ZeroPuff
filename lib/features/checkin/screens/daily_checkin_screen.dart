@@ -247,6 +247,7 @@ class _DailyCheckInScreenState extends ConsumerState<DailyCheckInScreen> {
     await NotificationService.reschedule(
       preferences: preferences,
       quitDate: profile?.quitDate,
+      smokingWindow: profile?.usualSmokingWindow,
       snapshot: dashboard == null
           ? const NotificationScheduleSnapshot(todayCheckedIn: true)
           : NotificationScheduleSnapshot(

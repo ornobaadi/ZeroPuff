@@ -1,6 +1,8 @@
 class ProgressCalculations {
   const ProgressCalculations._();
 
+  static const minutesWonBackPerCigarette = 20;
+
   static const healthMilestones = [
     ProgressMilestone(
       key: '20_minutes',
@@ -188,6 +190,39 @@ class ProgressCalculations {
       return 0;
     }
     return (cigarettesAvoided / packSize) * packPrice;
+  }
+
+  static int lifeMinutesWonBack(int cigarettesAvoided) {
+    if (cigarettesAvoided <= 0) {
+      return 0;
+    }
+    return cigarettesAvoided * minutesWonBackPerCigarette;
+  }
+
+  static Duration lifeWonBackDuration(int cigarettesAvoided) {
+    return Duration(minutes: lifeMinutesWonBack(cigarettesAvoided));
+  }
+
+  static String lifeWonBackLabel(Duration duration) {
+    if (duration <= Duration.zero) {
+      return '0 min';
+    }
+    if (duration.inDays >= 30) {
+      final months = duration.inDays ~/ 30;
+      return months == 1 ? '1 month' : '$months months';
+    }
+    if (duration.inDays >= 1) {
+      return duration.inDays == 1 ? '1 day' : '${duration.inDays} days';
+    }
+    if (duration.inHours >= 1) {
+      final hours = duration.inHours;
+      final minutes = duration.inMinutes.remainder(60);
+      if (minutes == 0) {
+        return hours == 1 ? '1h' : '${hours}h';
+      }
+      return '${hours}h ${minutes}m';
+    }
+    return duration.inMinutes == 1 ? '1 min' : '${duration.inMinutes} min';
   }
 
   static ProgressMilestone? nextMilestone(Duration smokeFreeDuration) {

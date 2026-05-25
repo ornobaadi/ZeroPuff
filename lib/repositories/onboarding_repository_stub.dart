@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/onboarding_data.dart';
 import '../models/profile_data.dart';
+import '../models/smoking_window_data.dart';
 
 final onboardingRepositoryProvider = Provider<OnboardingRepository>((ref) {
   return OnboardingRepository();
@@ -37,6 +38,9 @@ class OnboardingRepository {
       currencyCode: existing.currencyCode,
       currencySymbol: existing.currencySymbol,
       triggers: existing.triggers,
+      usualSmokingWindow: existing.usualSmokingWindow.copyWith(
+        windowId: SmokingWindowData.primaryWindowId,
+      ),
       quitReason: existing.quitReason,
     );
   }

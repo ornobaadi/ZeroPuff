@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../models/app_event.dart';
 import '../../../models/onboarding_data.dart';
 import '../../../models/profile_data.dart';
+import '../../../models/smoking_window_data.dart';
 import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/auth_repository.dart';
@@ -56,6 +57,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _cigarettesPerDay = 10;
   int _packPrice = 12;
   int _packSize = 20;
+  int _smokeWindowStartMinutes = 18 * 60;
+  int _smokeWindowEndMinutes = 23 * 60;
   _CurrencyOption _currency = _currencyOptions.first;
   final Set<String> _triggers = {'stress'};
   bool _isSaving = false;
@@ -227,6 +230,42 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             setState(() => _packSize = value);
                           },
                         ),
+                        const SizedBox(height: AppSpacing.componentGap),
+                        _SmokingWindowCard(
+                          startMinutes: _smokeWindowStartMinutes,
+                          endMinutes: _smokeWindowEndMinutes,
+                          onRangeChanged: (start, end) {
+                            _selectionHaptic();
+                            setState(() {
+                              _smokeWindowStartMinutes = start;
+                              _smokeWindowEndMinutes = end;
+                            });
+                          },
+                          onPickStart: () => _pickSmokeWindowTime(
+                            initialMinutes: _smokeWindowStartMinutes,
+                            onPicked: (minutes) => setState(() {
+                              _smokeWindowStartMinutes = minutes;
+                              if (_smokeWindowEndMinutes <= minutes) {
+                                _smokeWindowEndMinutes = (minutes + 60).clamp(
+                                  0,
+                                  24 * 60,
+                                );
+                              }
+                            }),
+                          ),
+                          onPickEnd: () => _pickSmokeWindowTime(
+                            initialMinutes: _smokeWindowEndMinutes,
+                            onPicked: (minutes) => setState(() {
+                              _smokeWindowEndMinutes = minutes;
+                              if (_smokeWindowStartMinutes >= minutes) {
+                                _smokeWindowStartMinutes = (minutes - 60).clamp(
+                                  0,
+                                  24 * 60,
+                                );
+                              }
+                            }),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -277,7 +316,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           icon: Icons.savings_outlined,
                           title: 'Progress, not spam',
                           body:
-                              'Reminders can mention money saved, cigarettes avoided, or your current streak.',
+                              'Reminders can mention money won back, cigarettes avoided, or your current streak.',
                         ),
                         SizedBox(height: AppSpacing.md),
                         _NotificationBenefitCard(
@@ -397,6 +436,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       quitReason: _reasonController.text.trim().isEmpty
           ? null
           : _reasonController.text.trim(),
+      usualSmokingWindow: SmokingWindowData(
+        startMinutes: _smokeWindowStartMinutes,
+        endMinutes: _smokeWindowEndMinutes,
+      ),
       currentStep: _step,
       completed: completed,
     );
@@ -423,6 +466,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         currencyCode: _currency.code,
         currencySymbol: _currency.symbol,
         triggers: _triggers.toList(),
+        usualSmokingWindow: SmokingWindowData(
+          startMinutes: _smokeWindowStartMinutes,
+          endMinutes: _smokeWindowEndMinutes,
+        ),
         quitReason: _reasonController.text.trim().isEmpty
             ? null
             : _reasonController.text.trim(),
@@ -472,6 +519,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     await NotificationService.reschedule(
       preferences: preferences,
       quitDate: profile.quitDate,
+      smokingWindow: profile.usualSmokingWindow,
       snapshot: NotificationScheduleSnapshot(
         smokeFreeDuration: smokeFreeDuration,
         currencySymbol: profile.currencySymbol,
@@ -481,6 +529,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   bool _isSameDate(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  Future<void> _pickSmokeWindowTime({
+    required int initialMinutes,
+    required ValueChanged<int> onPicked,
+  }) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: (initialMinutes ~/ 60).clamp(0, 23),
+        minute: initialMinutes.remainder(60),
+      ),
+    );
+    if (picked == null) {
+      return;
+    }
+    _selectionHaptic();
+    onPicked(picked.hour * 60 + picked.minute);
   }
 
   bool get _hapticsEnabled => ref.read(hapticsEnabledControllerProvider);
@@ -649,10 +715,15 @@ class _NotificationBenefitCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.componentGap,
+        AppSpacing.componentGap,
+        AppSpacing.componentGap,
+        AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Row(
@@ -683,6 +754,184 @@ class _NotificationBenefitCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SmokingWindowCard extends StatelessWidget {
+  const _SmokingWindowCard({
+    required this.startMinutes,
+    required this.endMinutes,
+    required this.onRangeChanged,
+    required this.onPickStart,
+    required this.onPickEnd,
+  });
+
+  final int startMinutes;
+  final int endMinutes;
+  final void Function(int startMinutes, int endMinutes) onRangeChanged;
+  final VoidCallback onPickStart;
+  final VoidCallback onPickEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final start = startMinutes.clamp(0, 24 * 60);
+    final end = endMinutes.clamp(0, 24 * 60);
+    final values = RangeValues(start.toDouble(), end.toDouble());
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.componentGap),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.schedule_rounded,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Usual smoke window',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'When do cravings usually show up?',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.componentGap,
+              AppSpacing.sm,
+              AppSpacing.componentGap,
+              AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: isDark ? 0.1 : 0.06),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.14),
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _TimeButton(
+                        label: 'Starts',
+                        value: SmokingWindowData.labelForMinutes(start),
+                        onTap: onPickStart,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xs,
+                      ),
+                      child: Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 18,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Expanded(
+                      child: _TimeButton(
+                        label: 'Ends',
+                        value: SmokingWindowData.labelForMinutes(end),
+                        onTap: onPickEnd,
+                      ),
+                    ),
+                  ],
+                ),
+                RangeSlider(
+                  values: values,
+                  min: 0,
+                  max: 24 * 60,
+                  divisions: 48,
+                  onChanged: (next) {
+                    onRangeChanged(next.start.round(), next.end.round());
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimeButton extends StatelessWidget {
+  const _TimeButton({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: theme.colorScheme.surface.withValues(alpha: 0.84),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
+          child: Column(
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              FittedBox(
+                child: Text(
+                  value,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -767,27 +1016,75 @@ class _NumberStepper extends StatelessWidget {
     final next = await showDialog<int>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(label),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(prefixText: prefix),
+        final theme = Theme.of(context);
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 56),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 340),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(label, style: theme.textTheme.headlineSmall),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: controller,
+                        autofocus: true,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        decoration: InputDecoration(
+                          prefixText: prefix,
+                          filled: true,
+                          helperText: 'Allowed range: $min-$max',
+                        ),
+                        onSubmitted: (_) {
+                          final parsed = int.tryParse(controller.text.trim());
+                          Navigator.of(context).pop(parsed);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            final parsed = int.tryParse(controller.text.trim());
+                            Navigator.of(context).pop(parsed);
+                          },
+                          child: const Text('Save'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final parsed = int.tryParse(controller.text.trim());
-                Navigator.of(context).pop(parsed);
-              },
-              child: const Text('Save'),
-            ),
-          ],
         );
       },
     );

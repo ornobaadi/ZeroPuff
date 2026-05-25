@@ -25,6 +25,7 @@ class NotificationPreferences {
     this.dailyCheckInMinute = 30,
     this.milestoneReminderEnabled = true,
     this.streakProtectionEnabled = true,
+    this.dangerWindowEnabled = true,
   });
 
   final bool dailyCheckInEnabled;
@@ -32,6 +33,7 @@ class NotificationPreferences {
   final int dailyCheckInMinute;
   final bool milestoneReminderEnabled;
   final bool streakProtectionEnabled;
+  final bool dangerWindowEnabled;
 
   NotificationPreferences copyWith({
     bool? dailyCheckInEnabled,
@@ -39,6 +41,7 @@ class NotificationPreferences {
     int? dailyCheckInMinute,
     bool? milestoneReminderEnabled,
     bool? streakProtectionEnabled,
+    bool? dangerWindowEnabled,
   }) {
     return NotificationPreferences(
       dailyCheckInEnabled: dailyCheckInEnabled ?? this.dailyCheckInEnabled,
@@ -48,6 +51,7 @@ class NotificationPreferences {
           milestoneReminderEnabled ?? this.milestoneReminderEnabled,
       streakProtectionEnabled:
           streakProtectionEnabled ?? this.streakProtectionEnabled,
+      dangerWindowEnabled: dangerWindowEnabled ?? this.dangerWindowEnabled,
     );
   }
 }

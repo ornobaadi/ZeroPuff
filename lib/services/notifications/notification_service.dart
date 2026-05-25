@@ -3,6 +3,7 @@ import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../core/calculations/progress_calculations.dart';
+import '../../models/smoking_window_data.dart';
 import '../../repositories/notification_preferences_repository.dart';
 
 class NotificationService {
@@ -13,6 +14,7 @@ class NotificationService {
   static const int streakProtectionId = 1003;
   static const int _dailyCheckInBaseId = 1100;
   static const int _streakProtectionBaseId = 1200;
+  static const int _dangerWindowBaseId = 1300;
   static const int _rollingReminderDays = 7;
 
   static final FlutterLocalNotificationsPlugin plugin =
@@ -48,6 +50,7 @@ class NotificationService {
   static Future<void> reschedule({
     required NotificationPreferences preferences,
     DateTime? quitDate,
+    SmokingWindowData? smokingWindow,
     NotificationScheduleSnapshot snapshot =
         const NotificationScheduleSnapshot(),
   }) async {
@@ -72,6 +75,22 @@ class NotificationService {
         hour: 22,
         minute: 15,
         skipToday: snapshot.todayCheckedIn,
+        title: copy.title,
+        body: copy.body,
+      );
+    }
+
+    if (preferences.dangerWindowEnabled && smokingWindow != null) {
+      final reminderMinutes = smokingWindow.startMinutes - 15;
+      final normalizedMinutes = reminderMinutes < 0
+          ? reminderMinutes + 24 * 60
+          : reminderMinutes;
+      final copy = _dangerWindowCopy(smokingWindow);
+      await _scheduleRollingOneShots(
+        baseId: _dangerWindowBaseId,
+        hour: normalizedMinutes ~/ 60,
+        minute: normalizedMinutes.remainder(60),
+        skipToday: false,
         title: copy.title,
         body: copy.body,
       );
@@ -111,6 +130,7 @@ class NotificationService {
     for (var index = 0; index < _rollingReminderDays; index++) {
       await plugin.cancel(id: _dailyCheckInBaseId + index);
       await plugin.cancel(id: _streakProtectionBaseId + index);
+      await plugin.cancel(id: _dangerWindowBaseId + index);
     }
   }
 
@@ -187,7 +207,7 @@ class NotificationService {
     }
     if (snapshot.moneySaved >= 1) {
       return _NotificationCopy(
-        title: 'You have saved ${_money(snapshot)} so far',
+        title: 'You won back ${_money(snapshot)} so far',
         body:
             'Log today before the day gets noisy. Your progress is adding up.',
       );
@@ -218,7 +238,7 @@ class NotificationService {
       return _NotificationCopy(
         title: 'Close the day with proof',
         body:
-            'You have kept ${_money(snapshot)} away from cigarettes. Record today in ZeroPuff.',
+            'You have won back ${_money(snapshot)} from cigarettes. Record today in ZeroPuff.',
       );
     }
     return const _NotificationCopy(
@@ -227,9 +247,17 @@ class NotificationService {
     );
   }
 
+  static _NotificationCopy _dangerWindowCopy(SmokingWindowData window) {
+    return _NotificationCopy(
+      title: 'Your usual smoke window starts soon',
+      body:
+          '${SmokingWindowData.labelForMinutes(window.startMinutes)}-${SmokingWindowData.labelForMinutes(window.endMinutes)} is your planned pause. Open ZeroPuff before autopilot starts.',
+    );
+  }
+
   static String _progressLine(NotificationScheduleSnapshot snapshot) {
     if (snapshot.moneySaved >= 1) {
-      return '${_money(snapshot)} saved.';
+      return '${_money(snapshot)} won back.';
     }
     if (snapshot.cigarettesAvoided > 0) {
       return '${snapshot.cigarettesAvoided} cigarettes avoided.';

@@ -4,6 +4,7 @@ import 'package:isar_community/isar.dart';
 import '../models/local_models.dart';
 import '../models/onboarding_data.dart';
 import '../models/profile_data.dart';
+import '../models/smoking_window_data.dart';
 import '../services/local_database/local_database_service_io.dart';
 import '../services/device/device_identity_service.dart';
 
@@ -37,6 +38,10 @@ class OnboardingRepository {
       currencySymbol: draft.currencySymbol,
       triggers: draft.triggers,
       quitReason: draft.quitReason,
+      usualSmokingWindow: SmokingWindowData(
+        startMinutes: draft.smokeWindowStartMinutes,
+        endMinutes: draft.smokeWindowEndMinutes,
+      ),
       currentStep: draft.currentStep,
       completed: draft.completed,
     );
@@ -59,6 +64,8 @@ class OnboardingRepository {
       ..currencySymbol = data.currencySymbol
       ..triggers = data.triggers
       ..quitReason = data.quitReason
+      ..smokeWindowStartMinutes = data.usualSmokingWindow.startMinutes
+      ..smokeWindowEndMinutes = data.usualSmokingWindow.endMinutes
       ..currentStep = data.currentStep
       ..completed = data.completed
       ..updatedAt = DateTime.now();
@@ -92,10 +99,29 @@ class OnboardingRepository {
       ..entityId = profile.userId
       ..operation = 'upsert'
       ..createdAt = DateTime.now();
+    final window = LocalSmokingWindow()
+      ..windowId = SmokingWindowData.primaryWindowId
+      ..userId = profile.userId
+      ..label = profile.usualSmokingWindow.label
+      ..startMinutes = profile.usualSmokingWindow.startMinutes
+      ..endMinutes = profile.usualSmokingWindow.endMinutes
+      ..daysOfWeek = profile.usualSmokingWindow.daysOfWeek
+      ..enabled = profile.usualSmokingWindow.enabled
+      ..isPrimary = true
+      ..source = profile.usualSmokingWindow.source
+      ..updatedAt = DateTime.now()
+      ..synced = false;
+    final windowQueueItem = SyncQueueItem()
+      ..entityType = 'smoking_window'
+      ..entityId = SmokingWindowData.primaryWindowId
+      ..operation = 'upsert'
+      ..createdAt = DateTime.now();
 
     await database.writeTxn(() async {
       await database.localProfiles.put(localProfile);
+      await database.localSmokingWindows.putByWindowId(window);
       await database.syncQueueItems.put(queueItem);
+      await database.syncQueueItems.put(windowQueueItem);
     });
   }
 
@@ -145,6 +171,18 @@ class OnboardingRepository {
         await database.localProfiles.put(guestProfile);
       }
 
+      final guestWindow = await database.localSmokingWindows
+          .filter()
+          .userIdEqualTo(guestUserId)
+          .findFirst();
+      if (guestWindow != null) {
+        guestWindow
+          ..userId = userId
+          ..updatedAt = DateTime.now()
+          ..synced = false;
+        await database.localSmokingWindows.putByWindowId(guestWindow);
+      }
+
       final staleQueueItems = await database.syncQueueItems
           .filter()
           .entityTypeEqualTo('profile')
@@ -163,6 +201,14 @@ class OnboardingRepository {
         ..operation = 'upsert'
         ..createdAt = DateTime.now();
       await database.syncQueueItems.put(queueItem);
+      if (guestWindow != null) {
+        final windowQueueItem = SyncQueueItem()
+          ..entityType = 'smoking_window'
+          ..entityId = SmokingWindowData.primaryWindowId
+          ..operation = 'upsert'
+          ..createdAt = DateTime.now();
+        await database.syncQueueItems.put(windowQueueItem);
+      }
     });
   }
 
@@ -180,6 +226,16 @@ class OnboardingRepository {
       return null;
     }
 
+    final window =
+        await database.localSmokingWindows
+            .filter()
+            .userIdEqualTo(profile.userId)
+            .isPrimaryEqualTo(true)
+            .findFirst() ??
+        await database.localSmokingWindows.getByWindowId(
+          SmokingWindowData.primaryWindowId,
+        );
+
     return ProfileData(
       userId: profile.userId,
       displayName: profile.displayName,
@@ -192,6 +248,18 @@ class OnboardingRepository {
       currencySymbol: profile.currencySymbol,
       triggers: profile.triggers,
       quitReason: profile.quitReason,
+      usualSmokingWindow: window == null
+          ? SmokingWindowData.defaultWindow()
+          : SmokingWindowData(
+              windowId: window.windowId,
+              label: window.label,
+              startMinutes: window.startMinutes,
+              endMinutes: window.endMinutes,
+              daysOfWeek: window.daysOfWeek,
+              enabled: window.enabled,
+              isPrimary: window.isPrimary,
+              source: window.source,
+            ),
     );
   }
 }
