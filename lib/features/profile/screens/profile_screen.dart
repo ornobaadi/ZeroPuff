@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/content_width.dart';
+import '../../../core/widgets/settings_tiles.dart';
 import '../../../repositories/account_repository.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/auth_repository.dart';
@@ -32,7 +34,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkTheme = theme.brightness == Brightness.dark;
     final user = ref.watch(currentUserProvider);
     final isGuest = user == null;
     final displayName = _displayName(user);
@@ -45,180 +46,156 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       appBar: AppBar(title: const Text('You')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.pagePadding,
-            AppSpacing.pagePadding,
-            AppSpacing.pagePadding,
-            120,
-          ),
+          padding: const EdgeInsets.all(AppSpacing.pagePadding),
           children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.cardPadding),
-              decoration: BoxDecoration(
-                color: isGuest
-                    ? AppColors.primary.withValues(alpha: 0.1)
-                    : theme.cardTheme.color,
-                borderRadius: BorderRadius.circular(34),
-                border: Border.all(
-                  color: isGuest
-                      ? AppColors.primary.withValues(alpha: 0.18)
-                      : isDarkTheme
-                      ? theme.colorScheme.outlineVariant
-                      : Colors.white,
-                ),
-                boxShadow: [
-                  if (!isDarkTheme)
-                    BoxShadow(
-                      color: AppColors.navInk.withValues(alpha: 0.06),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                ],
-              ),
+            ContentWidth(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _ProfileAvatar(
+                  _IdentityCard(
                     isGuest: isGuest,
-                    avatarUrl: avatarUrl,
                     displayName: displayName,
+                    avatarUrl: avatarUrl,
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    isGuest ? 'Guest mode' : displayName,
-                    style: theme.textTheme.headlineSmall,
+                  const SizedBox(height: AppSpacing.sectionGap),
+                  SettingsSection(
+                    title: 'Preferences',
+                    children: [
+                      SettingsTile(
+                        icon: Icons.palette_outlined,
+                        title: 'Appearance',
+                        subtitle: 'System, light or dark mode',
+                        trailing: _themeModeLabel(themeMode),
+                        onTap: () => _openRoute(AppRoutes.appearanceSettings),
+                      ),
+                      SettingsSwitchTile(
+                        icon: Icons.vibration_rounded,
+                        title: 'Haptics',
+                        subtitle: 'Gentle taps for rescue steps and key actions',
+                        value: hapticsEnabled,
+                        onChanged: (enabled) async {
+                          await ref
+                              .read(hapticsEnabledControllerProvider.notifier)
+                              .setEnabled(enabled);
+                          await HapticService.light(enabled: enabled);
+                        },
+                      ),
+                      SettingsTile(
+                        icon: Icons.notifications_none_rounded,
+                        title: 'Reminders',
+                        subtitle: 'Progress, milestone and evening nudges',
+                        onTap: () => _openRoute(AppRoutes.notificationSettings),
+                      ),
+                      SettingsTile(
+                        icon: Icons.tune_rounded,
+                        title: 'Setup details',
+                        subtitle: 'Quit date, smoking pace, currency, triggers',
+                        onTap: () => _openRoute(AppRoutes.setupSettings),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    isGuest
-                        ? 'Explore first. Your local progress can be attached to Google when account sync is fully enabled.'
-                        : 'Google is connected. Your supported progress can be restored after reinstall or on another device.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                  const SizedBox(height: AppSpacing.sectionGap),
+                  SettingsSection(
+                    title: 'Backup',
+                    children: [
+                      SettingsTile(
+                        icon: Icons.cloud_sync_outlined,
+                        title: 'Account sync',
+                        subtitle: isGuest
+                            ? 'Optional. Guest mode stays available.'
+                            : 'Connected to Google for backup and restore.',
+                        trailing: isGuest
+                            ? (_isSyncing ? 'Opening…' : null)
+                            : 'Connected',
+                        onTap: isGuest && !_isSyncing
+                            ? () {
+                                _lightHaptic();
+                                _connectGoogle();
+                              }
+                            : null,
+                      ),
+                      if (!isGuest)
+                        SettingsTile(
+                          icon: Icons.sync_rounded,
+                          title: 'Sync now',
+                          subtitle: pendingSync.when(
+                            data: (count) => count == 0
+                                ? 'Everything on this device is backed up.'
+                                : '$count change${count == 1 ? '' : 's'} waiting to back up.',
+                            loading: () => 'Checking for changes…',
+                            error: (_, _) => 'Could not check for changes.',
+                          ),
+                          trailing: _isManualSyncing ? 'Syncing…' : null,
+                          onTap: _isManualSyncing
+                              ? null
+                              : () {
+                                  _lightHaptic();
+                                  _syncNow();
+                                },
+                        ),
+                      if (!isGuest)
+                        SettingsTile(
+                          icon: Icons.logout_rounded,
+                          title: 'Sign out',
+                          subtitle:
+                              'Your progress stays backed up in your account.',
+                          onTap: () {
+                            _mediumHaptic();
+                            _signOut();
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sectionGap),
+                  SettingsSection(
+                    title: 'About',
+                    children: [
+                      SettingsTile(
+                        icon: Icons.info_outline_rounded,
+                        title: 'App info and safety',
+                        subtitle: 'Version, privacy note and disclaimer',
+                        onTap: () => _openRoute(AppRoutes.appInfo),
+                      ),
+                      if (AppConstants.privacyPolicyUrl.isNotEmpty)
+                        SettingsTile(
+                          icon: Icons.policy_outlined,
+                          title: 'Privacy policy',
+                          subtitle: 'Opens in your browser',
+                          onTap: () => launchUrl(
+                            Uri.parse(AppConstants.privacyPolicyUrl),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sectionGap),
+                  SettingsSection(
+                    title: 'Your data',
+                    children: [
+                      SettingsTile(
+                        icon: Icons.delete_outline_rounded,
+                        title: isGuest ? 'Delete local data' : 'Delete account',
+                        subtitle: isGuest
+                            ? 'Erase guest progress from this device.'
+                            : 'Permanently delete your account and all backed-up data.',
+                        destructive: true,
+                        onTap: () {
+                          _mediumHaptic();
+                          _confirmDeleteAccount(isGuest);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sectionGap),
+                  Center(
+                    child: Text(
+                      '${AppConstants.appName} ${AppConstants.appVersionLabel}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sectionGap),
-            Text('Settings', style: theme.textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.md),
-            _SettingsTile(
-              icon: Icons.palette_outlined,
-              title: 'Appearance',
-              subtitle: 'System, light, or dark mode.',
-              status: _themeModeLabel(themeMode),
-              onTap: () => _openRoute(AppRoutes.appearanceSettings),
-            ),
-            const SizedBox(height: AppSpacing.componentGap),
-            _SwitchSettingsTile(
-              icon: Icons.vibration_rounded,
-              title: 'Haptics',
-              subtitle: 'Gentle taps for rescue steps and key actions.',
-              value: hapticsEnabled,
-              onChanged: (enabled) async {
-                await ref
-                    .read(hapticsEnabledControllerProvider.notifier)
-                    .setEnabled(enabled);
-                await HapticService.light(enabled: enabled);
-              },
-            ),
-            const SizedBox(height: AppSpacing.componentGap),
-            _SettingsTile(
-              icon: Icons.tune_rounded,
-              title: 'Setup details',
-              subtitle: 'Quit date, smoking pace, currency, and triggers.',
-              status: 'Edit',
-              onTap: () => _openRoute(AppRoutes.setupSettings),
-            ),
-            const SizedBox(height: AppSpacing.componentGap),
-            _SettingsTile(
-              icon: Icons.notifications_none_rounded,
-              title: 'Reminders',
-              subtitle: 'Progress, milestone, and evening backup nudges.',
-              status: 'Edit',
-              onTap: () => _openRoute(AppRoutes.notificationSettings),
-            ),
-            const SizedBox(height: AppSpacing.componentGap),
-            _SettingsTile(
-              icon: Icons.cloud_sync_outlined,
-              title: 'Account sync',
-              subtitle: isGuest
-                  ? 'Optional. Guest mode remains available.'
-                  : 'Connected to Google for backup and restore.',
-              status: isGuest
-                  ? (_isSyncing ? 'Opening...' : 'Optional')
-                  : 'Connected',
-              onTap: isGuest && !_isSyncing
-                  ? () {
-                      _lightHaptic();
-                      _connectGoogle();
-                    }
-                  : null,
-            ),
-            if (!isGuest) ...[
-              const SizedBox(height: AppSpacing.componentGap),
-              _SettingsTile(
-                icon: Icons.sync_rounded,
-                title: 'Sync now',
-                subtitle: pendingSync.when(
-                  data: (count) => count == 0
-                      ? 'Everything local is caught up.'
-                      : '$count local change${count == 1 ? '' : 's'} waiting.',
-                  loading: () => 'Checking local changes.',
-                  error: (_, _) => 'Could not check local changes.',
-                ),
-                status: _isManualSyncing ? 'Syncing' : 'Retry',
-                onTap: _isManualSyncing
-                    ? null
-                    : () {
-                        _lightHaptic();
-                        _syncNow();
-                      },
-              ),
-            ],
-            if (!isGuest) ...[
-              const SizedBox(height: AppSpacing.componentGap),
-              _SettingsTile(
-                icon: Icons.logout_rounded,
-                title: 'Sign out',
-                subtitle: 'Your progress stays backed up in your account.',
-                status: '',
-                onTap: () {
-                  _mediumHaptic();
-                  _signOut();
-                },
-              ),
-            ],
-            const SizedBox(height: AppSpacing.componentGap),
-            _SettingsTile(
-              icon: Icons.delete_outline_rounded,
-              title: isGuest ? 'Delete local data' : 'Delete account',
-              subtitle: isGuest
-                  ? 'Erase guest progress from this device.'
-                  : 'Permanently delete your account and all backed-up data.',
-              status: '',
-              destructive: true,
-              onTap: () {
-                _mediumHaptic();
-                _confirmDeleteAccount(isGuest);
-              },
-            ),
-            const SizedBox(height: AppSpacing.componentGap),
-            _SettingsTile(
-              icon: Icons.info_outline_rounded,
-              title: 'App info and safety',
-              subtitle: 'Version, privacy note, and disclaimer.',
-              status: '',
-              onTap: () => _openRoute(AppRoutes.appInfo),
-            ),
-            const SizedBox(height: AppSpacing.sectionGap),
-            Center(
-              child: Text(
-                '${AppConstants.appName} ${AppConstants.appVersionLabel}',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
               ),
             ),
           ],
@@ -322,27 +299,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         if (!mounted) {
           return;
         }
-        final proceed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Some changes are not backed up'),
-            content: Text(
-              '${result.remaining} local change${result.remaining == 1 ? '' : 's'} could not be backed up. '
+        final proceed = await showConfirmDialog(
+          context,
+          title: 'Some changes are not backed up',
+          message:
+              '${result.remaining} change${result.remaining == 1 ? '' : 's'} could not be backed up. '
               'If you sign out now they will be lost.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Stay signed in'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Sign out anyway'),
-              ),
-            ],
-          ),
+          confirmLabel: 'Sign out anyway',
+          cancelLabel: 'Stay signed in',
+          destructive: true,
         );
-        if (proceed != true) {
+        if (!proceed) {
           return;
         }
       }
@@ -410,79 +377,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _confirmDeleteAccount(bool isGuest) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        final theme = Theme.of(dialogContext);
-        return Dialog(
-          insetPadding: const EdgeInsets.all(AppSpacing.pagePadding),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.relapse.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: const Icon(
-                    Icons.delete_outline_rounded,
-                    color: AppColors.relapse,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  isGuest ? 'Delete ZeroPuff data?' : 'Delete your account?',
-                  style: theme.textTheme.headlineSmall,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  isGuest
-                      ? 'This removes your guest progress, logs, check-ins, and settings from this device.'
-                      : 'This permanently deletes your ZeroPuff account and all backed-up data, and removes local data from this device. This cannot be undone.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          _lightHaptic();
-                          Navigator.of(dialogContext).pop(false);
-                        },
-                        child: const Text('Cancel'),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.relapse,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () {
-                          _mediumHaptic();
-                          Navigator.of(dialogContext).pop(true);
-                        },
-                        child: const Text('Delete'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    final confirmed = await showConfirmDialog(
+      context,
+      icon: Icons.delete_outline_rounded,
+      title: isGuest ? 'Delete ZeroPuff data?' : 'Delete your account?',
+      message: isGuest
+          ? 'This removes your guest progress, logs, check-ins and settings from this device.'
+          : 'This permanently deletes your ZeroPuff account and all backed-up data, and removes local data from this device. This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
     );
-    if (confirmed != true) {
+    if (!confirmed) {
       return;
     }
 
@@ -524,6 +429,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
+class _IdentityCard extends StatelessWidget {
+  const _IdentityCard({
+    required this.isGuest,
+    required this.displayName,
+    required this.avatarUrl,
+  });
+
+  final bool isGuest;
+  final String displayName;
+  final String? avatarUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return AppCard(
+      style: isGuest ? AppCardStyle.tonal : AppCardStyle.filled,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _ProfileAvatar(
+            isGuest: isGuest,
+            avatarUrl: avatarUrl,
+            displayName: displayName,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Semantics(
+            header: true,
+            child: Text(
+              isGuest ? 'Guest mode' : displayName,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: isGuest ? scheme.onPrimaryContainer : scheme.onSurface,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            isGuest
+                ? 'Your progress is stored on this device. Connect Google under Backup to keep it safe and restore it on another device.'
+                : 'Google is connected. Your supported progress can be restored after a reinstall or on another device.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: isGuest
+                  ? scheme.onPrimaryContainer
+                  : scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProfileAvatar extends StatelessWidget {
   const _ProfileAvatar({
     required this.isGuest,
@@ -538,204 +496,27 @@ class _ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final initials = displayName.trim().isEmpty
         ? '?'
         : displayName.trim().characters.first.toUpperCase();
 
-    return CircleAvatar(
-      radius: 30,
-      backgroundColor: theme.colorScheme.primaryContainer,
-      backgroundImage: avatarUrl == null ? null : NetworkImage(avatarUrl!),
-      onBackgroundImageError: avatarUrl == null ? null : (_, _) {},
-      child: avatarUrl == null
-          ? isGuest
-                ? Icon(
-                    Icons.person_outline_rounded,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  )
-                : Text(
-                    initials,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
-                    ),
-                  )
-          : null,
-    );
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.status,
-    this.onTap,
-    this.destructive = false,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String status;
-  final VoidCallback? onTap;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(30),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isDark ? theme.colorScheme.outlineVariant : Colors.white,
-          ),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: AppColors.navInk.withValues(alpha: 0.05),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                icon,
-                color: destructive
-                    ? theme.colorScheme.error
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: destructive ? theme.colorScheme.error : null,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              status,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SwitchSettingsTile extends StatelessWidget {
-  const _SwitchSettingsTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(30),
-      onTap: () => onChanged(!value),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isDark ? theme.colorScheme.outlineVariant : Colors.white,
-          ),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: AppColors.navInk.withValues(alpha: 0.05),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: value
-                    ? AppColors.primary.withValues(alpha: 0.12)
-                    : theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                icon,
-                color: value
-                    ? AppColors.primary
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Switch(value: value, onChanged: onChanged),
-          ],
-        ),
+    return ExcludeSemantics(
+      child: CircleAvatar(
+        radius: 28,
+        backgroundColor: isGuest ? scheme.surface : scheme.primaryContainer,
+        backgroundImage: avatarUrl == null ? null : NetworkImage(avatarUrl!),
+        onBackgroundImageError: avatarUrl == null ? null : (_, _) {},
+        child: avatarUrl == null
+            ? isGuest
+                  ? Icon(Icons.person_outline_rounded, color: scheme.primary)
+                  : Text(
+                      initials,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                      ),
+                    )
+            : null,
       ),
     );
   }

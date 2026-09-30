@@ -2,15 +2,15 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_typography.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/content_width.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
 import '../controllers/google_sign_in_controller.dart';
@@ -28,102 +28,111 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.pagePadding),
           children: [
-            const SizedBox(height: AppSpacing.xxl),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(
-                    alpha: 0.72,
-                  ),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.air_rounded,
-                      size: 18,
-                      color: theme.colorScheme.onPrimaryContainer,
+            ContentWidth(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: AppSpacing.xl),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: scheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(999),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      'Rescue first, private by default',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.air_rounded,
+                            size: 18,
+                            color: scheme.onPrimaryContainer,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            'Private by default',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: scheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            Text(AppConstants.appName, style: theme.textTheme.displayLarge),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Open it at the craving moment. Delay the decision, breathe, then log only what matters.',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontFamily: theme.textTheme.bodyLarge?.fontFamily,
-                fontWeight: FontWeight.w500, fontVariations: AppTypography.w500,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            const _PromiseCard(
-              icon: Icons.air_rounded,
-              title: 'A two-minute pause',
-              body: 'Guided steps help the urge cool before you choose.',
-            ),
-            const SizedBox(height: AppSpacing.componentGap),
-            const _PromiseCard(
-              icon: Icons.lock_outline_rounded,
-              title: 'Start without pressure',
-              body: 'Guest mode works now. Google is only for backup and sync.',
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            FilledButton.icon(
-              onPressed: _isSigningIn ? null : _signIn,
-              icon: _isSigningIn
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const _GoogleMark(),
-              label: Text(
-                _isSigningIn ? 'Opening Google' : 'Continue with Google',
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            OutlinedButton.icon(
-              onPressed: () {
-                _lightHaptic();
-                context.go(AppRoutes.onboarding);
-              },
-              icon: const Icon(Icons.arrow_forward_rounded),
-              label: const Text('Start as guest'),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                'No public feed. No shame score. Your quit data stays local unless you choose backup.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      AppConstants.appName,
+                      style: theme.textTheme.displayMedium,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Open it at the craving moment. Delay the decision, breathe, then log only what matters.',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  const _PromiseCard(
+                    icon: Icons.air_rounded,
+                    title: 'A two-minute pause',
+                    body: 'Guided steps help the urge pass before you choose.',
+                  ),
+                  const SizedBox(height: AppSpacing.componentGap),
+                  const _PromiseCard(
+                    icon: Icons.lock_outline_rounded,
+                    title: 'Start without pressure',
+                    body:
+                        'Guest mode works right away. Google is only for backup and sync.',
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  FilledButton.icon(
+                    onPressed: _isSigningIn ? null : _signIn,
+                    icon: _isSigningIn
+                        ? const SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              semanticsLabel: 'Opening Google',
+                            ),
+                          )
+                        : const _GoogleMark(),
+                    label: Text(
+                      _isSigningIn ? 'Opening Google' : 'Continue with Google',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.componentGap),
+                  OutlinedButton.icon(
+                    onPressed: _isSigningIn
+                        ? null
+                        : () {
+                            _lightHaptic();
+                            context.go(AppRoutes.onboarding);
+                          },
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                    label: const Text('Start as guest'),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'No public feed and no shame score. Your quit data stays on this device unless you choose backup.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -208,24 +217,23 @@ class _PromiseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
-    return Container(
+    return AppCard(
+      style: AppCardStyle.outlined,
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
+      semanticLabel: '$title. $body',
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
+          DecoratedBox(
             decoration: BoxDecoration(
-              color: theme.colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(16),
+              color: scheme.secondaryContainer,
+              shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: theme.colorScheme.onSecondaryContainer),
+            child: SizedBox.square(
+              dimension: 48,
+              child: Icon(icon, color: scheme.onSecondaryContainer),
+            ),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -236,8 +244,8 @@ class _PromiseCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   body,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],

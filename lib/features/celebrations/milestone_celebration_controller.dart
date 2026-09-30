@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/calculations/progress_calculations.dart';
-import '../../core/theme/app_colors.dart';
 import '../../features/home/providers/home_dashboard_provider.dart';
 import '../../repositories/achievement_repository.dart';
 
@@ -61,7 +60,6 @@ class CelebrationEvent {
     required this.body,
     required this.duration,
     required this.icon,
-    required this.color,
     this.badgeAsset,
   });
 
@@ -73,7 +71,6 @@ class CelebrationEvent {
       body: milestone.body,
       duration: milestone.duration,
       icon: Icons.emoji_events_rounded,
-      color: AppColors.accentMoney,
       badgeAsset: milestone.badgeAsset,
     );
   }
@@ -86,7 +83,6 @@ class CelebrationEvent {
       body: achievement.body,
       duration: achievement.duration,
       icon: Icons.military_tech_rounded,
-      color: AppColors.primary,
       badgeAsset: achievement.badgeAsset,
     );
   }
@@ -97,6 +93,5 @@ class CelebrationEvent {
   final String body;
   final Duration duration;
   final IconData icon;
-  final Color color;
   final String? badgeAsset;
 }

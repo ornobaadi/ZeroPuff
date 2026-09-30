@@ -1,12 +1,13 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_typography.dart';
 
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_accents.dart';
+import '../../../core/theme/app_motion.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../milestone_celebration_controller.dart';
 
+/// The one celebratory moment in the app: a badge that pops in, the name of the
+/// win, and a single way to dismiss it. Motion is skipped when the system asks
+/// for reduced animation.
 class CelebrationDialog extends StatefulWidget {
   const CelebrationDialog({required this.event, super.key});
 
@@ -20,15 +21,30 @@ class _CelebrationDialogState extends State<CelebrationDialog>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _pop;
+  bool _started = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 650),
-    )..forward();
+      duration: const Duration(milliseconds: 600),
+    );
     _pop = CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) {
+      return;
+    }
+    _started = true;
+    if (AppMotion.reduced(context)) {
+      _controller.value = 1;
+    } else {
+      _controller.forward();
+    }
   }
 
   @override
@@ -40,140 +56,78 @@ class _CelebrationDialogState extends State<CelebrationDialog>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final accents = AppAccents.of(context);
     final event = widget.event;
+    final isMilestone = event.kind == CelebrationKind.milestone;
+    final container = isMilestone
+        ? accents.moneyContainer
+        : scheme.primaryContainer;
+    final onContainer = isMilestone
+        ? accents.onMoneyContainer
+        : scheme.onPrimaryContainer;
+    final eyebrow = isMilestone ? 'Milestone reached' : 'Achievement unlocked';
 
     return Dialog(
       insetPadding: const EdgeInsets.all(AppSpacing.lg),
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
-          children: [
-            ..._confetti(event.color),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ScaleTransition(
-                  scale: _pop,
-                  child: Container(
-                    width: 100,
-                    height: 100,
+        child: Semantics(
+          liveRegion: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ScaleTransition(
+                scale: _pop,
+                child: ExcludeSemantics(
+                  child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: event.color.withValues(alpha: 0.16),
+                      color: container,
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: event.color.withValues(alpha: 0.26),
-                      ),
                     ),
-                    child: event.badgeAsset == null
-                        ? Icon(event.icon, size: 50, color: event.color)
-                        : Padding(
-                            padding: const EdgeInsets.all(AppSpacing.sm),
-                            child: Image.asset(
-                              event.badgeAsset!,
-                              fit: BoxFit.contain,
+                    child: SizedBox.square(
+                      dimension: 120,
+                      child: event.badgeAsset == null
+                          ? Icon(event.icon, size: 56, color: onContainer)
+                          : Padding(
+                              padding: const EdgeInsets.all(AppSpacing.componentGap),
+                              child: Image.asset(
+                                event.badgeAsset!,
+                                fit: BoxFit.contain,
+                              ),
                             ),
-                          ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  _eyebrow(event),
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: event.color,
-                    fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
-                  ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                eyebrow,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: scheme.primary,
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  event.title,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                event.title,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                event.body,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  event.body,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Celebrate this win'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _eyebrow(CelebrationEvent event) {
-    return switch (event.kind) {
-      CelebrationKind.milestone => 'Milestone reached',
-      CelebrationKind.timeAchievement => 'Achievement unlocked',
-    };
-  }
-
-  List<Widget> _confetti(Color eventColor) {
-    const positions = [
-      Offset(18, 10),
-      Offset(238, 18),
-      Offset(42, 220),
-      Offset(260, 190),
-      Offset(94, -6),
-      Offset(205, 246),
-    ];
-    final colors = [
-      eventColor,
-      AppColors.primary,
-      AppColors.accentMoney,
-      AppColors.accentStreak,
-      AppColors.accentCraving,
-      eventColor,
-    ];
-
-    return [
-      for (var i = 0; i < positions.length; i++)
-        Positioned(
-          left: positions[i].dx,
-          top: positions[i].dy,
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final drift = math.sin((_controller.value + i) * math.pi) * 5;
-              return Transform.translate(
-                offset: Offset(0, drift),
-                child: child,
-              );
-            },
-            child: _ConfettiPiece(color: colors[i], index: i),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Celebrate this win'),
+              ),
+            ],
           ),
-        ),
-    ];
-  }
-}
-
-class _ConfettiPiece extends StatelessWidget {
-  const _ConfettiPiece({required this.color, required this.index});
-
-  final Color color;
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: 0.45 + index * 0.28,
-      child: Container(
-        width: index.isEven ? 13 : 9,
-        height: index.isEven ? 9 : 13,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.86),
-          borderRadius: BorderRadius.circular(3),
         ),
       ),
     );

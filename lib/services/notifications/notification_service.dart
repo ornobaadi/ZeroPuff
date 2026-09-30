@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
@@ -21,6 +22,9 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
+    if (kIsWeb) {
+      return;
+    }
     tzdata.initializeTimeZones();
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -34,6 +38,9 @@ class NotificationService {
   }
 
   static Future<bool> requestPermission() async {
+    if (kIsWeb) {
+      return false;
+    }
     final android = plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -59,6 +66,9 @@ class NotificationService {
     NotificationScheduleSnapshot snapshot =
         const NotificationScheduleSnapshot(),
   }) async {
+    if (kIsWeb) {
+      return;
+    }
     await cancelScheduledReminders();
 
     if (preferences.dailyCheckInEnabled) {
@@ -129,6 +139,9 @@ class NotificationService {
   }
 
   static Future<void> cancelScheduledReminders() async {
+    if (kIsWeb) {
+      return;
+    }
     // ZeroPuff only schedules its own reminders, so clearing everything is
     // equivalent to (and much cheaper than) cancelling each id in turn.
     await plugin.cancelAll();

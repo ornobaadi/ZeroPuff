@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/calculations/progress_calculations.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_accents.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/content_width.dart';
+import '../../../core/widgets/section_header.dart';
+import '../../../core/widgets/stat_card.dart';
+import '../../../core/widgets/state_view.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../repositories/achievement_repository.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
+import '../widgets/badge_image.dart';
 
 final unlockedAchievementsProvider = FutureProvider<Set<String>>((ref) async {
   final data = ref.watch(homeDashboardProvider).value;
@@ -35,11 +39,7 @@ class ProgressScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final dashboard = ref.watch(homeDashboardProvider);
-    final recentCheckIns = ref.watch(recentCheckInsProvider);
-    final recentCravings = ref.watch(recentCravingsProvider);
-    final unlockedAchievements = ref.watch(unlockedAchievementsProvider);
     final hapticsEnabled = ref.watch(hapticsEnabledControllerProvider);
 
     void openDetail(String route) {
@@ -50,156 +50,152 @@ class ProgressScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Progress')),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.pagePadding,
-            AppSpacing.pagePadding,
-            AppSpacing.pagePadding,
-            120,
+        child: dashboard.when(
+          loading: () => const StateView.loading(label: 'Loading progress'),
+          error: (error, _) => StateView.error(
+            error: error,
+            onRetry: () => ref.invalidate(homeDashboardProvider),
           ),
-          children: dashboard.when(
-            data: (data) {
-              final recent = recentCheckIns.value ?? const [];
-              final cravings = recentCravings.value ?? const [];
-              final unlocked = unlockedAchievements.value ?? const {};
-              final smokeFreeCheckIns = recent
-                  .where((record) => record.smokeFreeToday)
-                  .length;
-
-              return [
-                Text(
-                  'Your progress map',
-                  style: theme.textTheme.headlineMedium,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'See the milestones you have reached and what you are unlocking next.',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sectionGap),
-                _MilestonesCard(
-                  smokeFreeDuration: data.smokeFreeDuration,
-                  onTap: () => openDetail(AppRoutes.milestoneDetails),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _AchievementShowcaseCard(
-                  achievements: ProgressCalculations.achievements,
-                  unlocked: unlocked,
-                  onTap: () => openDetail(AppRoutes.achievementsDetails),
-                ),
-                const SizedBox(height: AppSpacing.sectionGap),
-                Text('Quick stats', style: theme.textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ProgressStat(
-                        label: 'Smoke-free',
-                        value: '${data.smokeFreeDays}d',
-                        icon: Icons.air_rounded,
-                        color: AppColors.primary,
-                        onTap: () => openDetail(AppRoutes.smokeFreeDetails),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: _ProgressStat(
-                        label: 'Money won back',
-                        value:
-                            '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
-                        icon: Icons.savings_rounded,
-                        color: AppColors.accentMoney,
-                        onTap: () => openDetail(AppRoutes.savingsDetails),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ProgressStat(
-                        label: 'Avoided',
-                        value: '${data.cigarettesAvoided}',
-                        icon: Icons.smoke_free_rounded,
-                        color: AppColors.accentStreak,
-                        onTap: () => openDetail(AppRoutes.avoidedDetails),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: _ProgressStat(
-                        label: 'Check-ins',
-                        value: '${recent.length}',
-                        icon: Icons.fact_check_rounded,
-                        color: AppColors.accentCraving,
-                        onTap: () => openDetail(AppRoutes.checkInDetails),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ProgressStat(
-                        label: 'Time smoke-free',
-                        value: ProgressCalculations.durationLabel(
-                          data.smokeFreeDuration,
-                        ),
-                        icon: Icons.timer_rounded,
-                        color: AppColors.primary,
-                        onTap: () => openDetail(AppRoutes.milestoneDetails),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: _ProgressStat(
-                        label: 'Milestones',
-                        value:
-                            '${ProgressCalculations.unlockedMilestoneKeys(data.smokeFreeDuration).length}',
-                        icon: Icons.flag_rounded,
-                        color: AppColors.accentStreak,
-                        onTap: () => openDetail(AppRoutes.milestoneDetails),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _CravingAnalysisCard(
-                  cravingCount: cravings.length,
-                  onTap: () => openDetail(AppRoutes.cravingAnalysis),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _CheckInSummary(
-                  total: recent.length,
-                  smokeFree: smokeFreeCheckIns,
-                ),
-              ];
-            },
-            loading: () => [
-              const SizedBox(height: 160),
-              const Center(child: CircularProgressIndicator()),
-            ],
-            error: (error, _) => [
-              Text('Progress unavailable', style: theme.textTheme.titleLarge),
-              const SizedBox(height: AppSpacing.sm),
-              Text(friendlyError(error)),
-            ],
-          ),
+          data: (data) => _ProgressContent(data: data, onOpen: openDetail),
         ),
       ),
     );
   }
 }
 
+class _ProgressContent extends ConsumerWidget {
+  const _ProgressContent({required this.data, required this.onOpen});
+
+  final HomeDashboardData data;
+  final ValueChanged<String> onOpen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final recent = ref.watch(recentCheckInsProvider).value ?? const [];
+    final cravings = ref.watch(recentCravingsProvider).value ?? const [];
+    final unlocked = ref.watch(unlockedAchievementsProvider).value ?? const {};
+    final smokeFreeCheckIns = recent
+        .where((record) => record.smokeFreeToday)
+        .length;
+
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.pagePadding),
+      children: [
+        ContentWidth(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'See the milestones you have reached and what comes next.',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              _MilestonesCard(
+                smokeFreeDuration: data.smokeFreeDuration,
+                onTap: () => onOpen(AppRoutes.milestoneDetails),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _AchievementsCard(
+                achievements: ProgressCalculations.achievements,
+                unlocked: unlocked,
+                onTap: () => onOpen(AppRoutes.achievementsDetails),
+              ),
+              const SizedBox(height: AppSpacing.sectionGap),
+              const SectionHeader(title: 'Quick stats'),
+              const SizedBox(height: AppSpacing.md),
+              _StatRow(
+                left: StatCard(
+                  label: 'Smoke-free days',
+                  value: '${data.smokeFreeDays}',
+                  icon: Icons.air_rounded,
+                  onTap: () => onOpen(AppRoutes.smokeFreeDetails),
+                ),
+                right: StatCard(
+                  label: 'Money won back',
+                  value:
+                      '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
+                  icon: Icons.savings_rounded,
+                  tone: StatTone.money,
+                  onTap: () => onOpen(AppRoutes.savingsDetails),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _StatRow(
+                left: StatCard(
+                  label: 'Not smoked',
+                  value: '${data.cigarettesAvoided}',
+                  icon: Icons.smoke_free_rounded,
+                  tone: StatTone.streak,
+                  onTap: () => onOpen(AppRoutes.avoidedDetails),
+                ),
+                right: StatCard(
+                  label: 'Check-ins',
+                  value: '${recent.length}',
+                  icon: Icons.fact_check_rounded,
+                  tone: StatTone.craving,
+                  onTap: () => onOpen(AppRoutes.checkInDetails),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _StatRow(
+                left: StatCard(
+                  label: 'Time smoke-free',
+                  value: ProgressCalculations.durationLabel(
+                    data.smokeFreeDuration,
+                  ),
+                  icon: Icons.timer_rounded,
+                  onTap: () => onOpen(AppRoutes.milestoneDetails),
+                ),
+                right: StatCard(
+                  label: 'Milestones',
+                  value:
+                      '${ProgressCalculations.unlockedMilestoneKeys(data.smokeFreeDuration).length}',
+                  icon: Icons.flag_rounded,
+                  tone: StatTone.streak,
+                  onTap: () => onOpen(AppRoutes.milestoneDetails),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sectionGap),
+              _CravingAnalysisCard(
+                cravingCount: cravings.length,
+                onTap: () => onOpen(AppRoutes.cravingAnalysis),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _CheckInSummary(total: recent.length, smokeFree: smokeFreeCheckIns),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatRow extends StatelessWidget {
+  const _StatRow({required this.left, required this.right});
+
+  final Widget left;
+  final Widget right;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: left),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(child: right),
+        ],
+      ),
+    );
+  }
+}
+
 class _MilestonesCard extends StatelessWidget {
-  const _MilestonesCard({
-    required this.smokeFreeDuration,
-    required this.onTap,
-  });
+  const _MilestonesCard({required this.smokeFreeDuration, required this.onTap});
 
   final Duration smokeFreeDuration;
   final VoidCallback onTap;
@@ -207,7 +203,7 @@ class _MilestonesCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final scheme = theme.colorScheme;
     final current = ProgressCalculations.currentMilestone(smokeFreeDuration);
     final next = ProgressCalculations.nextMilestone(smokeFreeDuration);
     final hasReachedFirst =
@@ -216,179 +212,205 @@ class _MilestonesCard extends StatelessWidget {
     final shown = next ?? current;
     final previous = ProgressCalculations.previousMilestone(shown);
     final previousDuration = previous?.duration ?? Duration.zero;
-    final segmentDuration = shown.duration - previousDuration;
-    final segmentElapsed = smokeFreeDuration - previousDuration;
-    final progress = next == null
+    final segmentSeconds = (shown.duration - previousDuration).inSeconds;
+    final elapsedSeconds = (smokeFreeDuration - previousDuration).inSeconds;
+    final progress = next == null || segmentSeconds <= 0
         ? 1.0
-        : (segmentElapsed.inSeconds / segmentDuration.inSeconds).clamp(
-            0.0,
-            1.0,
-          );
-    final asset = current.badgeAsset ?? shown.badgeAsset;
+        : (elapsedSeconds / segmentSeconds).clamp(0.0, 1.0);
+    final percent = (progress * 100).round();
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(36),
+    final headline = hasReachedFirst
+        ? 'Current milestone: ${current.title}'
+        : 'First milestone: 20 minutes';
+    final progressText = next == null
+        ? 'All milestones reached'
+        : '$percent% to ${next.title}';
+
+    return AppCard(
+      style: AppCardStyle.tonal,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.surfaceCardDark
-              : AppColors.primaryLight.withValues(alpha: 0.52),
-          borderRadius: BorderRadius.circular(36),
-          border: Border.all(
-            color: isDark
-                ? AppColors.primary.withValues(alpha: 0.22)
-                : AppColors.primary.withValues(alpha: 0.12),
+      semanticLabel: 'Milestones. $headline. $progressText. Double tap for details.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              BadgeImage(
+                asset: current.badgeAsset ?? shown.badgeAsset,
+                unlocked: hasReachedFirst,
+                size: 72,
+                fallbackIcon: Icons.flag_rounded,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Milestones',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      headline,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: scheme.onPrimaryContainer,
+              ),
+            ],
           ),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: AppColors.navInk.withValues(alpha: 0.06),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _MilestoneAssetImage(asset: asset, active: hasReachedFirst),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Milestones',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        hasReachedFirst
-                            ? 'Current milestone: ${current.title}'
-                            : 'First milestone: 20 minutes',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right_rounded),
-              ],
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            hasReachedFirst
+                ? current.body
+                : 'Your first milestone arrives at 20 smoke-free minutes.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onPrimaryContainer,
             ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              hasReachedFirst
-                  ? current.body
-                  : 'Your first milestone arrives at 20 smoke-free minutes.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.86),
-              ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            progressText,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: scheme.onPrimaryContainer,
             ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    next == null
-                        ? 'All milestones reached'
-                        : '${(progress * 100).round()}% to ${next.title}',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                if (next != null)
-                  Text(
-                    next.title,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: isDark
-                          ? AppColors.primaryLight
-                          : AppColors.primaryDark,
-                      fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                minHeight: 10,
-                value: progress,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                color: AppColors.primary,
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          LinearProgressIndicator(
+            year2023: false, // ignore: deprecated_member_use
+            value: progress,
+            minHeight: 10,
+            borderRadius: BorderRadius.circular(999),
+            backgroundColor: scheme.surface.withValues(alpha: 0.5),
+            semanticsLabel: 'Progress to next milestone',
+            semanticsValue: '$percent percent',
+          ),
+        ],
       ),
     );
   }
 }
 
-class _MilestoneAssetImage extends StatelessWidget {
-  const _MilestoneAssetImage({required this.asset, required this.active});
+class _AchievementsCard extends StatelessWidget {
+  const _AchievementsCard({
+    required this.achievements,
+    required this.unlocked,
+    required this.onTap,
+  });
 
-  final String? asset;
-  final bool active;
+  final List<ProgressMilestone> achievements;
+  final Set<String> unlocked;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final asset = this.asset;
-    final fallback = Icon(
-      active ? Icons.flag_rounded : Icons.lock_rounded,
-      color: active ? AppColors.primary : theme.colorScheme.outline,
-      size: 48,
-    );
-    final image = asset == null
-        ? fallback
-        : Image.asset(
-            asset,
-            width: 82,
-            height: 82,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-            errorBuilder: (context, error, stackTrace) => fallback,
-          );
+    final scheme = theme.colorScheme;
+    final accents = AppAccents.of(context);
+    final unlockedCount = achievements
+        .where((achievement) => unlocked.contains(achievement.key))
+        .length;
+    final nextLocked = achievements
+        .where((achievement) => !unlocked.contains(achievement.key))
+        .firstOrNull;
+    final progress = achievements.isEmpty
+        ? 0.0
+        : unlockedCount / achievements.length;
+    final subtitle = nextLocked == null
+        ? 'Every badge is unlocked.'
+        : 'Next badge: ${nextLocked.title}';
 
-    return SizedBox(
-      width: 82,
-      height: 82,
-      child: ColorFiltered(
-        colorFilter: active
-            ? const ColorFilter.mode(Colors.transparent, BlendMode.dst)
-            : const ColorFilter.matrix(<double>[
-                0.2126,
-                0.7152,
-                0.0722,
-                0,
-                0,
-                0.2126,
-                0.7152,
-                0.0722,
-                0,
-                0,
-                0.2126,
-                0.7152,
-                0.0722,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-              ]),
-        child: Opacity(opacity: active ? 1 : 0.54, child: image),
+    return AppCard(
+      onTap: onTap,
+      semanticLabel:
+          'Achievements. $unlockedCount of ${achievements.length} unlocked. $subtitle. Double tap for details.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: accents.moneyContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.componentGap),
+                  child: Icon(
+                    Icons.emoji_events_rounded,
+                    color: accents.onMoneyContainer,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Achievements', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Text(
+                '$unlockedCount/${achievements.length} unlocked',
+                style: theme.textTheme.labelLarge,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: LinearProgressIndicator(
+                  year2023: false, // ignore: deprecated_member_use
+                  value: progress,
+                  minHeight: 8,
+                  borderRadius: BorderRadius.circular(999),
+                  color: accents.money,
+                  backgroundColor: scheme.surfaceContainerHighest,
+                  semanticsLabel: 'Achievements unlocked',
+                  semanticsValue: '$unlockedCount of ${achievements.length}',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            height: 108,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: achievements.length,
+              separatorBuilder: (context, index) =>
+                  const SizedBox(width: AppSpacing.componentGap),
+              itemBuilder: (context, index) {
+                final achievement = achievements[index];
+                return BadgeImage(
+                  asset: achievement.badgeAsset,
+                  unlocked: unlocked.contains(achievement.key),
+                  size: 96,
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -403,413 +425,47 @@ class _CravingAnalysisCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final scheme = theme.colorScheme;
+    final accents = AppAccents.of(context);
+    final subtitle = cravingCount < 3
+        ? '$cravingCount logged. Three unlock useful patterns.'
+        : '$cravingCount logs ready for pattern spotting.';
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(30),
+    return AppCard(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.cardPadding),
-        decoration: BoxDecoration(
-          color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isDark
-                ? AppColors.accentCraving.withValues(alpha: 0.18)
-                : Colors.white,
-          ),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: AppColors.navInk.withValues(alpha: 0.06),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.accentCraving.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
+      semanticLabel: 'Craving analysis. $subtitle Double tap for details.',
+      child: Row(
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: accents.cravingContainer,
+              shape: BoxShape.circle,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.componentGap),
+              child: Icon(
                 Icons.insights_rounded,
-                color: AppColors.accentCraving,
+                color: accents.onCravingContainer,
               ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Craving analysis', style: theme.textTheme.titleMedium),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    cravingCount < 3
-                        ? '$cravingCount logged. Three unlocks useful patterns.'
-                        : '$cravingCount logs ready for pattern spotting.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AchievementShowcaseCard extends StatelessWidget {
-  const _AchievementShowcaseCard({
-    required this.achievements,
-    required this.unlocked,
-    required this.onTap,
-  });
-
-  final List<ProgressMilestone> achievements;
-  final Set<String> unlocked;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final unlockedCount = achievements
-        .where((achievement) => unlocked.contains(achievement.key))
-        .length;
-    ProgressMilestone? nextLocked;
-    for (final achievement in achievements) {
-      if (!unlocked.contains(achievement.key)) {
-        nextLocked = achievement;
-        break;
-      }
-    }
-    final progress = achievements.isEmpty
-        ? 0.0
-        : unlockedCount / achievements.length;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(36),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(36),
-          border: Border.all(
-            color: isDark
-                ? AppColors.primary.withValues(alpha: 0.16)
-                : Colors.white,
-          ),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: AppColors.navInk.withValues(alpha: 0.06),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: AppColors.accentMoney.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Icon(
-                    Icons.emoji_events_rounded,
-                    color: AppColors.accentMoney,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Achievements',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        nextLocked == null
-                            ? 'Every badge is unlocked.'
-                            : 'Next badge: ${nextLocked.title}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right_rounded),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Text(
-                  '$unlockedCount/${achievements.length} unlocked',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: AppColors.accentMoney,
-                    fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: LinearProgressIndicator(
-                      minHeight: 9,
-                      value: progress,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      color: AppColors.accentMoney,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            SizedBox(
-              height: 210,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: achievements.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(width: AppSpacing.md),
-                itemBuilder: (context, index) {
-                  final achievement = achievements[index];
-                  return _AchievementBadgePreview(
-                    achievement: achievement,
-                    unlocked: unlocked.contains(achievement.key),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProgressStat extends StatelessWidget {
-  const _ProgressStat({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-    this.onTap,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(30),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isDark ? color.withValues(alpha: 0.18) : Colors.white,
-          ),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: AppColors.navInk.withValues(alpha: 0.06),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color),
-                const Spacer(),
-                if (onTap != null) const Icon(Icons.chevron_right_rounded),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                style: AppTypography.statNumber.copyWith(color: color),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AchievementBadgePreview extends StatelessWidget {
-  const _AchievementBadgePreview({
-    required this.achievement,
-    required this.unlocked,
-  });
-
-  final ProgressMilestone achievement;
-  final bool unlocked;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
-      width: 136,
-      child: Column(
-        children: [
-          _AchievementBadgeImage(
-            achievement: achievement,
-            unlocked: unlocked,
-            size: 94,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            achievement.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: unlocked
-                  ? theme.colorScheme.onSurface
-                  : theme.colorScheme.onSurfaceVariant,
-              fontWeight: unlocked ? FontWeight.w800 : FontWeight.w600,
             ),
           ),
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: Text(
-              achievement.body,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                height: 1.32,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Craving analysis', style: theme.textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AchievementBadgeImage extends StatelessWidget {
-  const _AchievementBadgeImage({
-    required this.achievement,
-    required this.unlocked,
-    required this.size,
-  });
-
-  final ProgressMilestone achievement;
-  final bool unlocked;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final asset = achievement.badgeAsset;
-
-    final badge = asset == null
-        ? Icon(
-            Icons.emoji_events_rounded,
-            size: size * 0.62,
-            color: unlocked ? AppColors.accentMoney : theme.colorScheme.outline,
-          )
-        : Image.asset(asset, width: size, height: size, fit: BoxFit.contain);
-
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          ColorFiltered(
-            colorFilter: unlocked
-                ? const ColorFilter.mode(Colors.transparent, BlendMode.dst)
-                : const ColorFilter.matrix(<double>[
-                    0.2126,
-                    0.7152,
-                    0.0722,
-                    0,
-                    0,
-                    0.2126,
-                    0.7152,
-                    0.0722,
-                    0,
-                    0,
-                    0.2126,
-                    0.7152,
-                    0.0722,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    1,
-                    0,
-                  ]),
-            child: Opacity(opacity: unlocked ? 1 : 0.58, child: badge),
-          ),
-          if (!unlocked)
-            Positioned(
-              bottom: 6,
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface.withValues(alpha: 0.82),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.lock_rounded,
-                  size: size * 0.20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
+          const Icon(Icons.chevron_right_rounded),
         ],
       ),
     );
@@ -825,17 +481,13 @@ class _CheckInSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPadding),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
+    return AppCard(
+      style: AppCardStyle.outlined,
       child: Row(
         children: [
-          const Icon(Icons.fact_check_rounded, color: AppColors.primary),
+          Icon(Icons.fact_check_rounded, color: scheme.primary),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
@@ -843,7 +495,7 @@ class _CheckInSummary extends StatelessWidget {
                   ? 'No check-ins yet. Start with today.'
                   : '$smokeFree of your last $total check-ins were smoke-free.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: scheme.onSurfaceVariant,
               ),
             ),
           ),

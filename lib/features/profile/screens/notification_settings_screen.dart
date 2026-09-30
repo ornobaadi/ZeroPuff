@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/content_width.dart';
+import '../../../core/widgets/settings_tiles.dart';
+import '../../../core/widgets/state_view.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
@@ -31,11 +33,12 @@ class _NotificationSettingsScreenState
   Future<void> _save(NotificationPreferences preferences) async {
     setState(() => _saving = true);
     try {
+      var permissionDenied = false;
       if (preferences.dailyCheckInEnabled ||
           preferences.milestoneReminderEnabled ||
           preferences.streakProtectionEnabled ||
           preferences.dangerWindowEnabled) {
-        await NotificationService.requestPermission();
+        permissionDenied = !await NotificationService.requestPermission();
       }
 
       final saved = await ref
@@ -73,7 +76,13 @@ class _NotificationSettingsScreenState
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Notification settings saved.')),
+          SnackBar(
+            content: Text(
+              permissionDenied
+                  ? 'Saved, but notifications are blocked. Allow them in your phone settings to receive reminders.'
+                  : 'Reminder settings saved.',
+            ),
+          ),
         );
       }
     } on Object catch (error) {
@@ -115,13 +124,13 @@ class _NotificationSettingsScreenState
     final preferences = ref.watch(editableNotificationPreferencesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
+      appBar: AppBar(title: const Text('Reminders')),
       body: SafeArea(
         child: preferences.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Padding(
-            padding: const EdgeInsets.all(AppSpacing.pagePadding),
-            child: Text(friendlyError(error)),
+          loading: () => const StateView.loading(),
+          error: (error, _) => StateView.error(
+            error: error,
+            onRetry: () => ref.invalidate(editableNotificationPreferencesProvider),
           ),
           data: (data) {
             final checkInTime = TimeOfDay(
@@ -132,145 +141,86 @@ class _NotificationSettingsScreenState
             return ListView(
               padding: const EdgeInsets.all(AppSpacing.pagePadding),
               children: [
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.cardPadding),
-                  decoration: BoxDecoration(
-                    color: theme.cardTheme.color,
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: theme.colorScheme.outlineVariant),
-                  ),
+                ContentWidth(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Gentle reminders',
-                        style: theme.textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        'Local reminders adapt to your progress and pause when today is already recorded.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        'Gentle reminders that adapt to your progress and pause when today is already recorded.',
+                        style: theme.textTheme.bodyLarge?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
+                      const SizedBox(height: AppSpacing.lg),
+                      SettingsSection(
+                        children: [
+                          SettingsSwitchTile(
+                            icon: Icons.fact_check_outlined,
+                            title: 'Progress check-in',
+                            subtitle:
+                                'A personal nudge if today still needs a record.',
+                            value: data.dailyCheckInEnabled,
+                            onChanged: _saving
+                                ? null
+                                : (value) => _save(
+                                    data.copyWith(dailyCheckInEnabled: value),
+                                  ),
+                          ),
+                          if (data.dailyCheckInEnabled)
+                            SettingsTile(
+                              icon: Icons.access_time_rounded,
+                              title: 'Check-in time',
+                              trailing: checkInTime,
+                              onTap: _saving ? null : () => _changeTime(data),
+                            ),
+                          SettingsSwitchTile(
+                            icon: Icons.flag_outlined,
+                            title: 'Milestones',
+                            subtitle: 'Celebrate each smoke-free milestone.',
+                            value: data.milestoneReminderEnabled,
+                            onChanged: _saving
+                                ? null
+                                : (value) => _save(
+                                    data.copyWith(
+                                      milestoneReminderEnabled: value,
+                                    ),
+                                  ),
+                          ),
+                          SettingsSwitchTile(
+                            icon: Icons.schedule_rounded,
+                            title: 'Danger window',
+                            subtitle:
+                                'A small nudge before your usual smoking window starts.',
+                            value: data.dangerWindowEnabled,
+                            onChanged: _saving
+                                ? null
+                                : (value) => _save(
+                                    data.copyWith(dangerWindowEnabled: value),
+                                  ),
+                          ),
+                          SettingsSwitchTile(
+                            icon: Icons.nightlight_round,
+                            title: 'Streak protection',
+                            subtitle:
+                                'A later evening backup, only if today is blank.',
+                            value: data.streakProtectionEnabled,
+                            onChanged: _saving
+                                ? null
+                                : (value) => _save(
+                                    data.copyWith(
+                                      streakProtectionEnabled: value,
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                ),
-                const SizedBox(height: AppSpacing.sectionGap),
-                _ReminderTile(
-                  icon: Icons.fact_check_outlined,
-                  title: 'Progress check-in',
-                  subtitle:
-                      'A personal nudge around $checkInTime if today still needs a record.',
-                  value: data.dailyCheckInEnabled,
-                  saving: _saving,
-                  onChanged: (value) =>
-                      _save(data.copyWith(dailyCheckInEnabled: value)),
-                  trailing: TextButton(
-                    onPressed: _saving ? null : () => _changeTime(data),
-                    child: Text(checkInTime),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.componentGap),
-                _ReminderTile(
-                  icon: Icons.flag_outlined,
-                  title: 'Milestones',
-                  subtitle: 'Celebrate each smoke-free milestone.',
-                  value: data.milestoneReminderEnabled,
-                  saving: _saving,
-                  onChanged: (value) =>
-                      _save(data.copyWith(milestoneReminderEnabled: value)),
-                ),
-                const SizedBox(height: AppSpacing.componentGap),
-                _ReminderTile(
-                  icon: Icons.schedule_rounded,
-                  title: 'Danger window',
-                  subtitle:
-                      'A small nudge before your usual smoking window starts.',
-                  value: data.dangerWindowEnabled,
-                  saving: _saving,
-                  onChanged: (value) =>
-                      _save(data.copyWith(dangerWindowEnabled: value)),
-                ),
-                const SizedBox(height: AppSpacing.componentGap),
-                _ReminderTile(
-                  icon: Icons.nightlight_round,
-                  title: 'Streak protection',
-                  subtitle: 'A later evening backup only if today is blank.',
-                  value: data.streakProtectionEnabled,
-                  saving: _saving,
-                  onChanged: (value) =>
-                      _save(data.copyWith(streakProtectionEnabled: value)),
                 ),
               ],
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-class _ReminderTile extends StatelessWidget {
-  const _ReminderTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.saving,
-    required this.onChanged,
-    this.trailing,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool value;
-  final bool saving;
-  final ValueChanged<bool> onChanged;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: AppColors.primary),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ?trailing,
-          Switch(value: value, onChanged: saving ? null : onChanged),
-        ],
       ),
     );
   }
