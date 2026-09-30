@@ -19,7 +19,13 @@ flutter run
 Requires `android/key.properties` and the upload keystore (both gitignored). The release build fails without them.
 
 ```
-flutter build appbundle --release
+flutter build appbundle --release --flavor prod --android-skip-build-dependency-validation
+```
+
+For a test build that installs next to the store app (package `com.zeropuff.app.dev`):
+
+```
+flutter build apk --split-per-abi --flavor dev
 ```
 
 See `PRD_Zeropuff.md` for product scope, including the guardrails that keep the app out of Google Play's Health category.
