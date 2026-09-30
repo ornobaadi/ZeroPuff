@@ -265,7 +265,7 @@ class _MilestonesCard extends StatelessWidget {
                       Text(
                         'Milestones',
                         style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
@@ -312,7 +312,7 @@ class _MilestonesCard extends StatelessWidget {
                       color: isDark
                           ? AppColors.primaryLight
                           : AppColors.primaryDark,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
                     ),
                   ),
               ],
@@ -543,7 +543,7 @@ class _AchievementShowcaseCard extends StatelessWidget {
                       Text(
                         'Achievements',
                         style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
@@ -568,7 +568,7 @@ class _AchievementShowcaseCard extends StatelessWidget {
                   '$unlockedCount/${achievements.length} unlocked',
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: AppColors.accentMoney,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),

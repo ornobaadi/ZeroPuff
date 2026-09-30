@@ -797,7 +797,7 @@ class _MilestoneDetailDialog extends StatelessWidget {
               textAlign: TextAlign.center,
               style: theme.textTheme.labelLarge?.copyWith(
                 color: AppColors.primary,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -907,7 +907,7 @@ class _StatusPill extends StatelessWidget {
         label,
         style: theme.textTheme.labelSmall?.copyWith(
           color: color,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
         ),
       ),
     );
@@ -992,7 +992,7 @@ class _CravingEmptyState extends StatelessWidget {
             style: AppTypography.statNumber.copyWith(
               fontSize: 30,
               color: AppColors.accentCraving,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -1054,7 +1054,7 @@ class _CompactHeroNumber extends StatelessWidget {
             style: AppTypography.statNumber.copyWith(
               fontSize: 30,
               color: color,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
@@ -1338,7 +1338,7 @@ class _AchievementSummaryPill extends StatelessWidget {
               '$unlocked/$total unlocked',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: AppColors.primary,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
               ),
             ),
           ],

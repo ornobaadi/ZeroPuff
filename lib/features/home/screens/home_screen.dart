@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/calculations/progress_calculations.dart';
 import '../../../core/router/app_routes.dart';
@@ -443,7 +442,7 @@ class _FlipTimer extends StatelessWidget {
                   data.smokeFreeDays == 1 ? 'day' : 'days',
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
                   ),
                 ),
               ),
@@ -560,7 +559,7 @@ class _AppBarStreak extends StatelessWidget {
                   '$streak',
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
                   ),
                 ),
               ],
@@ -773,7 +772,7 @@ class _BreathingCravingButtonState extends State<_BreathingCravingButton>
               "I'm craving",
               style: theme.textTheme.titleMedium?.copyWith(
                 color: Colors.white,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w700, fontVariations: AppTypography.w700,
               ),
             ),
           ],
@@ -838,11 +837,10 @@ class _MetricCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             Text(
               value,
-              style: GoogleFonts.outfit(
+              style: AppTypography.statNumber.copyWith(
                 fontSize: 30,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w700, fontVariations: AppTypography.w700,
                 color: color,
-                letterSpacing: 0,
               ),
             ),
             const SizedBox(height: AppSpacing.xs),

@@ -468,7 +468,7 @@ class _StatPill extends StatelessWidget {
               value,
               style: theme.textTheme.titleLarge?.copyWith(
                 color: color,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
               ),
             ),
           ),
@@ -498,7 +498,7 @@ class _MonthCalendar extends ConsumerWidget {
     final cells = JournalCalculations.monthGrid(data.month);
     final weekdayStyle = theme.textTheme.labelMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w700, fontVariations: AppTypography.w700,
     );
 
     return Container(

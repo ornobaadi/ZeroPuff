@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -556,7 +557,7 @@ class _ProfileAvatar extends StatelessWidget {
                     initials,
                     style: theme.textTheme.titleLarge?.copyWith(
                       color: theme.colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
                     ),
                   )
           : null,

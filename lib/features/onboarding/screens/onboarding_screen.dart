@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -808,7 +808,7 @@ class _SmokingWindowCard extends StatelessWidget {
                     Text(
                       'Usual smoke window',
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -918,7 +918,7 @@ class _TimeButton extends StatelessWidget {
                 label,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w700, fontVariations: AppTypography.w700,
                 ),
               ),
               const SizedBox(height: 2),
@@ -926,7 +926,7 @@ class _TimeButton extends StatelessWidget {
                 child: Text(
                   value,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
                   ),
                 ),
               ),
@@ -990,9 +990,9 @@ class _NumberStepper extends StatelessWidget {
                   child: Text(
                     '${prefix ?? ''}$value',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(
+                    style: AppTypography.statNumber.copyWith(
                       fontSize: 27,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
                       height: 1,
                       color: theme.colorScheme.onSurface,
                     ),
@@ -1154,7 +1154,7 @@ class _OnboardingTriggerChip extends StatelessWidget {
               option.label,
               style: theme.textTheme.labelMedium?.copyWith(
                 color: foreground,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
               ),
             ),
           ],

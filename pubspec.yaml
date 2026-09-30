@@ -41,7 +41,6 @@ dependencies:
   google_sign_in: ^7.2.0
   path_provider: ^2.1.5
   flutter_dotenv: ^6.0.1
-  google_fonts: ^8.1.0
   intl: ^0.20.2
   shared_preferences: ^2.5.5
   flutter_local_notifications: ^21.0.0
@@ -81,6 +80,14 @@ flutter:
   assets:
     - .env
     - assets/badges/
+
+  fonts:
+    - family: PlayfairDisplay
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay-Variable.ttf
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Variable.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

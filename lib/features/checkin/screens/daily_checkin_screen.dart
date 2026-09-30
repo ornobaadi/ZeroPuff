@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -333,7 +334,7 @@ class _MoodScale extends StatelessWidget {
                           mood.subtitle,
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: AppColors.primary,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
                           ),
                         ),
                       ],
@@ -352,7 +353,7 @@ class _MoodScale extends StatelessWidget {
                       '${mood.value}/5',
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: AppColors.primaryDark,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
                       ),
                     ),
                   ),
@@ -456,7 +457,7 @@ class _MoodScaleTick extends StatelessWidget {
           value,
           style: theme.textTheme.labelMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
           ),
         ),
         const SizedBox(height: 2),
@@ -502,7 +503,7 @@ class _MoodGuideRow extends StatelessWidget {
               '${option.value}',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: AppColors.textPrimary,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
               ),
             ),
           ),

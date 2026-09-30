@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -74,7 +75,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 fontFamily: theme.textTheme.bodyLarge?.fontFamily,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w500, fontVariations: AppTypography.w500,
               ),
             ),
             const SizedBox(height: AppSpacing.xxl),

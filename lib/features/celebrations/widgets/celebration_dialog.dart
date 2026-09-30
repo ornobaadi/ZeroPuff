@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_typography.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -81,7 +82,7 @@ class _CelebrationDialogState extends State<CelebrationDialog>
                   _eyebrow(event),
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: event.color,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),

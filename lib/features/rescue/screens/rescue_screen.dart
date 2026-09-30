@@ -803,7 +803,7 @@ class _ReasonCard extends StatelessWidget {
                     reason.title,
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: foreground,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
@@ -955,7 +955,7 @@ class _PhaseTaskCard extends StatelessWidget {
                   '$phaseNumber/${rescuePhases.length}',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
                   ),
                 ),
               ),
