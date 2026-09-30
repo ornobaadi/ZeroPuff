@@ -3,38 +3,67 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="How to delete your ZeroPuff account and data.">
 <title>Delete your account – ZeroPuff</title>
 <style>
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.6;max-width:720px;margin:0 auto;padding:24px 16px 64px;color:#1b2a27;background:#f7fbfa}
-h1{color:#1f7a61}h2{margin-top:2rem;color:#1f7a61}a{color:#1f7a61}
-table{border-collapse:collapse;width:100%}td,th{border:1px solid #cfe3de;padding:8px;text-align:left;vertical-align:top}
-footer{margin-top:3rem;font-size:.9rem;color:#5b6f6a}
+:root{--g:#1f7a61;--bg:#f7fbfa;--t:#1b2a27;--m:#5b6f6a;--b:#cfe3de}
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.65;max-width:780px;margin:0 auto;padding:24px 16px 64px;color:var(--t);background:var(--bg)}
+h1{color:var(--g);margin-bottom:.2rem}h2{margin-top:2.2rem;color:var(--g);border-bottom:1px solid var(--b);padding-bottom:.3rem}h3{margin-top:1.4rem}
+a{color:var(--g)}nav a{margin-right:14px}
+table{border-collapse:collapse;width:100%;font-size:.95rem;margin:1rem 0}td,th{border:1px solid var(--b);padding:8px 10px;text-align:left;vertical-align:top}th{background:#e6f2ee}
+.box{background:#e6f2ee;border-left:4px solid var(--g);padding:12px 16px;margin:1rem 0;border-radius:4px}
+.meta{color:var(--m)}footer{margin-top:3rem;font-size:.9rem;color:var(--m);border-top:1px solid var(--b);padding-top:1rem}
 </style>
 </head>
 <body>
-<h1>Delete your ZeroPuff account</h1>
-<p>You can delete your ZeroPuff account and data at any time.</p>
+<nav><a href="index.html">Home</a><a href="privacy.html">Privacy Policy</a><a href="delete-account.html">Delete your account</a></nav>
+<h1>Delete your ZeroPuff account and data</h1>
+<p class="meta"><strong>App:</strong> ZeroPuff (<code>com.zeropuff.app</code>) · <strong>Developer:</strong> Silio Digital</p>
+<p>You can permanently delete your ZeroPuff account and the data associated with it at any time. This page explains how, what is deleted, and what is kept.</p>
 
-<h2>Option 1: Inside the app (fastest)</h2>
+<h2>Option 1: Delete inside the app (immediate)</h2>
 <ol>
-<li>Open ZeroPuff and go to <strong>Profile</strong>.</li>
+<li>Open <strong>ZeroPuff</strong> and sign in if you are not already.</li>
+<li>Go to the <strong>Profile</strong> tab.</li>
 <li>Tap <strong>Delete account</strong>.</li>
-<li>Confirm. Your account and all backed-up data are permanently deleted, and local data is erased from the device.</li>
+<li>Read the warning and tap <strong>Delete</strong> to confirm.</li>
+</ol>
+<p>Your account and all your backed-up data are deleted immediately from our servers, all local data is erased from your device, and you are signed out. This cannot be undone.</p>
+
+<h2>Option 2: Request deletion by email</h2>
+<p>If you can no longer open the app (for example you uninstalled it or changed phones), request deletion by email:</p>
+<ol>
+<li>Send an email to <a href="mailto:aadi4789@gmail.com?subject=ZeroPuff%20account%20deletion%20request">aadi4789@gmail.com</a> with the subject <strong>ZeroPuff account deletion request</strong>.</li>
+<li>Send it from the email address of the Google account you used to sign in to ZeroPuff, so we can verify it is you.</li>
+<li>We will delete your account and data within <strong>30 days</strong> (usually much sooner) and confirm by reply.</li>
 </ol>
 
-<h2>Option 2: By email</h2>
-<p>If you can no longer access the app, email <a href="mailto:YOUR_CONTACT_EMAIL?subject=ZeroPuff%20account%20deletion">YOUR_CONTACT_EMAIL</a> from the email address linked to your Google account with the subject "ZeroPuff account deletion". We will delete your account within 30 days and confirm by email.</p>
-
 <h2>What is deleted</h2>
-<ul>
-<li>Your profile (name, email, profile picture)</li>
-<li>Smoking logs, craving logs, daily check-ins and achievements</li>
-<li>Notification preferences and in-app activity events</li>
-</ul>
-<p>Deletion is permanent and cannot be undone. We keep no copy of this data afterwards, except where the law requires us to.</p>
+<table>
+<tr><th>Data</th><th>Result</th></tr>
+<tr><td>Profile: name, email address, profile picture, account ID</td><td>Deleted</td></tr>
+<tr><td>Habit set-up: quit date, cigarettes per day, pack size and price, currency, smoking times, your reason for quitting</td><td>Deleted</td></tr>
+<tr><td>Smoking logs, craving logs, daily check-ins, achievements</td><td>Deleted</td></tr>
+<tr><td>Notification preferences and app activity events</td><td>Deleted</td></tr>
+<tr><td>Sign-in (authentication) record</td><td>Deleted – you can no longer sign in with that account</td></tr>
+<tr><td>Data stored on your device</td><td>Erased when you delete in the app, or when you uninstall the app</td></tr>
+</table>
 
-<h2>Guest mode</h2>
-<p>If you never signed in, your data exists only on your device. Use <strong>Profile → Delete local data</strong> or uninstall the app.</p>
-<footer><a href="index.html">Home</a> · <a href="privacy.html">Privacy Policy</a> · <a href="delete-account.html">Delete your account</a></footer>
+<h2>What may be kept</h2>
+<ul>
+<li>Routine encrypted backups held by our hosting provider are overwritten on their normal rotation schedule, typically within 30 days. They are not used or restored.</li>
+<li>Limited records if we are legally required to keep them.</li>
+</ul>
+
+<h2>If you only used guest mode</h2>
+<p>Guest data exists only on your device and was never sent to us. Delete it with <strong>Profile → Delete local data</strong>, or by uninstalling the app or clearing its storage in Android settings.</p>
+
+<h2>Partial deletion</h2>
+<p>If you would like to remove only some data (for example individual logs) without deleting your account, you can edit or remove entries in the app, or email us and we will help.</p>
+
+<h2>Questions</h2>
+<p>Email <a href="mailto:aadi4789@gmail.com">aadi4789@gmail.com</a>. See also our <a href="privacy.html">Privacy Policy</a>.</p>
+<footer>© 2026 Silio Digital · ZeroPuff (com.zeropuff.app) · Contact: <a href="mailto:aadi4789@gmail.com">aadi4789@gmail.com</a></footer>
 </body>
 </html>
