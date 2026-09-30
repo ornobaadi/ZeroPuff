@@ -11,9 +11,12 @@ import '../../../repositories/daily_checkin_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/smoking_log_repository.dart';
 
+/// Refreshes the dashboard once a minute. The live seconds clock is owned by
+/// the timer widget itself, so ticking every second here would needlessly
+/// rebuild every screen that reads the dashboard.
 final homeTickerProvider = StreamProvider<DateTime>((ref) {
   return Stream<DateTime>.periodic(
-    const Duration(seconds: 1),
+    const Duration(minutes: 1),
     (_) => DateTime.now(),
   ).startWith(DateTime.now());
 });
@@ -166,6 +169,7 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
   return AsyncData(
     HomeDashboardData(
       smokeFreeDuration: smokeFreeDuration,
+      smokeFreeSince: quitDate,
       cigarettesAvoided: cigarettesAvoided,
       moneySaved: moneySaved,
       currencySymbol: data.currencySymbol,
@@ -225,7 +229,15 @@ class HomeDashboardData {
     required this.resistanceStreak,
     this.lastSmokeAt,
     this.todayCheckIn,
-  });
+    DateTime? smokeFreeSince,
+  }) : _smokeFreeSince = smokeFreeSince;
+
+  final DateTime? _smokeFreeSince;
+
+  /// When the current smoke-free period began (quit date or the last logged
+  /// cigarette, whichever is later).
+  DateTime get smokeFreeSince =>
+      _smokeFreeSince ?? DateTime.now().subtract(smokeFreeDuration);
 
   final Duration smokeFreeDuration;
   final int cigarettesAvoided;

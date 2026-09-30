@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/content_width.dart';
+import '../../../core/widgets/number_stepper.dart';
+import '../../../core/widgets/state_view.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../models/app_event.dart';
 import '../../../repositories/app_event_repository.dart';
@@ -13,15 +18,17 @@ import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/smoking_log_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
 
-const _triggers = [
-  'stress',
-  'bored',
-  'social',
-  'after food',
-  'coffee',
-  'routine',
-  'other',
-];
+const _maxCount = 60;
+
+const _triggers = {
+  'stress': 'Stressed',
+  'bored': 'Bored',
+  'social': 'Social',
+  'after food': 'After food',
+  'coffee': 'Coffee',
+  'routine': 'Routine',
+  'other': 'Something else',
+};
 
 class SmokingLogScreen extends ConsumerStatefulWidget {
   const SmokingLogScreen({this.logId, super.key});
@@ -38,8 +45,9 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
   DateTime _smokedAt = DateTime.now();
   final _noteController = TextEditingController();
 
-  bool _isDisposed = false;
   bool _loadingExisting = false;
+  bool _isSaving = false;
+  Object? _loadError;
 
   bool get _isEditing => widget.logId != null;
 
@@ -51,67 +59,78 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
 
   @override
   void dispose() {
-    _isDisposed = true;
     _noteController.dispose();
     super.dispose();
   }
 
   Future<void> _submitLog() async {
+    if (_isSaving) {
+      return;
+    }
+    setState(() => _isSaving = true);
     _mediumHaptic();
-    final repository = ref.read(smokingLogRepositoryProvider);
-    final eventRepository = ref.read(appEventRepositoryProvider);
-    final note = _noteController.text.trim().isEmpty
-        ? null
-        : _noteController.text.trim();
-    final logId = widget.logId;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final repository = ref.read(smokingLogRepositoryProvider);
+      final eventRepository = ref.read(appEventRepositoryProvider);
+      final note = _noteController.text.trim().isEmpty
+          ? null
+          : _noteController.text.trim();
+      final logId = widget.logId;
 
-    final savedLogId =
-        logId ??
-        (await repository.addLog(
+      final String savedLogId;
+      if (logId == null) {
+        savedLogId = await repository.addLog(
           count: _count,
           trigger: _trigger,
           smokedAt: _smokedAt,
           note: note,
-        ));
-    if (logId != null) {
-      await repository.updateLog(
-        logId: logId,
-        count: _count,
-        trigger: _trigger,
-        smokedAt: _smokedAt,
-        note: note,
+        );
+      } else {
+        await repository.updateLog(
+          logId: logId,
+          count: _count,
+          trigger: _trigger,
+          smokedAt: _smokedAt,
+          note: note,
+        );
+        savedLogId = logId;
+      }
+
+      await eventRepository.track(
+        AppEvent(
+          eventName: logId == null ? 'smoke_logged' : 'smoke_log_updated',
+          properties: {
+            'count': _count,
+            'trigger': _trigger,
+            'smoked_at': _smokedAt.toIso8601String(),
+          },
+        ),
       );
-    }
+      ref.invalidate(latestSmokeAtProvider);
+      ref.invalidate(recentSmokingLogsProvider);
+      ref.invalidate(homeBaselineProvider);
 
-    await eventRepository.track(
-      AppEvent(
-        eventName: logId == null ? 'smoke_logged' : 'smoke_log_updated',
-        properties: {
-          'count': _count,
-          'trigger': _trigger,
-          'smoked_at': _smokedAt.toIso8601String(),
-        },
-      ),
-    );
-    ref.invalidate(latestSmokeAtProvider);
-    ref.invalidate(recentSmokingLogsProvider);
-    ref.invalidate(homeBaselineProvider);
-
-    if (!_isDisposed && mounted) {
+      if (!mounted) {
+        return;
+      }
       if (logId == null) {
         context.go('${AppRoutes.recovery}?logId=$savedLogId');
         return;
       }
-
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Log updated. Your timeline is clearer now.'),
         ),
       );
+    } on Object catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(error))));
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -120,18 +139,25 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
     if (logId == null) {
       return;
     }
-    setState(() => _loadingExisting = true);
+    setState(() {
+      _loadingExisting = true;
+      _loadError = null;
+    });
     try {
       final log = await ref.read(smokingLogRepositoryProvider).getById(logId);
       if (log == null || !mounted) {
         return;
       }
       setState(() {
-        _count = log.count;
-        _trigger = log.trigger;
+        _count = log.count.clamp(1, _maxCount);
+        _trigger = _triggers.containsKey(log.trigger) ? log.trigger : 'other';
         _smokedAt = log.smokedAt;
         _noteController.text = log.note ?? '';
       });
+    } on Object catch (error) {
+      if (mounted) {
+        setState(() => _loadError = error);
+      }
     } finally {
       if (mounted) {
         setState(() => _loadingExisting = false);
@@ -142,37 +168,48 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(_isEditing ? 'Edit log' : 'Log cigarette')),
-      body: SafeArea(
-        child: _loadingExisting
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                padding: const EdgeInsets.all(AppSpacing.pagePadding),
-                children: [
-                  Container(
+    final Widget body;
+    if (_loadingExisting) {
+      body = const StateView.loading(label: 'Loading log');
+    } else if (_loadError != null) {
+      body = StateView.error(error: _loadError!, onRetry: _loadExisting);
+    } else {
+      body = ListView(
+        padding: const EdgeInsets.all(AppSpacing.pagePadding),
+        children: [
+          ContentWidth(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Material(
+                  color: scheme.secondaryContainer,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: AppShapes.extraLarge,
+                  ),
+                  child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.cardPadding),
-                    decoration: BoxDecoration(
-                      color: AppColors.relapse.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: AppColors.relapse.withValues(alpha: 0.16),
-                      ),
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           _isEditing ? 'Private correction' : 'Private log',
-                          style: theme.textTheme.labelLarge,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: scheme.onSecondaryContainer,
+                          ),
                         ),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          _isEditing
-                              ? 'Make the timeline accurate.'
-                              : 'This is not a failure screen.',
-                          style: theme.textTheme.headlineMedium,
+                        const SizedBox(height: AppSpacing.sm),
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            _isEditing
+                                ? 'Make the timeline accurate.'
+                                : 'This is not a failure screen.',
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              color: scheme.onSecondaryContainer,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
@@ -180,115 +217,95 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
                               ? 'Small corrections matter. Your progress should reflect what really happened.'
                               : 'Honest logs protect the bigger pattern and help tomorrow feel less random.',
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                            color: scheme.onSecondaryContainer,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.sectionGap),
-                  Text('How many?', style: theme.textTheme.titleMedium),
-                  const SizedBox(height: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: theme.cardTheme.color,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton.filledTonal(
-                          onPressed: _count > 1
-                              ? () {
-                                  _selectionHaptic();
-                                  setState(() => _count--);
-                                }
-                              : null,
-                          icon: const Icon(Icons.remove_rounded),
-                        ),
-                        SizedBox(
-                          width: 120,
-                          child: Text(
-                            '$_count',
-                            textAlign: TextAlign.center,
-                            style: AppTypography.statNumber.copyWith(
-                              fontSize: 46,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                        ),
-                        IconButton.filledTonal(
-                          onPressed: () {
-                            _selectionHaptic();
-                            setState(() => _count++);
-                          },
-                          icon: const Icon(Icons.add_rounded),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  Text(
-                    'What triggered it?',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: _triggers.map((trigger) {
-                      return ChoiceChip(
-                        label: Text(trigger),
-                        selected: _trigger == trigger,
+                ),
+                const SizedBox(height: AppSpacing.sectionGap),
+                NumberStepper(
+                  label: 'How many?',
+                  value: _count,
+                  min: 1,
+                  max: _maxCount,
+                  onChanged: (value) {
+                    _selectionHaptic();
+                    setState(() => _count = value);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                Text('What triggered it?', style: theme.textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    for (final entry in _triggers.entries)
+                      ChoiceChip(
+                        label: Text(entry.value),
+                        selected: _trigger == entry.key,
                         onSelected: (selected) {
                           if (selected) {
                             _selectionHaptic();
-                            setState(() => _trigger = trigger);
+                            setState(() => _trigger = entry.key);
                           }
                         },
-                      );
-                    }).toList(),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                Text(
+                  'When did this happen?',
+                  style: theme.textTheme.titleMedium,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _TimeSelector(
+                  smokedAt: _smokedAt,
+                  onChanged: (value) {
+                    _selectionHaptic();
+                    setState(() => _smokedAt = value);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                TextField(
+                  controller: _noteController,
+                  maxLength: 300,
+                  minLines: 3,
+                  maxLines: 5,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'Optional note',
+                    hintText: 'What was happening right before?',
+                    alignLabelWithHint: true,
                   ),
-                  const SizedBox(height: AppSpacing.xl),
-                  Text(
-                    'When did this happen?',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _TimeSelector(
-                    smokedAt: _smokedAt,
-                    onChanged: (value) {
-                      _selectionHaptic();
-                      setState(() => _smokedAt = value);
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  TextField(
-                    controller: _noteController,
-                    decoration: const InputDecoration(
-                      labelText: 'Optional note',
-                      hintText: 'What was happening right before?',
-                    ),
-                    minLines: 3,
-                    maxLines: 5,
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.relapse,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: _submitLog,
-                    icon: const Icon(Icons.check_rounded),
-                    label: Text(_isEditing ? 'Update log' : 'Save log'),
-                  ),
-                ],
-              ),
-      ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                FilledButton.icon(
+                  onPressed: _isSaving ? null : _submitLog,
+                  icon: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            semanticsLabel: 'Saving',
+                          ),
+                        )
+                      : const Icon(Icons.check_rounded),
+                  label: Text(_isEditing ? 'Update log' : 'Save log'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: Text(_isEditing ? 'Edit log' : 'Log cigarette')),
+      body: SafeArea(child: body),
     );
   }
 
@@ -312,11 +329,12 @@ class _TimeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final now = DateTime.now();
-    final presets = <_TimePreset>[
-      _TimePreset('Just now', now),
-      _TimePreset('15 min ago', now.subtract(const Duration(minutes: 15))),
-      _TimePreset('30 min ago', now.subtract(const Duration(minutes: 30))),
+    final presets = <(String, DateTime)>[
+      ('Just now', now),
+      ('15 min ago', now.subtract(const Duration(minutes: 15))),
+      ('30 min ago', now.subtract(const Duration(minutes: 30))),
     ];
 
     return Column(
@@ -325,47 +343,43 @@ class _TimeSelector extends StatelessWidget {
         Wrap(
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
-          children: presets.map((preset) {
-            final selected =
-                smokedAt.difference(preset.value).inMinutes.abs() < 2;
-            return ChoiceChip(
-              label: Text(preset.label),
-              selected: selected,
-              onSelected: (_) => onChanged(preset.value),
-            );
-          }).toList(),
+          children: [
+            for (final (label, value) in presets)
+              ChoiceChip(
+                label: Text(label),
+                selected: smokedAt.difference(value).inMinutes.abs() < 2,
+                onSelected: (_) => onChanged(value),
+              ),
+          ],
         ),
         const SizedBox(height: AppSpacing.componentGap),
-        InkWell(
-          borderRadius: BorderRadius.circular(22),
+        AppCard(
+          style: AppCardStyle.outlined,
           onTap: () => _pickTime(context),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: theme.colorScheme.outlineVariant),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.schedule_rounded),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    _timeLabel(smokedAt),
-                    style: theme.textTheme.titleMedium,
-                  ),
+          semanticLabel: 'Time smoked: ${_label(smokedAt, now)}. Double tap to change.',
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              Icon(Icons.schedule_rounded, color: scheme.onSurfaceVariant),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  _label(smokedAt, now),
+                  style: theme.textTheme.titleMedium,
                 ),
-                const Icon(Icons.chevron_right_rounded),
-              ],
-            ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: scheme.onSurfaceVariant,
+              ),
+            ],
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Your smoke-free timer starts from this time.',
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+            color: scheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -381,34 +395,31 @@ class _TimeSelector extends StatelessWidget {
       return;
     }
     final now = DateTime.now();
-    var value = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      picked.hour,
-      picked.minute,
-    );
+    // Assume today; if that lands in the future, the user means yesterday.
+    var value = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
     if (value.isAfter(now)) {
-      value = value.subtract(const Duration(days: 1));
+      value = DateTime(
+        now.year,
+        now.month,
+        now.day - 1,
+        picked.hour,
+        picked.minute,
+      );
     }
     onChanged(value);
   }
 
-  String _timeLabel(DateTime value) {
-    final hour = value.hour == 0
-        ? 12
-        : value.hour > 12
-        ? value.hour - 12
-        : value.hour;
-    final minute = value.minute.toString().padLeft(2, '0');
-    final suffix = value.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $suffix';
+  String _label(DateTime value, DateTime now) {
+    final time = DateFormat.jm().format(value);
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(value.year, value.month, value.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) {
+      return 'Today, $time';
+    }
+    if (diff == 1) {
+      return 'Yesterday, $time';
+    }
+    return '${DateFormat.MMMd().format(value)}, $time';
   }
-}
-
-class _TimePreset {
-  const _TimePreset(this.label, this.value);
-
-  final String label;
-  final DateTime value;
 }

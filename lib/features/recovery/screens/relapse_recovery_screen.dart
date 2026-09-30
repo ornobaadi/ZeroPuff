@@ -4,12 +4,19 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/router/app_routes.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_motion.dart';
+import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/content_width.dart';
+import '../../../core/widgets/selectable_tile.dart';
+import '../../../core/widgets/state_view.dart';
 import '../../../models/app_event.dart';
 import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/smoking_log_repository.dart';
 
+/// Shown right after a cigarette is logged: reassurance, the pattern, and one
+/// small reset action. Non-judgemental by design.
 class RelapseRecoveryScreen extends ConsumerStatefulWidget {
   const RelapseRecoveryScreen({this.logId, super.key});
 
@@ -22,7 +29,7 @@ class RelapseRecoveryScreen extends ConsumerStatefulWidget {
 
 class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
   late final Future<SmokingLogRecord?> _logFuture;
-  final Set<String> _selectedActions = {};
+  String? _selectedAction;
   bool _started = false;
 
   @override
@@ -31,7 +38,11 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
     final logId = widget.logId;
     _logFuture = logId == null
         ? Future.value(null)
-        : ref.read(smokingLogRepositoryProvider).getById(logId);
+        : ref
+              .read(smokingLogRepositoryProvider)
+              .getById(logId)
+              // A missing log should not block the reassurance screen.
+              .catchError((Object _) => null);
     ref
         .read(appEventRepositoryProvider)
         .track(
@@ -47,18 +58,22 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
       return;
     }
     setState(() => _started = true);
-    await ref
-        .read(appEventRepositoryProvider)
-        .track(
-          AppEvent(
-            eventName: 'relapse_recovery_started',
-            properties: {
-              'log_id': widget.logId,
-              'trigger': log?.trigger,
-              'actions': _selectedActions.toList(),
-            },
-          ),
-        );
+    try {
+      await ref
+          .read(appEventRepositoryProvider)
+          .track(
+            AppEvent(
+              eventName: 'relapse_recovery_started',
+              properties: {
+                'log_id': widget.logId,
+                'trigger': log?.trigger,
+                'actions': [?_selectedAction],
+              },
+            ),
+          );
+    } on Object {
+      // Analytics must never block moving on.
+    }
     if (mounted) {
       context.go(AppRoutes.home);
     }
@@ -82,90 +97,98 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
           future: _logFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const StateView.loading(label: 'Loading');
             }
             final log = snapshot.data;
             return ListView(
               padding: const EdgeInsets.all(AppSpacing.pagePadding),
               children: [
-                const SizedBox(height: AppSpacing.lg),
-                _RecoveryHero(log: log),
-                const SizedBox(height: AppSpacing.xxl),
-                Text('What happened?', style: theme.textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Name the pattern once. Then let the next move be small.',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                ContentWidth(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _RecoveryHero(log: log),
+                      const SizedBox(height: AppSpacing.sectionGap),
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          'What happened?',
+                          style: theme.textTheme.titleLarge,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Name the pattern once. Then let the next move be small.',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _TriggerWrap(trigger: log?.trigger),
+                      const SizedBox(height: AppSpacing.sectionGap),
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          'Pick one tiny reset',
+                          style: theme.textTheme.titleLarge,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      for (final action in _actions)
+                        SelectableTile(
+                          icon: action.icon,
+                          title: action.title,
+                          subtitle: action.subtitle,
+                          selected: _selectedAction == action.id,
+                          onTap: () => setState(
+                            () => _selectedAction =
+                                _selectedAction == action.id ? null : action.id,
+                          ),
+                        ),
+                      const SizedBox(height: AppSpacing.lg),
+                      _ResetSummary(log: log),
+                      const SizedBox(height: AppSpacing.xl),
+                      FilledButton.icon(
+                        onPressed: _started ? null : () => _startRecovery(log),
+                        icon: _started
+                            ? const SizedBox.square(
+                                dimension: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  semanticsLabel: 'Starting',
+                                ),
+                              )
+                            : const Icon(Icons.play_arrow_rounded),
+                        label: const Text('Start recovery'),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: widget.logId == null
+                                  ? null
+                                  : () => context.push(
+                                      '${AppRoutes.logging}?logId=${widget.logId}',
+                                    ),
+                              icon: const Icon(Icons.edit_rounded),
+                              label: const Text('Edit log'),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => context.go(AppRoutes.journal),
+                              icon: const Icon(Icons.calendar_month_rounded),
+                              label: const Text('Journal'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                _TriggerWrap(trigger: log?.trigger),
-                const SizedBox(height: AppSpacing.xxl),
-                Text('Pick one tiny reset', style: theme.textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.md),
-                _RecoveryActionCard(
-                  icon: Icons.water_drop_rounded,
-                  title: 'Drink water',
-                  subtitle: 'Give your hands and mouth a clean interruption.',
-                  selected: _selectedActions.contains('drink_water'),
-                  onTap: () => _toggleAction('drink_water'),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _RecoveryActionCard(
-                  icon: Icons.cleaning_services_rounded,
-                  title: 'Reset environment',
-                  subtitle: 'Move the lighter, change rooms, open a window.',
-                  selected: _selectedActions.contains('reset_environment'),
-                  onTap: () => _toggleAction('reset_environment'),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _RecoveryActionCard(
-                  icon: Icons.schedule_rounded,
-                  title: 'Plan next danger window',
-                  subtitle:
-                      'Choose the next risky moment before it chooses you.',
-                  selected: _selectedActions.contains('plan_danger_window'),
-                  onTap: () => _toggleAction('plan_danger_window'),
-                ),
-                const SizedBox(height: AppSpacing.xxl),
-                _ResetSummary(log: log),
-                const SizedBox(height: AppSpacing.xl),
-                FilledButton.icon(
-                  onPressed: () => _startRecovery(log),
-                  icon: _started
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.play_arrow_rounded),
-                  label: const Text('Start recovery'),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: widget.logId == null
-                            ? null
-                            : () => context.push(
-                                '${AppRoutes.logging}?logId=${widget.logId}',
-                              ),
-                        icon: const Icon(Icons.edit_rounded),
-                        label: const Text('Edit log'),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => context.go(AppRoutes.journal),
-                        icon: const Icon(Icons.calendar_month_rounded),
-                        label: const Text('Journal'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xl),
               ],
             );
           },
@@ -173,15 +196,37 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
       ),
     );
   }
-
-  void _toggleAction(String action) {
-    setState(() {
-      if (!_selectedActions.add(action)) {
-        _selectedActions.remove(action);
-      }
-    });
-  }
 }
+
+class _ResetAction {
+  const _ResetAction(this.id, this.icon, this.title, this.subtitle);
+
+  final String id;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+}
+
+const _actions = [
+  _ResetAction(
+    'drink_water',
+    Icons.water_drop_rounded,
+    'Drink water',
+    'Give your hands and mouth a clean interruption.',
+  ),
+  _ResetAction(
+    'reset_environment',
+    Icons.cleaning_services_rounded,
+    'Reset environment',
+    'Move the lighter, change rooms, open a window.',
+  ),
+  _ResetAction(
+    'plan_danger_window',
+    Icons.schedule_rounded,
+    'Plan next danger window',
+    'Choose the next risky moment before it chooses you.',
+  ),
+];
 
 class _RecoveryHero extends StatelessWidget {
   const _RecoveryHero({required this.log});
@@ -191,66 +236,69 @@ class _RecoveryHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final loggedAt = log == null
-        ? 'Just now'
-        : DateFormat('h:mm a').format(log!.smokedAt);
+        ? 'just now'
+        : DateFormat.jm().format(log!.smokedAt);
 
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.94, end: 1),
-      duration: const Duration(milliseconds: 520),
-      curve: Curves.easeOutCubic,
-      builder: (context, scale, child) {
-        return Transform.scale(scale: scale, child: child);
-      },
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.cardPadding),
-        decoration: BoxDecoration(
-          color: AppColors.relapse.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: AppColors.relapse.withValues(alpha: 0.18)),
+      tween: Tween(begin: 0.96, end: 1),
+      duration: AppMotion.of(context, AppMotion.emphasized),
+      curve: AppMotion.enter,
+      builder: (context, scale, child) =>
+          Transform.scale(scale: scale, child: child),
+      child: Material(
+        color: scheme.secondaryContainer,
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppShapes.extraLargeIncreased,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: AppColors.relapse.withValues(alpha: 0.16),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
                 Icons.favorite_rounded,
-                color: AppColors.relapse,
-                size: 32,
+                color: scheme.onSecondaryContainer,
+                size: 40,
               ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              'Logged. You did not lose everything.',
-              style: theme.textTheme.headlineMedium,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'This gives us a clearer map for next time.',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                const Icon(Icons.restart_alt_rounded, color: AppColors.relapse),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    'Smoke-free clock restarted from $loggedAt.',
-                    style: theme.textTheme.labelLarge,
+              const SizedBox(height: AppSpacing.lg),
+              Semantics(
+                header: true,
+                child: Text(
+                  'Logged. You did not lose everything.',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: scheme.onSecondaryContainer,
                   ),
                 ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'This gives us a clearer map for next time.',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: scheme.onSecondaryContainer,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Icon(
+                    Icons.restart_alt_rounded,
+                    color: scheme.onSecondaryContainer,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Smoke-free clock restarted from $loggedAt.',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: scheme.onSecondaryContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -273,6 +321,7 @@ class _TriggerWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final chips = {
       if (trigger != null && trigger!.isNotEmpty) trigger!,
       ..._fallbackTriggers,
@@ -281,108 +330,18 @@ class _TriggerWrap extends StatelessWidget {
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
-      children: chips.map((chip) {
-        final selected = chip == trigger;
-        return Chip(
-          avatar: selected
-              ? const Icon(Icons.check_rounded, size: 18)
-              : const Icon(Icons.circle_outlined, size: 14),
-          label: Text(chip),
-          backgroundColor: selected
-              ? AppColors.relapse.withValues(alpha: 0.16)
-              : Theme.of(context).colorScheme.surfaceContainerHighest,
-          side: BorderSide(
-            color: selected
-                ? AppColors.relapse.withValues(alpha: 0.3)
-                : Colors.transparent,
+      children: [
+        for (final chip in chips)
+          Chip(
+            avatar: chip == trigger
+                ? const Icon(Icons.check_rounded, size: 18)
+                : null,
+            label: Text(toBeginningOfSentenceCase(chip) ?? chip),
+            backgroundColor: chip == trigger
+                ? scheme.secondaryContainer
+                : scheme.surfaceContainerLow,
           ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _RecoveryActionCard extends StatelessWidget {
-  const _RecoveryActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primary.withValues(alpha: 0.14)
-              : theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            width: selected ? 2 : 1,
-            color: selected
-                ? AppColors.primary
-                : theme.colorScheme.outlineVariant,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: selected
-                    ? AppColors.primary.withValues(alpha: 0.16)
-                    : theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, color: selected ? AppColors.primary : null),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            AnimatedScale(
-              duration: const Duration(milliseconds: 180),
-              scale: selected ? 1 : 0.8,
-              child: Icon(
-                selected
-                    ? Icons.check_circle_rounded
-                    : Icons.radio_button_unchecked_rounded,
-                color: selected
-                    ? AppColors.primary
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }
@@ -395,21 +354,17 @@ class _ResetSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final count = log?.count ?? 1;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPadding),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.16)),
-      ),
+    return AppCard(
+      style: AppCardStyle.outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.map_rounded, color: AppColors.primary),
+              Icon(Icons.map_rounded, color: scheme.primary),
               const SizedBox(width: AppSpacing.sm),
               Text('What changes now', style: theme.textTheme.titleMedium),
             ],
@@ -441,17 +396,19 @@ class _SummaryLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 8,
-          height: 8,
-          margin: const EdgeInsets.only(top: 7),
-          decoration: const BoxDecoration(
-            color: AppColors.primary,
-            shape: BoxShape.circle,
+        Padding(
+          padding: const EdgeInsets.only(top: 7),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.primary,
+              shape: BoxShape.circle,
+            ),
+            child: const SizedBox(width: 8, height: 8),
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -459,7 +416,7 @@ class _SummaryLine extends StatelessWidget {
           child: Text(
             text,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: scheme.onSurfaceVariant,
             ),
           ),
         ),
