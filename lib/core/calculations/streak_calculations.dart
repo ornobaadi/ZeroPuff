@@ -32,7 +32,7 @@ class StreakCalculations {
 
     while (normalizedDates.contains(cursor)) {
       streak += 1;
-      cursor = cursor.subtract(const Duration(days: 1));
+      cursor = previousDay(cursor);
     }
 
     return streak;
@@ -58,7 +58,7 @@ class StreakCalculations {
         break;
       }
       streak += 1;
-      cursor = cursor.subtract(const Duration(days: 1));
+      cursor = previousDay(cursor);
     }
 
     return streak;
@@ -95,11 +95,11 @@ class StreakCalculations {
 
     if (smokeFreeToday) {
       streak = 1;
-      cursor = cursor.subtract(const Duration(days: 1));
+      cursor = previousDay(cursor);
     } else if (checkedInToday) {
       return 0;
     } else if (allowTodayPending) {
-      cursor = cursor.subtract(const Duration(days: 1));
+      cursor = previousDay(cursor);
     } else {
       return 0;
     }
@@ -112,7 +112,7 @@ class StreakCalculations {
         break;
       }
       streak += 1;
-      cursor = cursor.subtract(const Duration(days: 1));
+      cursor = previousDay(cursor);
     }
 
     return streak;
@@ -147,6 +147,12 @@ class StreakCalculations {
     return DateTime(date.year, date.month, date.day);
   }
 
+  /// Calendar-day arithmetic. Subtracting a 24h Duration breaks on DST days
+  /// (midnight minus 24h lands at 23:00 on the previous day).
+  static DateTime previousDay(DateTime date) {
+    return DateTime(date.year, date.month, date.day - 1);
+  }
+
   static DateTime? parseLocalDateKey(String value) {
     final parts = value.split('-');
     if (parts.length != 3) {
@@ -176,7 +182,7 @@ class StreakCalculations {
 
     while (normalizedDates.contains(cursor)) {
       streak += 1;
-      cursor = cursor.subtract(const Duration(days: 1));
+      cursor = previousDay(cursor);
     }
 
     return streak;

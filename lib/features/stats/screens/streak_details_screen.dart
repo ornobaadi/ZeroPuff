@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -102,7 +103,7 @@ class StreakDetailsScreen extends ConsumerWidget {
             children: [
               Text('Streak unavailable', style: theme.textTheme.titleLarge),
               const SizedBox(height: AppSpacing.sm),
-              Text(error.toString()),
+              Text(friendlyError(error)),
             ],
           ),
         ),

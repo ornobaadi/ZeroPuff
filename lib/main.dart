@@ -8,8 +8,40 @@ import 'core/theme/app_theme.dart';
 import 'repositories/app_settings_repository.dart';
 
 Future<void> main() async {
-  await AppBootstrap.initialize();
+  try {
+    await AppBootstrap.initialize();
+  } on Object catch (error) {
+    debugPrint('ZeroPuff: startup failed: $error');
+    runApp(const _StartupErrorApp());
+    return;
+  }
   runApp(const ProviderScope(child: ZeroPuffApp()));
+}
+
+/// Shown when local storage cannot be opened, instead of a blank screen.
+class _StartupErrorApp extends StatelessWidget {
+  const _StartupErrorApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: Text(
+                'ZeroPuff could not start. Please restart the app. '
+                'If this keeps happening, reinstall it or contact support.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class ZeroPuffApp extends ConsumerWidget {

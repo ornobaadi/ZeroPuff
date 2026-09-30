@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -143,7 +144,7 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(error))));
       }
     } finally {
       if (mounted) {
@@ -303,7 +304,7 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(child: Text(error.toString())),
+          error: (error, _) => Center(child: Text(friendlyError(error))),
         ),
       ),
       bottomNavigationBar: SafeArea(

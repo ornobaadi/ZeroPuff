@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -180,14 +181,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _SettingsTile(
                 icon: Icons.logout_rounded,
                 title: 'Sign out',
-                subtitle: 'Keep local data on this device.',
+                subtitle: 'Your progress stays backed up in your account.',
                 status: '',
-                onTap: () async {
+                onTap: () {
                   _mediumHaptic();
-                  await ref.read(authRepositoryProvider).signOut();
-                  ref.invalidate(currentUserProvider);
-                  ref.invalidate(homeBaselineProvider);
-                  ref.invalidate(homeDashboardProvider);
+                  _signOut();
                 },
               ),
             ],
@@ -301,11 +299,67 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(error))));
       }
     } finally {
       if (mounted) {
         setState(() => _isSyncing = false);
+      }
+    }
+  }
+
+  /// Backs up pending changes, then signs out and clears this device.
+  ///
+  /// Local data is cleared so the next person who signs in cannot inherit (or
+  /// upload into their own account) the previous user's logs.
+  Future<void> _signOut() async {
+    try {
+      final result = await ref
+          .read(syncServiceProvider)
+          .syncPending(limit: 500);
+      if (result.remaining > 0) {
+        if (!mounted) {
+          return;
+        }
+        final proceed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Some changes are not backed up'),
+            content: Text(
+              '${result.remaining} local change${result.remaining == 1 ? '' : 's'} could not be backed up. '
+              'If you sign out now they will be lost.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Stay signed in'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Sign out anyway'),
+              ),
+            ],
+          ),
+        );
+        if (proceed != true) {
+          return;
+        }
+      }
+      await NotificationService.cancelScheduledReminders();
+      await ref.read(accountRepositoryProvider).deleteLocalData();
+      await ref.read(authRepositoryProvider).signOut();
+      ref.invalidate(currentUserProvider);
+      ref.invalidate(homeBaselineProvider);
+      ref.invalidate(homeDashboardProvider);
+      ref.invalidate(pendingSyncCountProvider);
+      if (mounted) {
+        context.go(AppRoutes.signIn);
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(friendlyError(error))));
       }
     }
   }
@@ -345,7 +399,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(error))));
       }
     } finally {
       if (mounted) {
@@ -438,10 +492,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
       await NotificationService.cancelScheduledReminders();
       await ref.read(accountRepositoryProvider).deleteLocalData();
-      await ref.read(authRepositoryProvider).signOut();
+      try {
+        // The account may already be gone server-side, so a sign-out failure
+        // here must not hide the successful deletion.
+        await ref.read(authRepositoryProvider).signOut();
+      } on Object {
+        // Ignored on purpose.
+      }
       ref.invalidate(currentUserProvider);
       ref.invalidate(homeBaselineProvider);
       ref.invalidate(homeDashboardProvider);
+      ref.invalidate(pendingSyncCountProvider);
       if (mounted) {
         context.go(AppRoutes.signIn);
         ScaffoldMessenger.of(
@@ -456,7 +517,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(error))));
       }
     }
   }

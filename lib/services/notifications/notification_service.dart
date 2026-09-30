@@ -24,7 +24,12 @@ class NotificationService {
     tzdata.initializeTimeZones();
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const settings = InitializationSettings(android: android);
+    const ios = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+    const settings = InitializationSettings(android: android, iOS: ios);
     await plugin.initialize(settings: settings);
   }
 
@@ -124,14 +129,9 @@ class NotificationService {
   }
 
   static Future<void> cancelScheduledReminders() async {
-    await plugin.cancel(id: dailyCheckInId);
-    await plugin.cancel(id: milestoneReminderId);
-    await plugin.cancel(id: streakProtectionId);
-    for (var index = 0; index < _rollingReminderDays; index++) {
-      await plugin.cancel(id: _dailyCheckInBaseId + index);
-      await plugin.cancel(id: _streakProtectionBaseId + index);
-      await plugin.cancel(id: _dangerWindowBaseId + index);
-    }
+    // ZeroPuff only schedules its own reminders, so clearing everything is
+    // equivalent to (and much cheaper than) cancelling each id in turn.
+    await plugin.cancelAll();
   }
 
   static Future<void> _scheduleRollingOneShots({
@@ -184,15 +184,18 @@ class NotificationService {
     required int minute,
     required int daysFromToday,
   }) {
-    final now = tz.TZDateTime.now(tz.local);
-    return tz.TZDateTime(
-      tz.local,
+    // tz.local is UTC (no timezone plugin), so build the wall-clock time with
+    // Dart's device-local DateTime and convert it to an absolute instant.
+    // DateTime normalizes day overflow and respects DST changes.
+    final now = DateTime.now();
+    final localTime = DateTime(
       now.year,
       now.month,
-      now.day,
+      now.day + daysFromToday,
       hour,
       minute,
-    ).add(Duration(days: daysFromToday));
+    );
+    return tz.TZDateTime.from(localTime, tz.local);
   }
 
   static _NotificationCopy _dailyCheckInCopy(

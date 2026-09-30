@@ -20,6 +20,7 @@ class AccountRepository {
   Future<void> deleteLocalData() async {
     await _database.writeTxn(() async {
       await _database.localProfiles.clear();
+      await _database.localSmokingWindows.clear();
       await _database.onboardingDrafts.clear();
       await _database.cravingRescueSessions.clear();
       await _database.smokingLogs.clear();

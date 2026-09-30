@@ -179,5 +179,31 @@ void main() {
 
       expect(streak, 1);
     });
+
+    test('previousDay uses calendar days, including month boundaries', () {
+      expect(
+        StreakCalculations.previousDay(DateTime(2026, 3, 1)),
+        DateTime(2026, 2, 28),
+      );
+      expect(
+        StreakCalculations.previousDay(DateTime(2026, 1, 1, 15)),
+        DateTime(2025, 12, 31),
+      );
+    });
+
+    test('streak walks back across many calendar days without skipping', () {
+      final today = DateTime(2026, 3, 30);
+      final days = {
+        for (var i = 0; i < 40; i++) DateTime(2026, 3, 30 - i),
+      };
+
+      expect(
+        StreakCalculations.consecutiveDayStreak(
+          today: today,
+          activeDates: days,
+        ),
+        40,
+      );
+    });
   });
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -17,10 +18,31 @@ class AppBootstrap {
     await dotenv.load(isOptional: true);
 
     final config = AppConfig.fromEnv();
-    await GoogleSignInService.initialize(config);
-    await SupabaseService.initialize(config);
+    if (kDebugMode && !config.hasSupabaseConfig) {
+      debugPrint(
+        'ZeroPuff: Supabase is not configured (missing .env values). '
+        'The app will run in guest-only mode.',
+      );
+    }
+
+    // Local storage is required. Everything else is optional, so a failure in
+    // one service must not stop the app from starting.
     await DeviceIdentityService.initialize();
     await LocalDatabaseService.initialize();
-    await NotificationService.initialize();
+
+    await _optional('Google sign-in', () => GoogleSignInService.initialize(config));
+    await _optional('Supabase', () => SupabaseService.initialize(config));
+    await _optional('Notifications', NotificationService.initialize);
+  }
+
+  static Future<void> _optional(
+    String name,
+    Future<void> Function() step,
+  ) async {
+    try {
+      await step();
+    } on Object catch (error) {
+      debugPrint('ZeroPuff: $name failed to initialize: $error');
+    }
   }
 }

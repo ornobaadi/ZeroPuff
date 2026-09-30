@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -1213,7 +1214,7 @@ class _ErrorScaffold extends StatelessWidget {
             children: [
               Text('Unavailable', style: theme.textTheme.titleLarge),
               const SizedBox(height: AppSpacing.sm),
-              Text(error.toString()),
+              Text(friendlyError(error)),
             ],
           ),
         ),
@@ -1620,7 +1621,7 @@ class _DetailScaffold extends StatelessWidget {
             error: (error, _) => [
               Text('Unavailable', style: theme.textTheme.titleLarge),
               const SizedBox(height: AppSpacing.sm),
-              Text(error.toString()),
+              Text(friendlyError(error)),
             ],
           ),
         ),

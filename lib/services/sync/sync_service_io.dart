@@ -30,6 +30,24 @@ final pendingSyncCountProvider = FutureProvider<int>((ref) async {
   return database.syncQueueItems.count();
 });
 
+// Serializes sync and restore runs so concurrent triggers (manual sync,
+// sign-in, screen refresh) never process the same queue items twice.
+Future<void> _syncLock = Future<void>.value();
+
+Future<T> _withSyncLock<T>(Future<T> Function() action) {
+  final previous = _syncLock;
+  final completer = Future<T>(() async {
+    try {
+      await previous;
+    } on Object {
+      // A previous failure must not block later runs.
+    }
+    return action();
+  });
+  _syncLock = completer.then<void>((_) {}, onError: (_) {});
+  return completer;
+}
+
 class SyncService {
   const SyncService({
     required Isar database,
@@ -43,7 +61,26 @@ class SyncService {
   final SupabaseClient? _client;
   final SyncQueueRepository _queue;
 
-  Future<SyncRunResult> syncPending({int limit = 25}) async {
+  /// Drops queued profile-level changes so a guest's set-up cannot overwrite
+  /// the profile that already exists in the signed-in account.
+  Future<void> discardPendingProfileChanges() async {
+    await _database.writeTxn(() async {
+      await _database.syncQueueItems
+          .filter()
+          .entityTypeEqualTo('profile')
+          .or()
+          .entityTypeEqualTo('smoking_window')
+          .or()
+          .entityTypeEqualTo('notification_preferences')
+          .deleteAll();
+    });
+  }
+
+  Future<SyncRunResult> syncPending({int limit = 25}) {
+    return _withSyncLock(() => _syncPending(limit: limit));
+  }
+
+  Future<SyncRunResult> _syncPending({required int limit}) async {
     final client = _client;
     final user = client?.auth.currentUser;
     if (client == null || user == null) {
@@ -77,7 +114,11 @@ class SyncService {
 
   Future<RemoteRestoreResult> restoreRemoteSnapshot({
     bool replaceLocal = true,
-  }) async {
+  }) {
+    return _withSyncLock(() => _restoreRemoteSnapshot(replaceLocal));
+  }
+
+  Future<RemoteRestoreResult> _restoreRemoteSnapshot(bool replaceLocal) async {
     final client = _client;
     final user = client?.auth.currentUser;
     if (client == null || user == null) {
@@ -89,29 +130,29 @@ class SyncService {
         .select()
         .eq('id', user.id)
         .limit(1);
-    final cravingRows = await client
-        .from('craving_logs')
-        .select()
-        .eq('user_id', user.id)
-        .order('started_at', ascending: false)
-        .limit(500);
-    final smokingRows = await client
-        .from('smoking_logs')
-        .select()
-        .eq('user_id', user.id)
-        .order('smoked_at', ascending: false)
-        .limit(500);
-    final checkInRows = await client
-        .from('daily_checkins')
-        .select()
-        .eq('user_id', user.id)
-        .order('local_date', ascending: false)
-        .limit(500);
-    final achievementRows = await client
-        .from('achievements')
-        .select()
-        .eq('user_id', user.id)
-        .limit(500);
+    final cravingRows = await _fetchAll(
+      client,
+      table: 'craving_logs',
+      userId: user.id,
+      orderBy: 'started_at',
+    );
+    final smokingRows = await _fetchAll(
+      client,
+      table: 'smoking_logs',
+      userId: user.id,
+      orderBy: 'smoked_at',
+    );
+    final checkInRows = await _fetchAll(
+      client,
+      table: 'daily_checkins',
+      userId: user.id,
+      orderBy: 'local_date',
+    );
+    final achievementRows = await _fetchAll(
+      client,
+      table: 'achievements',
+      userId: user.id,
+    );
     final preferenceRows = await client
         .from('notification_preferences')
         .select()
@@ -132,6 +173,11 @@ class SyncService {
     final preferences = _rows(preferenceRows);
     final smokingWindows = _rows(smokingWindowRows);
 
+    final existingQuitDate = (await _database.localProfiles
+            .where()
+            .findFirst())
+        ?.quitDate;
+
     await _database.writeTxn(() async {
       if (replaceLocal) {
         await _database.localProfiles.clear();
@@ -144,7 +190,8 @@ class SyncService {
       }
 
       for (final row in profiles) {
-        final quitDate = _dateTime(row['quit_date']) ?? DateTime.now();
+        final quitDate =
+            _dateTime(row['quit_date']) ?? existingQuitDate ?? DateTime.now();
         final profile = LocalProfile()
           ..userId = user.id
           ..displayName = row['display_name']?.toString() ?? ''
@@ -281,6 +328,33 @@ class SyncService {
       notificationPreferences: preferences.length,
       smokingWindows: smokingWindows.length,
     );
+  }
+
+  /// Reads every row for the user in pages, so accounts with more than one
+  /// page of history are restored completely.
+  Future<List<Map<String, dynamic>>> _fetchAll(
+    SupabaseClient client, {
+    required String table,
+    required String userId,
+    String? orderBy,
+  }) async {
+    const pageSize = 500;
+    final all = <Map<String, dynamic>>[];
+    var from = 0;
+    while (true) {
+      final base = client.from(table).select().eq('user_id', userId);
+      final page = orderBy == null
+          ? await base.range(from, from + pageSize - 1)
+          : await base
+                .order(orderBy, ascending: false)
+                .range(from, from + pageSize - 1);
+      final rows = _rows(page);
+      all.addAll(rows);
+      if (rows.length < pageSize) {
+        return all;
+      }
+      from += pageSize;
+    }
   }
 
   Future<void> _syncItem(

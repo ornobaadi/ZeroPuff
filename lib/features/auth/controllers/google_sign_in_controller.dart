@@ -28,15 +28,26 @@ class GoogleSignInController {
       return const GoogleSignInOutcome(signedIn: false, hasLocalProfile: false);
     }
 
+    // If this account already has a saved profile (for example the user
+    // reinstalled and went through set-up again as a guest), the account's
+    // profile wins. Overwriting it would silently reset their quit date.
+    final remoteProfileExists = await _ref
+        .read(profileRepositoryProvider)
+        .onboardingCompleted(user.id);
+
     await _ref
         .read(onboardingRepositoryProvider)
         .attachGuestProfileToUser(user.id);
+
+    if (remoteProfileExists) {
+      await _ref.read(syncServiceProvider).discardPendingProfileChanges();
+    }
 
     final localProfile = await _ref
         .read(onboardingRepositoryProvider)
         .loadCompletedProfile();
 
-    if (localProfile != null) {
+    if (localProfile != null && !remoteProfileExists) {
       final linkedProfile = ProfileData(
         userId: user.id,
         displayName:
@@ -72,7 +83,7 @@ class GoogleSignInController {
 
     return GoogleSignInOutcome(
       signedIn: true,
-      hasLocalProfile: localProfile != null,
+      hasLocalProfile: localProfile != null || remoteProfileExists,
       restoredRows: restoreResult.restoredRows,
     );
   }

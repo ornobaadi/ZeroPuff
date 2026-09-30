@@ -9,6 +9,8 @@ class SyncService {
     return const SyncRunResult(skipped: true);
   }
 
+  Future<void> discardPendingProfileChanges() async {}
+
   Future<RemoteRestoreResult> restoreRemoteSnapshot({
     bool replaceLocal = true,
   }) async {

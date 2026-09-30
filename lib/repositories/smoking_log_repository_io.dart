@@ -51,9 +51,10 @@ class SmokingLogRepositoryIO implements SmokingLogRepository {
 
   @override
   Future<int> getTotalSmokedToday() async {
-    final now = DateTime.now().toUtc();
-    final startOfDay = DateTime.utc(now.year, now.month, now.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
+    // "Today" is the user's local calendar day, not the UTC day.
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = DateTime(now.year, now.month, now.day + 1);
 
     final logs = await _isar.smokingLogs
         .filter()

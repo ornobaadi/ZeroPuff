@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -79,7 +80,7 @@ class _NotificationSettingsScreenState
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(error))));
       }
     } finally {
       if (mounted) {
@@ -120,7 +121,7 @@ class _NotificationSettingsScreenState
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Padding(
             padding: const EdgeInsets.all(AppSpacing.pagePadding),
-            child: Text(error.toString()),
+            child: Text(friendlyError(error)),
           ),
           data: (data) {
             final checkInTime = TimeOfDay(

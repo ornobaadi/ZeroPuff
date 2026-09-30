@@ -97,13 +97,10 @@ class GoogleSignInLaunchException extends AuthConfigurationException {
   factory GoogleSignInLaunchException.fromGoogleError(
     GoogleSignInException error,
   ) {
-    final description = error.description;
-    final suffix = description == null || description.isEmpty
-        ? ''
-        : ' $description';
+    debugPrint('Google Sign-In failed: ${error.code} ${error.description}');
 
-    return GoogleSignInLaunchException(
-      'Google Sign-In failed: ${error.code}.$suffix',
+    return const GoogleSignInLaunchException(
+      'Google sign-in did not finish. Please try again.',
     );
   }
 }

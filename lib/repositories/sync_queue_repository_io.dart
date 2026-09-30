@@ -15,11 +15,16 @@ final syncQueueRepositoryProvider = Provider<SyncQueueRepository>((ref) {
 class SyncQueueRepository {
   const SyncQueueRepository(this._database);
 
+  static const maxAttempts = 8;
+
   final Isar _database;
 
   Future<List<SyncQueueItem>> pending({int limit = 25}) {
+    // Items that keep failing are skipped so one poison item cannot block the
+    // whole queue forever.
     return _database.syncQueueItems
-        .where()
+        .filter()
+        .attemptCountLessThan(maxAttempts)
         .sortByCreatedAt()
         .limit(limit)
         .findAll();
@@ -32,7 +37,8 @@ class SyncQueueRepository {
   Future<void> markFailed(SyncQueueItem item, Object error) async {
     item
       ..attemptCount += 1
-      ..lastError = error.toString();
+      ..lastError = error.toString().split('
+').first;
     await _database.writeTxn(() => _database.syncQueueItems.put(item));
   }
 }
