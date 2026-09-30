@@ -1,82 +1,76 @@
 class ProgressCalculations {
   const ProgressCalculations._();
 
-  static const minutesWonBackPerCigarette = 20;
-
-  static const healthMilestones = [
+  static const streakMilestones = [
     ProgressMilestone(
       key: '20_minutes',
       title: '20 minutes',
-      body: 'Heart rate and blood pressure begin moving down from the spike.',
+      body: 'Your first 20 smoke-free minutes are on the board.',
       duration: Duration(minutes: 20),
-      badgeAsset: 'assets/health/1.png',
+      badgeAsset: 'assets/badges/20min.png',
     ),
     ProgressMilestone(
       key: '12_hours',
       title: '12 hours',
-      body: 'Carbon monoxide in your blood drops toward a normal range.',
+      body: 'Half a day without smoking. Keep the momentum going.',
       duration: Duration(hours: 12),
-      badgeAsset: 'assets/health/2.png',
+      badgeAsset: 'assets/badges/8h.png',
     ),
     ProgressMilestone(
       key: '2_weeks',
       title: '2 weeks',
-      body: 'Circulation can improve, and lung function may begin increasing.',
+      body: 'Two weeks in. New routines are starting to replace old ones.',
       duration: Duration(days: 14),
-      badgeAsset: 'assets/health/3.png',
+      badgeAsset: 'assets/badges/2w.png',
     ),
     ProgressMilestone(
       key: '1_month',
       title: '1 month',
-      body:
-          'Coughing and shortness of breath may start easing as airways heal.',
+      body: 'A full month smoke-free. That is a real habit shift.',
       duration: Duration(days: 30),
-      badgeAsset: 'assets/health/4.png',
+      badgeAsset: 'assets/badges/1m.png',
     ),
     ProgressMilestone(
       key: '3_months',
       title: '3 months',
-      body: 'Circulation and lung function can keep getting stronger.',
+      body: 'Three months of choosing differently, one day at a time.',
       duration: Duration(days: 90),
-      badgeAsset: 'assets/health/5.png',
+      badgeAsset: 'assets/badges/3m.png',
     ),
     ProgressMilestone(
       key: '9_months',
       title: '9 months',
-      body:
-          'Breathing, coughing, and airway irritation may be noticeably better.',
+      body: 'Nine months strong. Your new routine is well established.',
       duration: Duration(days: 270),
-      badgeAsset: 'assets/health/6.png',
+      badgeAsset: 'assets/badges/3m.png',
     ),
     ProgressMilestone(
       key: '1_year',
       title: '1 year',
-      body: 'Heart-disease risk has dropped sharply compared with continuing.',
+      body: 'One full year smoke-free. Worth celebrating.',
       duration: Duration(days: 365),
-      badgeAsset: 'assets/health/7.png',
+      badgeAsset: 'assets/badges/1y.png',
     ),
     ProgressMilestone(
       key: '5_years',
       title: '5 years',
-      body:
-          'Stroke and several cancer risks keep falling with time smoke-free.',
+      body: 'Five years of staying the course.',
       duration: Duration(days: 365 * 5),
-      badgeAsset: 'assets/health/8.png',
+      badgeAsset: 'assets/badges/1y.png',
     ),
     ProgressMilestone(
       key: '10_years',
       title: '10 years',
-      body:
-          'Risk of dying from lung cancer is about half that of someone still smoking.',
+      body: 'A decade smoke-free. Remarkable consistency.',
       duration: Duration(days: 365 * 10),
-      badgeAsset: 'assets/health/9.png',
+      badgeAsset: 'assets/badges/1y.png',
     ),
     ProgressMilestone(
       key: '15_years',
       title: '15 years',
-      body: 'Coronary heart disease risk can approach that of a non-smoker.',
+      body: 'Fifteen years and counting. Smoking is well behind you.',
       duration: Duration(days: 365 * 15),
-      badgeAsset: 'assets/health/10.png',
+      badgeAsset: 'assets/badges/1y.png',
     ),
   ];
 
@@ -90,7 +84,7 @@ class ProgressCalculations {
     ),
     ProgressMilestone(
       key: '8_hours',
-      title: 'Fresh Oxygen',
+      title: 'Clear Start',
       body: 'Protect 8 smoke-free hours.',
       duration: Duration(hours: 8),
       badgeAsset: 'assets/badges/8h.png',
@@ -133,7 +127,7 @@ class ProgressCalculations {
     ProgressMilestone(
       key: '3_months',
       title: 'Craving Tamer',
-      body: 'Reach three months of clean-air practice.',
+      body: 'Reach three months smoke-free.',
       duration: Duration(days: 90),
       badgeAsset: 'assets/badges/3m.png',
     ),
@@ -192,18 +186,7 @@ class ProgressCalculations {
     return (cigarettesAvoided / packSize) * packPrice;
   }
 
-  static int lifeMinutesWonBack(int cigarettesAvoided) {
-    if (cigarettesAvoided <= 0) {
-      return 0;
-    }
-    return cigarettesAvoided * minutesWonBackPerCigarette;
-  }
-
-  static Duration lifeWonBackDuration(int cigarettesAvoided) {
-    return Duration(minutes: lifeMinutesWonBack(cigarettesAvoided));
-  }
-
-  static String lifeWonBackLabel(Duration duration) {
+  static String durationLabel(Duration duration) {
     if (duration <= Duration.zero) {
       return '0 min';
     }
@@ -226,7 +209,7 @@ class ProgressCalculations {
   }
 
   static ProgressMilestone? nextMilestone(Duration smokeFreeDuration) {
-    for (final milestone in healthMilestones) {
+    for (final milestone in streakMilestones) {
       if (smokeFreeDuration < milestone.duration) {
         return milestone;
       }
@@ -235,8 +218,8 @@ class ProgressCalculations {
   }
 
   static ProgressMilestone currentMilestone(Duration smokeFreeDuration) {
-    ProgressMilestone current = healthMilestones.first;
-    for (final milestone in healthMilestones) {
+    ProgressMilestone current = streakMilestones.first;
+    for (final milestone in streakMilestones) {
       if (smokeFreeDuration >= milestone.duration) {
         current = milestone;
       } else {
@@ -247,13 +230,13 @@ class ProgressCalculations {
   }
 
   static ProgressMilestone? previousMilestone(ProgressMilestone milestone) {
-    final index = healthMilestones.indexWhere(
+    final index = streakMilestones.indexWhere(
       (item) => item.key == milestone.key,
     );
     if (index <= 0) {
       return null;
     }
-    return healthMilestones[index - 1];
+    return streakMilestones[index - 1];
   }
 
   static double milestoneProgress({
@@ -299,18 +282,19 @@ class ProgressCalculations {
         .toSet();
   }
 
-  static Set<String> unlockedHealthMilestoneKeys(Duration smokeFreeDuration) {
-    return healthMilestones
+  static Set<String> unlockedMilestoneKeys(Duration smokeFreeDuration) {
+    return streakMilestones
         .where((milestone) => smokeFreeDuration >= milestone.duration)
-        .map((milestone) => healthMilestoneAchievementKey(milestone.key))
+        .map((milestone) => milestoneAchievementKey(milestone.key))
         .toSet();
   }
 
-  static String healthMilestoneAchievementKey(String key) {
+  static String milestoneAchievementKey(String key) {
+    // Prefix kept for compatibility with already-stored achievement keys.
     return 'health_milestone_$key';
   }
 
-  static String healthMilestoneKeyFromAchievement(String achievementKey) {
+  static String milestoneKeyFromAchievement(String achievementKey) {
     return achievementKey.replaceFirst('health_milestone_', '');
   }
 }

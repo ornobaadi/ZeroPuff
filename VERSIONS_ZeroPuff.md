@@ -1,4 +1,6 @@
 # VERSIONS.md — ZeroPuff Rollout Plan
+
+> **Scope guardrail:** ZeroPuff is a habit tracker, not a health app. No Health Connect / HealthKit / wearable / heart-rate features, and no medical claims, at any version. See the guardrails in `PRD_Zeropuff.md`.
 ### From Zero to Full Product, Step by Step
 
 **Philosophy:** Ship something real users can install at every version.  
@@ -23,7 +25,7 @@ v1.5  GROWTH — "Deepen the experience."
   ↓   Voice mode, advanced analytics, all AI personas, Banglish.
 
 v2.0  FINAL — "Feature-complete."
-      Community feed, wearable sync, widget, global expansion.
+      Community feed, widget, global expansion.
 ```
 
 ---
@@ -88,8 +90,8 @@ Tap "I'm Craving"
 - Optional note
 - No AI response yet — just a "Logged ✓" confirmation
 
-#### ✅ Health Milestones Timeline
-- Full scientific timeline (20 min → 15 years)
+#### ✅ Smoke-Free Milestones
+- Time-based milestones (20 min → 15 years), neutral copy only
 - Past milestones: filled, colored
 - Next milestone: highlighted with progress bar
 - Future milestones: grayed out
@@ -169,7 +171,7 @@ Week 2:
   Day 5:   Daily check-in screen
 
 Week 3:
-  Day 1–2: Health milestone timeline screen
+  Day 1–2: Milestones screen
   Day 3:   Savings tracker screen + achievements grid
   Day 4:   Settings / Profile screen
   Day 5:   Local notifications setup + streak protection logic
@@ -426,7 +428,7 @@ Gated behind premium entitlement:
 
 NOT gated (free users keep these):
   → Offline 2-minute rescue (always free, works offline)
-  → Health milestones
+  → Milestones
   → Savings tracker
   → Daily check-in (without AI response)
   → Basic achievements
@@ -485,7 +487,7 @@ Events handled:
 - Feature graphic (1024×500)
 - Full Play Store listing copy
 - Privacy policy URL (required)
-- Medical disclaimer in onboarding
+- Not-medical-advice disclaimer in onboarding
 
 ---
 
@@ -785,28 +787,10 @@ Memory panel (in Spark tab):
 Privacy: all memory stored in Supabase (user's own row), user can wipe it
 ```
 
-#### ✅ Amazfit / WearOS Heart Rate Integration
-```
-Optional: connect to fitness wearable
-
-When heart rate spikes above baseline:
-  → Notification: "Your heart rate jumped. Craving risk is higher right now.
-     Spark is here if you need it."
-  → User can set sensitivity (off / subtle / proactive)
-
-For Amazfit Bip 6 (your watch):
-  → Zepp Health app data access
-  → Requires Zepp Health API or Health Connect (Android)
-
-For WearOS:
-  → Health Connect integration (Android 14+)
-```
-
 #### ✅ Therapist / Coach Referral (Partnerships)
 ```
 In Profile → "Get more support":
   → List of quit-smoking helplines (local + international)
-  → Option to connect with a certified quit coach (affiliate model)
   → In Bangladesh: Dhaka Ahsania Mission, NICD hotline
   → Global: NHS Quit Support, CDC Smokers Quitline, etc.
 
@@ -864,7 +848,6 @@ Weeks 3–4 — Community:
 
 Weeks 5–6 — Remaining Features:
   Day 1–2:  Long-term AI memory (memory panel UI, edit/delete)
-  Day 3–4:  Health Connect integration (heart rate → notification)
   Day 5:    Referral / support resources screen
   Day 6–7:  Country cigarette price database + onboarding preset
   Day 8–10: iOS configuration + App Store submission
@@ -886,7 +869,7 @@ Weeks 7–8 — QA & Release:
 |---|---|---|---|---|---|
 | Core tracker (counter, savings) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Offline craving rescue (2-min) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Health milestones | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Milestones | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Daily check-in | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Private smoking log | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Honesty streak | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -916,7 +899,6 @@ Weeks 7–8 — QA & Release:
 | Anonymous community feed | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Group quit challenges | ❌ | ❌ | ❌ | ❌ | ✅ premium |
 | Long-term AI memory | ❌ | ❌ | ❌ | ❌ | ✅ premium |
-| Heart rate / wearable sync | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Country cigarette price DB | ❌ | ❌ | ❌ | ❌ | ✅ |
 | iOS release | ❌ | ❌ | ❌ | ❌ | ✅ |
 

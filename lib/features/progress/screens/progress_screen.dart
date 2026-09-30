@@ -67,20 +67,20 @@ class ProgressScreen extends ConsumerWidget {
 
               return [
                 Text(
-                  'Your recovery map',
+                  'Your progress map',
                   style: theme.textTheme.headlineMedium,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'See what your body is rebuilding and what you are unlocking next.',
+                  'See the milestones you have reached and what you are unlocking next.',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
-                _HealthImprovementsCard(
+                _MilestonesCard(
                   smokeFreeDuration: data.smokeFreeDuration,
-                  onTap: () => openDetail(AppRoutes.healthDetails),
+                  onTap: () => openDetail(AppRoutes.milestoneDetails),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 _AchievementShowcaseCard(
@@ -144,22 +144,24 @@ class ProgressScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: _ProgressStat(
-                        label: 'Life won back',
-                        value: data.lifeWonBackLabel,
-                        icon: Icons.favorite_rounded,
+                        label: 'Time smoke-free',
+                        value: ProgressCalculations.durationLabel(
+                          data.smokeFreeDuration,
+                        ),
+                        icon: Icons.timer_rounded,
                         color: AppColors.primary,
-                        onTap: () => openDetail(AppRoutes.healthDetails),
+                        onTap: () => openDetail(AppRoutes.milestoneDetails),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: _ProgressStat(
-                        label: 'Health markers',
+                        label: 'Milestones',
                         value:
-                            '${ProgressCalculations.unlockedHealthMilestoneKeys(data.smokeFreeDuration).length}',
-                        icon: Icons.health_and_safety_rounded,
+                            '${ProgressCalculations.unlockedMilestoneKeys(data.smokeFreeDuration).length}',
+                        icon: Icons.flag_rounded,
                         color: AppColors.accentStreak,
-                        onTap: () => openDetail(AppRoutes.healthDetails),
+                        onTap: () => openDetail(AppRoutes.milestoneDetails),
                       ),
                     ),
                   ],
@@ -192,8 +194,8 @@ class ProgressScreen extends ConsumerWidget {
   }
 }
 
-class _HealthImprovementsCard extends StatelessWidget {
-  const _HealthImprovementsCard({
+class _MilestonesCard extends StatelessWidget {
+  const _MilestonesCard({
     required this.smokeFreeDuration,
     required this.onTap,
   });
@@ -209,7 +211,7 @@ class _HealthImprovementsCard extends StatelessWidget {
     final next = ProgressCalculations.nextMilestone(smokeFreeDuration);
     final hasReachedFirst =
         smokeFreeDuration >=
-        ProgressCalculations.healthMilestones.first.duration;
+        ProgressCalculations.streakMilestones.first.duration;
     final shown = next ?? current;
     final previous = ProgressCalculations.previousMilestone(shown);
     final previousDuration = previous?.duration ?? Duration.zero;
@@ -253,14 +255,14 @@ class _HealthImprovementsCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _HealthAssetImage(asset: asset, active: hasReachedFirst),
+                _MilestoneAssetImage(asset: asset, active: hasReachedFirst),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Health improvements',
+                        'Milestones',
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -268,8 +270,8 @@ class _HealthImprovementsCard extends StatelessWidget {
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         hasReachedFirst
-                            ? 'Current marker: ${current.title}'
-                            : 'First marker: 20 minutes',
+                            ? 'Current milestone: ${current.title}'
+                            : 'First milestone: 20 minutes',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -284,7 +286,7 @@ class _HealthImprovementsCard extends StatelessWidget {
             Text(
               hasReachedFirst
                   ? current.body
-                  : 'Your first body-recovery marker begins at 20 smoke-free minutes.',
+                  : 'Your first milestone arrives at 20 smoke-free minutes.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.86),
               ),
@@ -295,7 +297,7 @@ class _HealthImprovementsCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     next == null
-                        ? 'All listed markers reached'
+                        ? 'All milestones reached'
                         : '${(progress * 100).round()}% to ${next.title}',
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -331,8 +333,8 @@ class _HealthImprovementsCard extends StatelessWidget {
   }
 }
 
-class _HealthAssetImage extends StatelessWidget {
-  const _HealthAssetImage({required this.asset, required this.active});
+class _MilestoneAssetImage extends StatelessWidget {
+  const _MilestoneAssetImage({required this.asset, required this.active});
 
   final String? asset;
   final bool active;
@@ -342,7 +344,7 @@ class _HealthAssetImage extends StatelessWidget {
     final theme = Theme.of(context);
     final asset = this.asset;
     final fallback = Icon(
-      active ? Icons.favorite_rounded : Icons.lock_rounded,
+      active ? Icons.flag_rounded : Icons.lock_rounded,
       color: active ? AppColors.primary : theme.colorScheme.outline,
       size: 48,
     );

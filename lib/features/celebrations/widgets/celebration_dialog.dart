@@ -113,7 +113,7 @@ class _CelebrationDialogState extends State<CelebrationDialog>
 
   String _eyebrow(CelebrationEvent event) {
     return switch (event.kind) {
-      CelebrationKind.healthMilestone => 'Health milestone reached',
+      CelebrationKind.milestone => 'Milestone reached',
       CelebrationKind.timeAchievement => 'Achievement unlocked',
     };
   }

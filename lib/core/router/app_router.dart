@@ -186,9 +186,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
-        path: AppRoutes.healthDetails,
+        path: AppRoutes.milestoneDetails,
         pageBuilder: (context, state) =>
-            _materialPage(state, const HealthMilestoneDetailsScreen()),
+            _materialPage(state, const MilestoneDetailsScreen()),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,

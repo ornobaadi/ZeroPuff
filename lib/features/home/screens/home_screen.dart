@@ -42,7 +42,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _showCelebrationDialog(event);
-          if (event.kind == CelebrationKind.healthMilestone) {
+          if (event.kind == CelebrationKind.milestone) {
             _rescheduleNotifications();
           }
         }
@@ -122,12 +122,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onTap: () => _openRoute(AppRoutes.savingsDetails),
                   ),
                   _MetricCard(
-                    label: 'Life won back',
-                    value: data.lifeWonBackLabel,
-                    suffix: 'estimated',
+                    label: 'Time smoke-free',
+                    value: ProgressCalculations.durationLabel(
+                      data.smokeFreeDuration,
+                    ),
+                    suffix: 'so far',
                     color: AppColors.accentStreak,
-                    icon: Icons.favorite_rounded,
-                    onTap: () => _openRoute(AppRoutes.healthDetails),
+                    icon: Icons.timer_rounded,
+                    onTap: () => _openRoute(AppRoutes.milestoneDetails),
                   ),
                   _MetricCard(
                     label: 'Smoke-free streak',

@@ -8,7 +8,7 @@ import 'package:zeropuff/features/profile/screens/app_info_screen.dart';
 import 'package:zeropuff/features/progress/screens/progress_screen.dart';
 
 void main() {
-  testWidgets('home stats grid includes life won back', (tester) async {
+  testWidgets('home stats grid includes time smoke-free', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -25,9 +25,9 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Life won back'), findsOneWidget);
+    expect(find.text('Time smoke-free'), findsOneWidget);
     expect(find.text('Money won back'), findsOneWidget);
-    expect(find.text('1 day'), findsOneWidget);
+    expect(find.text('5 days'), findsOneWidget);
   });
 
   testWidgets('progress quick stats include life won back', (tester) async {
@@ -49,22 +49,17 @@ void main() {
     await tester.drag(find.byType(ListView).first, const Offset(0, -700));
     await tester.pumpAndSettle();
 
-    expect(find.text('Life won back'), findsOneWidget);
-    expect(find.text('1 day'), findsOneWidget);
+    expect(find.text('Time smoke-free'), findsOneWidget);
+    expect(find.text('5 days'), findsOneWidget);
     expect(find.text('Money won back'), findsOneWidget);
   });
 
-  testWidgets('app info explains life won back source and caveat', (
+  testWidgets('app info shows the not-medical-advice disclaimer', (
     tester,
   ) async {
     await tester.pumpWidget(const MaterialApp(home: AppInfoScreen()));
 
-    expect(find.text('Stats and sources'), findsOneWidget);
-    expect(find.textContaining('Life won back'), findsOneWidget);
-    expect(
-      find.textContaining('not personal medical predictions'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('not medical advice'), findsOneWidget);
   });
 }
 
@@ -73,9 +68,6 @@ HomeDashboardData _dashboardData() {
     smokeFreeDuration: Duration(days: 5),
     cigarettesAvoided: 72,
     moneySaved: 43.2,
-    lifeMinutesWonBack: 1440,
-    lifeWonBackDuration: Duration(days: 1),
-    lifeWonBackLabel: '1 day',
     currencySymbol: r'$',
     cigarettesPerDay: 15,
     packPrice: 12,

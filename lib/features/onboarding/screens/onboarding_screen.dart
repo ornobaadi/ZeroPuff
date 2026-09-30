@@ -300,7 +300,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       maxLines: 8,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: const InputDecoration(
-                        hintText: 'Example: I want my breathing back.',
+                        hintText: 'Example: I want to feel free and in control.',
                       ),
                     ),
                   ),

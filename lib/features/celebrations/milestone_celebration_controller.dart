@@ -15,7 +15,7 @@ final milestoneCelebrationProvider = FutureProvider<CelebrationEvent?>((
   }
   final cravings = ref.watch(recentCravingsProvider).value ?? const [];
 
-  final healthKeys = ProgressCalculations.unlockedHealthMilestoneKeys(
+  final milestoneKeys = ProgressCalculations.unlockedMilestoneKeys(
     dashboard.smokeFreeDuration,
   );
   final achievementKeys = ProgressCalculations.unlockedAchievementKeysForStats(
@@ -26,19 +26,19 @@ final milestoneCelebrationProvider = FutureProvider<CelebrationEvent?>((
   );
   final newlyUnlocked = await ref
       .watch(achievementRepositoryProvider)
-      .unlockAll({...healthKeys, ...achievementKeys});
+      .unlockAll({...milestoneKeys, ...achievementKeys});
   if (newlyUnlocked.isEmpty) {
     return null;
   }
 
   final events = <CelebrationEvent>[
-    ...ProgressCalculations.healthMilestones
+    ...ProgressCalculations.streakMilestones
         .where(
           (milestone) => newlyUnlocked.contains(
-            ProgressCalculations.healthMilestoneAchievementKey(milestone.key),
+            ProgressCalculations.milestoneAchievementKey(milestone.key),
           ),
         )
-        .map(CelebrationEvent.healthMilestone),
+        .map(CelebrationEvent.milestone),
     ...ProgressCalculations.achievements
         .where((achievement) => newlyUnlocked.contains(achievement.key))
         .map(CelebrationEvent.achievement),
@@ -51,7 +51,7 @@ final milestoneCelebrationProvider = FutureProvider<CelebrationEvent?>((
   return events.first;
 });
 
-enum CelebrationKind { healthMilestone, timeAchievement }
+enum CelebrationKind { milestone, timeAchievement }
 
 class CelebrationEvent {
   const CelebrationEvent({
@@ -65,10 +65,10 @@ class CelebrationEvent {
     this.badgeAsset,
   });
 
-  factory CelebrationEvent.healthMilestone(ProgressMilestone milestone) {
+  factory CelebrationEvent.milestone(ProgressMilestone milestone) {
     return CelebrationEvent(
-      kind: CelebrationKind.healthMilestone,
-      key: ProgressCalculations.healthMilestoneAchievementKey(milestone.key),
+      kind: CelebrationKind.milestone,
+      key: ProgressCalculations.milestoneAchievementKey(milestone.key),
       title: '${milestone.title} smoke-free',
       body: milestone.body,
       duration: milestone.duration,

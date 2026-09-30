@@ -194,10 +194,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: AppSpacing.componentGap),
             _SettingsTile(
               icon: Icons.delete_outline_rounded,
-              title: 'Delete local data',
+              title: isGuest ? 'Delete local data' : 'Delete account',
               subtitle: isGuest
                   ? 'Erase guest progress from this device.'
-                  : 'Erase local data and remove synced profile rows.',
+                  : 'Permanently delete your account and all backed-up data.',
               status: '',
               destructive: true,
               onTap: () {
@@ -209,7 +209,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _SettingsTile(
               icon: Icons.info_outline_rounded,
               title: 'App info and safety',
-              subtitle: 'Version, privacy note, and medical disclaimer.',
+              subtitle: 'Version, privacy note, and disclaimer.',
               status: '',
               onTap: () => _openRoute(AppRoutes.appInfo),
             ),
@@ -381,14 +381,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Delete ZeroPuff data?',
+                  isGuest ? 'Delete ZeroPuff data?' : 'Delete your account?',
                   style: theme.textTheme.headlineSmall,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   isGuest
                       ? 'This removes your guest progress, logs, check-ins, and settings from this device.'
-                      : 'This removes local data and attempts to delete your synced profile/settings rows. Full auth-user deletion needs the later secure Edge Function.',
+                      : 'This permanently deletes your ZeroPuff account and all backed-up data, and removes local data from this device. This cannot be undone.',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -434,7 +434,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     try {
       final user = ref.read(currentUserProvider);
       if (user != null) {
-        await ref.read(profileRepositoryProvider).deleteUserOwnedRows(user.id);
+        await ref.read(profileRepositoryProvider).deleteAccount();
       }
       await NotificationService.cancelScheduledReminders();
       await ref.read(accountRepositoryProvider).deleteLocalData();
@@ -446,7 +446,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         context.go(AppRoutes.signIn);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('ZeroPuff data deleted.')));
+        ).showSnackBar(SnackBar(
+            content: Text(
+              isGuest ? 'ZeroPuff data deleted.' : 'Your account was deleted.',
+            ),
+          ));
       }
     } on Object catch (error) {
       if (mounted) {

@@ -1,20 +1,25 @@
-# zeropuff
+# ZeroPuff
 
-A new Flutter project.
+A simple smoke-free habit and streak tracker built with Flutter. Log cravings, check in daily, track cigarettes avoided and money saved, and celebrate milestones. ZeroPuff is not a medical app and does not provide medical advice.
 
-## Getting Started
+## Setup
 
-This project is a starting point for a Flutter application.
+1. Copy `.env.example` to `.env` and fill in the Supabase and Google values.
+2. Apply the SQL files in `supabase/migrations/` to your Supabase project, in order.
+3. `flutter pub get`
 
-A few resources to get you started if this is your first Flutter project:
+## Run
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Release (Android)
 
-flutter run -d chrome --web-port 3000
-flutter build apk --release
+Requires `android/key.properties` and the upload keystore (both gitignored). The release build fails without them.
+
+```
+flutter build appbundle --release
+```
+
+See `PRD_Zeropuff.md` for product scope, including the guardrails that keep the app out of Google Play's Health category.

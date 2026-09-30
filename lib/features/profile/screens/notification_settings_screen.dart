@@ -173,8 +173,8 @@ class _NotificationSettingsScreenState
                 const SizedBox(height: AppSpacing.componentGap),
                 _ReminderTile(
                   icon: Icons.flag_outlined,
-                  title: 'Health milestones',
-                  subtitle: 'Celebrate the next body-recovery marker.',
+                  title: 'Milestones',
+                  subtitle: 'Celebrate each smoke-free milestone.',
                   value: data.milestoneReminderEnabled,
                   saving: _saving,
                   onChanged: (value) =>

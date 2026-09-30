@@ -45,21 +45,14 @@ class SmokeFreeDetailsScreen extends ConsumerWidget {
           color: AppColors.accentMoney,
         ),
         _TapInfoCard(
-          title: 'Recovery milestones',
-          body: 'See what has already changed and what marker is coming next.',
-          icon: Icons.favorite_rounded,
+          title: 'Milestones',
+          body: 'See the milestones you have reached and the next one coming up.',
+          icon: Icons.flag_rounded,
           color: AppColors.accentStreak,
           onTap: () {
             HapticService.selection(enabled: hapticsEnabled);
-            context.push(AppRoutes.healthDetails);
+            context.push(AppRoutes.milestoneDetails);
           },
-        ),
-        _InfoCard(
-          title: 'Life won back',
-          body:
-              'Because of those avoided cigarettes, you have protected about ${data.lifeWonBackLabel} of life. This is an estimate, not a medical prediction.',
-          icon: Icons.favorite_rounded,
-          color: AppColors.primary,
         ),
       ],
     );
@@ -183,13 +176,6 @@ class AvoidedDetailsScreen extends ConsumerWidget {
               'This is an estimate based on your old daily baseline and how long you have been smoke-free.',
           icon: Icons.insights_rounded,
           color: AppColors.accentStreak,
-        ),
-        _InfoCard(
-          title: 'Life won back',
-          body:
-              'Those avoided cigarettes equal about ${data.lifeWonBackLabel} of estimated healthy time protected.',
-          icon: Icons.favorite_rounded,
-          color: AppColors.primary,
         ),
         _InfoCard(
           title: 'Next action',
@@ -324,15 +310,15 @@ class CravingAnalysisScreen extends ConsumerWidget {
   }
 }
 
-class HealthMilestoneDetailsScreen extends ConsumerWidget {
-  const HealthMilestoneDetailsScreen({super.key});
+class MilestoneDetailsScreen extends ConsumerWidget {
+  const MilestoneDetailsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(homeDashboardProvider);
     final hapticsEnabled = ref.watch(hapticsEnabledControllerProvider);
     return _DetailScaffold(
-      title: 'Health improvements',
+      title: 'Milestones',
       dashboard: dashboard,
       builder: (context, data) {
         final next = ProgressCalculations.nextMilestone(data.smokeFreeDuration);
@@ -353,30 +339,30 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
 
         return [
           _HeroNumber(
-            value: data.lifeWonBackLabel,
-            label: 'estimated healthy time protected',
+            value: ProgressCalculations.durationLabel(data.smokeFreeDuration),
+            label: 'smoke-free so far',
             color: AppColors.primary,
-            icon: Icons.favorite_rounded,
+            icon: Icons.flag_rounded,
           ),
-          _HealthHero(
+          _MilestoneHero(
             current: current,
             next: next,
             progress: progress,
             smokeFreeDuration: data.smokeFreeDuration,
           ),
           _InfoCard(
-            title: next == null ? 'All listed markers reached' : 'Next up',
+            title: next == null ? 'All milestones reached' : 'Next up',
             body: next == null
-                ? 'You have cleared every current health marker in ZeroPuff.'
+                ? 'You have reached every milestone in ZeroPuff.'
                 : '${next.title}: ${next.body}',
             icon: next == null
                 ? Icons.emoji_events_rounded
                 : Icons.flag_rounded,
             color: AppColors.accentMoney,
           ),
-          Text('Recovery map', style: Theme.of(context).textTheme.titleLarge),
-          ...ProgressCalculations.healthMilestones.map(
-            (milestone) => _HealthMilestoneCard(
+          Text('Milestone map', style: Theme.of(context).textTheme.titleLarge),
+          ...ProgressCalculations.streakMilestones.map(
+            (milestone) => _MilestoneCard(
               milestone: milestone,
               active: data.smokeFreeDuration >= milestone.duration,
               current: current.key == milestone.key,
@@ -387,7 +373,7 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
               onTap: data.smokeFreeDuration >= milestone.duration
                   ? () {
                       HapticService.light(enabled: hapticsEnabled);
-                      _showHealthMilestoneDialog(context, milestone);
+                      _showMilestoneDialog(context, milestone);
                     }
                   : null,
             ),
@@ -395,36 +381,22 @@ class HealthMilestoneDetailsScreen extends ConsumerWidget {
           _InfoCard(
             title: 'A gentle note',
             body:
-                'Health timelines are estimates. Your body, history, and care all matter, so use this as encouragement rather than diagnosis.',
-            icon: Icons.favorite_rounded,
+                'Milestones are simple time markers to celebrate your progress. ZeroPuff does not provide medical advice.',
+            icon: Icons.flag_rounded,
             color: AppColors.accentStreak,
-          ),
-          _InfoCard(
-            title: 'Life won back estimate',
-            body:
-                'ZeroPuff estimates life won back as avoided cigarettes x 20 minutes. This is a population-level estimate, not a medical prediction.',
-            icon: Icons.calculate_rounded,
-            color: AppColors.accentMoney,
-          ),
-          _InfoCard(
-            title: 'What this is based on',
-            body:
-                'The life estimate follows UCL research on life expectancy per cigarette. Health benefits follow public-health guidance from CDC and related clinical sources.',
-            icon: Icons.verified_outlined,
-            color: AppColors.primary,
           ),
         ];
       },
     );
   }
 
-  void _showHealthMilestoneDialog(
+  void _showMilestoneDialog(
     BuildContext context,
     ProgressMilestone milestone,
   ) {
     showDialog<void>(
       context: context,
-      builder: (context) => _HealthMilestoneDetailDialog(milestone: milestone),
+      builder: (context) => _MilestoneDetailDialog(milestone: milestone),
     );
   }
 }
@@ -608,8 +580,8 @@ class _ProjectionTile extends StatelessWidget {
   }
 }
 
-class _HealthHero extends StatelessWidget {
-  const _HealthHero({
+class _MilestoneHero extends StatelessWidget {
+  const _MilestoneHero({
     required this.current,
     required this.next,
     required this.progress,
@@ -660,7 +632,7 @@ class _HealthHero extends StatelessWidget {
                     Text(
                       reachedCurrent
                           ? current.body
-                          : 'Your first body-recovery marker begins at 20 smoke-free minutes.',
+                          : 'Your first milestone arrives at 20 smoke-free minutes.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -693,8 +665,8 @@ class _HealthHero extends StatelessWidget {
   }
 }
 
-class _HealthMilestoneCard extends StatelessWidget {
-  const _HealthMilestoneCard({
+class _MilestoneCard extends StatelessWidget {
+  const _MilestoneCard({
     required this.milestone,
     required this.active,
     required this.current,
@@ -795,8 +767,8 @@ class _HealthMilestoneCard extends StatelessWidget {
   }
 }
 
-class _HealthMilestoneDetailDialog extends StatelessWidget {
-  const _HealthMilestoneDetailDialog({required this.milestone});
+class _MilestoneDetailDialog extends StatelessWidget {
+  const _MilestoneDetailDialog({required this.milestone});
 
   final ProgressMilestone milestone;
 
@@ -864,7 +836,7 @@ class _MilestoneBadge extends StatelessWidget {
     final asset = milestone.badgeAsset;
     final badge = asset == null
         ? Icon(
-            active ? Icons.favorite_rounded : Icons.lock_rounded,
+            active ? Icons.flag_rounded : Icons.lock_rounded,
             size: size * 0.46,
             color: active ? AppColors.primary : theme.colorScheme.outline,
           )

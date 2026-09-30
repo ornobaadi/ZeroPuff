@@ -131,9 +131,6 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
     packPrice: packPrice,
     packSize: packSize,
   );
-  final lifeWonBackDuration = ProgressCalculations.lifeWonBackDuration(
-    cigarettesAvoided,
-  );
   final checkInDates = checkIns
       .map((record) => StreakCalculations.parseLocalDateKey(record.localDate))
       .nonNulls
@@ -171,11 +168,6 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
       smokeFreeDuration: smokeFreeDuration,
       cigarettesAvoided: cigarettesAvoided,
       moneySaved: moneySaved,
-      lifeMinutesWonBack: lifeWonBackDuration.inMinutes,
-      lifeWonBackDuration: lifeWonBackDuration,
-      lifeWonBackLabel: ProgressCalculations.lifeWonBackLabel(
-        lifeWonBackDuration,
-      ),
       currencySymbol: data.currencySymbol,
       cigarettesPerDay: cigarettesPerDay,
       packPrice: packPrice,
@@ -222,9 +214,6 @@ class HomeDashboardData {
     required this.smokeFreeDuration,
     required this.cigarettesAvoided,
     required this.moneySaved,
-    required this.lifeMinutesWonBack,
-    required this.lifeWonBackDuration,
-    required this.lifeWonBackLabel,
     required this.currencySymbol,
     required this.cigarettesPerDay,
     required this.packPrice,
@@ -241,9 +230,6 @@ class HomeDashboardData {
   final Duration smokeFreeDuration;
   final int cigarettesAvoided;
   final double moneySaved;
-  final int lifeMinutesWonBack;
-  final Duration lifeWonBackDuration;
-  final String lifeWonBackLabel;
   final String currencySymbol;
   final int cigarettesPerDay;
   final double packPrice;

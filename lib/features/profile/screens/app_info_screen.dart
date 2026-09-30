@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
@@ -59,32 +60,33 @@ class AppInfoScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sectionGap),
             _InfoBlock(
-              icon: Icons.medical_information_outlined,
-              title: 'Medical disclaimer',
+              icon: Icons.info_outline_rounded,
+              title: 'Disclaimer',
               body:
-                  'ZeroPuff is a habit and tracking companion. It is not medical advice, diagnosis, or emergency care. Talk to a qualified clinician for treatment decisions, medication, or urgent health concerns.',
+                  'ZeroPuff is a habit and tracking app. It is not medical advice, diagnosis, or emergency care. Talk to a qualified professional for treatment decisions or urgent concerns.',
             ),
             const SizedBox(height: AppSpacing.md),
             _InfoBlock(
-              icon: Icons.verified_outlined,
-              title: 'Stats and sources',
+              icon: Icons.calculate_outlined,
+              title: 'About your stats',
               body:
-                  'Life won back is estimated from avoided cigarettes using UCL research on life expectancy per cigarette. Health milestones are simplified from public-health guidance including CDC. These are motivation tools, not personal medical predictions.',
+                  'Cigarettes avoided and money saved are estimates based on the daily habit you told us about and how long you have been smoke-free.',
             ),
             const SizedBox(height: AppSpacing.md),
             _InfoBlock(
               icon: Icons.privacy_tip_outlined,
               title: 'Privacy note',
               body:
-                  'Your quit data is stored on this device first. If you connect Google, ZeroPuff backs up supported progress to your account so it can be restored on another device.',
+                  'Your habit data is stored on this device first. If you connect Google, ZeroPuff backs up supported progress to your account so it can be restored on another device.',
             ),
-            const SizedBox(height: AppSpacing.md),
-            _InfoBlock(
-              icon: Icons.favorite_border_rounded,
-              title: 'Beta promise',
-              body:
-                  'This beta focuses on honest logging, recovery after relapse, and small wins. No ads, social pressure, AI chat, or payment prompts are part of v0.2.',
-            ),
+            if (AppConstants.privacyPolicyUrl.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.md),
+              _LinkBlock(
+                icon: Icons.policy_outlined,
+                title: 'Privacy policy',
+                url: AppConstants.privacyPolicyUrl,
+              ),
+            ],
           ],
         ),
       ),
@@ -135,6 +137,45 @@ class _InfoBlock extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LinkBlock extends StatelessWidget {
+  const _LinkBlock({
+    required this.icon,
+    required this.title,
+    required this.url,
+  });
+
+  final IconData icon;
+  final String title;
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: () =>
+          launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.primary),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: Text(title, style: theme.textTheme.titleMedium)),
+            const Icon(Icons.open_in_new_rounded, size: 20),
+          ],
+        ),
       ),
     );
   }

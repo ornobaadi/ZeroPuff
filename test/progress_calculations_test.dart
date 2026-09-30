@@ -24,33 +24,26 @@ void main() {
       );
     });
 
-    test('calculates life minutes won back from avoided cigarettes', () {
-      expect(ProgressCalculations.lifeMinutesWonBack(0), 0);
-      expect(ProgressCalculations.lifeMinutesWonBack(1), 20);
-      expect(ProgressCalculations.lifeMinutesWonBack(3), 60);
-      expect(ProgressCalculations.lifeMinutesWonBack(72), 1440);
-    });
-
-    test('formats life won back labels', () {
-      expect(ProgressCalculations.lifeWonBackLabel(Duration.zero), '0 min');
+    test('formats smoke-free duration labels', () {
+      expect(ProgressCalculations.durationLabel(Duration.zero), '0 min');
       expect(
-        ProgressCalculations.lifeWonBackLabel(const Duration(minutes: 40)),
+        ProgressCalculations.durationLabel(const Duration(minutes: 40)),
         '40 min',
       );
       expect(
-        ProgressCalculations.lifeWonBackLabel(const Duration(minutes: 60)),
+        ProgressCalculations.durationLabel(const Duration(minutes: 60)),
         '1h',
       );
       expect(
-        ProgressCalculations.lifeWonBackLabel(const Duration(minutes: 400)),
+        ProgressCalculations.durationLabel(const Duration(minutes: 400)),
         '6h 40m',
       );
       expect(
-        ProgressCalculations.lifeWonBackLabel(const Duration(days: 1)),
+        ProgressCalculations.durationLabel(const Duration(days: 1)),
         '1 day',
       );
       expect(
-        ProgressCalculations.lifeWonBackLabel(const Duration(days: 30)),
+        ProgressCalculations.durationLabel(const Duration(days: 30)),
         '1 month',
       );
     });
@@ -71,8 +64,8 @@ void main() {
       expect(milestone?.key, '12_hours');
     });
 
-    test('maps health milestone keys to synced achievement keys', () {
-      final unlocked = ProgressCalculations.unlockedHealthMilestoneKeys(
+    test('maps milestone keys to synced achievement keys', () {
+      final unlocked = ProgressCalculations.unlockedMilestoneKeys(
         const Duration(minutes: 22),
       );
 
@@ -80,7 +73,7 @@ void main() {
     });
 
     test('clamps milestone progress', () {
-      final milestone = ProgressCalculations.healthMilestones.first;
+      final milestone = ProgressCalculations.streakMilestones.first;
 
       expect(
         ProgressCalculations.milestoneProgress(

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -47,7 +50,25 @@ class AuthRepository {
       );
     }
 
-    final googleUser = await GoogleSignIn.instance.authenticate();
+    if (kIsWeb) {
+      // Web: Supabase PKCE OAuth redirect. The google_sign_in_web plugin
+      // dropped support for authenticate(), so we use Supabase's native
+      // OAuth flow which handles the browser redirect automatically.
+      await client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: Uri.base.origin,
+      );
+      return;
+    }
+
+    // Android & iOS & macOS: native Google Sign-In dialog (no browser).
+    // This opens the native account picker, not Chrome Custom Tabs.
+    final GoogleSignInAccount googleUser;
+    try {
+      googleUser = await GoogleSignIn.instance.authenticate();
+    } on GoogleSignInException catch (error) {
+      throw GoogleSignInLaunchException.fromGoogleError(error);
+    }
     final idToken = googleUser.authentication.idToken;
     if (idToken == null) {
       throw const AuthException('Google did not return an ID token.');
@@ -60,8 +81,30 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
-    await GoogleSignIn.instance.signOut();
+    // Sign out from Google first so a stale session can't auto-reconnect.
+    try {
+      await GoogleSignIn.instance.signOut();
+    } on Object {
+      // Best-effort: Google Sign-In may not have been initialized.
+    }
     await _client?.auth.signOut();
+  }
+}
+
+class GoogleSignInLaunchException extends AuthConfigurationException {
+  const GoogleSignInLaunchException(super.message);
+
+  factory GoogleSignInLaunchException.fromGoogleError(
+    GoogleSignInException error,
+  ) {
+    final description = error.description;
+    final suffix = description == null || description.isEmpty
+        ? ''
+        : ' $description';
+
+    return GoogleSignInLaunchException(
+      'Google Sign-In failed: ${error.code}.$suffix',
+    );
   }
 }
 

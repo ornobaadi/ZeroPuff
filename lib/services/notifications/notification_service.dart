@@ -297,7 +297,7 @@ class NotificationService {
     const android = AndroidNotificationDetails(
       'zeropuff_reminders',
       'ZeroPuff reminders',
-      channelDescription: 'Daily check-ins and gentle quit-plan reminders.',
+      channelDescription: 'Daily check-ins and gentle streak reminders.',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
     );

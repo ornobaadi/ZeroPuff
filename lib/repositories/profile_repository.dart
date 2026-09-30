@@ -83,17 +83,15 @@ class ProfileRepository {
     });
   }
 
-  Future<void> deleteUserOwnedRows(String userId) async {
+  /// Permanently deletes the signed-in user's account and all synced data
+  /// through the `delete_my_account` database function.
+  Future<void> deleteAccount() async {
     final client = _client;
     if (client == null) {
       return;
     }
 
-    await client
-        .from('notification_preferences')
-        .delete()
-        .eq('user_id', userId);
-    await client.from('profiles').delete().eq('id', userId);
+    await client.rpc('delete_my_account');
   }
 
   Future<void> _upsertPrimarySmokingWindow({

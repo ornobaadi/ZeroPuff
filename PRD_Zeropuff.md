@@ -1,4 +1,12 @@
 # PRD: ZeroPuff v2.0
+
+> ## Scope guardrails (Google Play classification)
+> ZeroPuff is a **habit / streak tracker**, not a health app. To stay out of Google Play's Health apps category (which requires an organization account), the product must **never** include:
+> - Health Connect, HealthKit, wearable, heart-rate or any health-sensor integration
+> - Medical or physiological claims (heart, lung, cancer, blood pressure, "life won back", recovery timelines)
+> - Diagnosis, treatment, medication, nicotine-replacement or therapy advice (including from any AI feature)
+> - Store listing, category or Data-safety wording that presents the app as health, medical or cessation therapy
+> Keep the in-app "not medical advice" disclaimer. Any future feature must be checked against this list first.
 ### AI-Powered Quit Smoking Companion — Android (Flutter)
 
 **Version:** 2.0 — Definitive  
@@ -379,7 +387,7 @@ class AppTypography {
 
 ### 7.2 Color System
 
-**Seed Color:** `#2A9D7C` — a muted, sophisticated teal-green. Not neon. Not lime. The color of healthy lungs and fresh air.
+**Seed Color:** `#2A9D7C` — a muted, sophisticated teal-green. Not neon. Not lime. The color of fresh air.
 
 **Scheme Variant:** `DynamicSchemeVariant.expressive` — gives us a richer, more vibrant tonal palette than the default, while still being harmonious.
 
@@ -700,7 +708,7 @@ Use **Material Symbols** (Rounded variant, weight 400, grade 0, optical size 24)
 
 // Key icons used:
 Icons.bolt_rounded           // Spark / AI (NOT the default bolt — use rounded)
-Icons.favorite_rounded       // Health milestones
+Icons.favorite_rounded       // Milestones
 Icons.trending_up_rounded    // Progress / savings
 Icons.people_rounded         // Quit Circle
 Icons.mic_rounded            // Voice mode
@@ -732,7 +740,7 @@ Icons.workspace_premium      // Premium features
 │  │   HRS  MIN  SEC                 │    │  ← Spaced caps, 11px
 │  │                                 │    │
 │  │  ●●●●●●●●●●●●●░░░░  78%        │    │  ← Progress to next milestone
-│  │  Next: 3 months (lung function) │    │  ← Subtle, understated
+│  │  Next: 3 months (three months) │    │  ← Subtle, understated
 │  ╰─────────────────────────────────╯    │
 │                                         │
 │  ╭─────────────╮  ╭─────────────╮       │
@@ -810,9 +818,9 @@ Icons.workspace_premium      // Premium features
 │     7 days. 70 cigarettes not           │
 │     smoked. ৳ 2,100 saved.             │  ← DM Sans 16px, secondary
 │                                         │
-│     Your taste buds are fully           │
-│     restored. Your lungs cleared        │  ← Science fact, adds meaning
-│     their first layer of residue.       │
+│     One full week of choosing           │
+│     differently. Keep it going.         │  ← Encouragement, no health claims
+│                                         │
 │                                         │
 │  ╭───────────────────────────────╮      │
 │  │         Share this win        │      │  ← Optional share
@@ -1247,26 +1255,22 @@ After logging a relapse:
 - Optional: "Want Spark's take?" → AI reflection (uses 1 daily message)
 - Skipping check-in does NOT break honesty streak
 
-### F9: Health Milestones Timeline
+### F9: Smoke-Free Milestones
 
-| Time | What Happens | Icon |
-|---|---|---|
-| 20 min | Heart rate and blood pressure drop | ❤️ |
-| 12 hrs | Blood oxygen normalizes | 🫁 |
-| 24 hrs | Heart attack risk starts dropping | 💛 |
-| 48 hrs | Taste & smell nerve endings regrow | 👃 |
-| 72 hrs | Breathing noticeably easier | 🌬️ |
-| 1 week | Circulation improves significantly | 🩸 |
-| 2 weeks | Lung function improves | 🫁 |
-| 1 month | Cough and fatigue reduce | ⚡ |
-| 3 months | Lung capacity up 30% | 💨 |
-| 6 months | Cravings rare and weak | 🌿 |
-| 1 year | Heart disease risk halved | ❤️‍🔥 |
-| 5 years | Stroke risk = non-smoker | 🧠 |
-| 10 years | Lung cancer risk halved | 🎯 |
-| 15 years | Heart disease risk = non-smoker | 🏆 |
+Simple time markers with neutral, encouraging copy. **No medical or physiological claims.**
 
-Each milestone: animated unlock screen + AI congratulation + science explanation.
+| Time | Milestone |
+|---|---|
+| 20 min | First 20 minutes on the board |
+| 12 hrs | Half a day without smoking |
+| 2 weeks | New routines replacing old ones |
+| 1 month | A full month smoke-free |
+| 3 months | Three months of choosing differently |
+| 9 months | Routine well established |
+| 1 year | One full year |
+| 5 / 10 / 15 years | Long-term consistency |
+
+Each milestone: unlock celebration + optional reminder notification.
 
 ### F10: Savings Tracker
 
@@ -1467,7 +1471,7 @@ When AI is unavailable (no internet, API down):
 | Feature | Guest | Free | Premium Monthly | Premium Annual |
 |---|---|---|---|---|
 | Core dashboard | ✅ | ✅ | ✅ | ✅ |
-| Health milestones | ✅ | ✅ | ✅ | ✅ |
+| Milestones | ✅ | ✅ | ✅ | ✅ |
 | Savings tracker | ✅ | ✅ | ✅ | ✅ |
 | 2-min guided rescue | ✅ | ✅ | ✅ | ✅ |
 | Daily check-in | ✅ | ✅ | ✅ | ✅ |
@@ -1530,7 +1534,7 @@ App Entry
             │   └── [Premium] → Voice Mode
             │
             ├── PROGRESS
-            │   ├── Health Timeline
+            │   ├── Milestones
             │   ├── Savings Detail
             │   ├── Craving Log History
             │   ├── Smoking Log History
@@ -1631,7 +1635,7 @@ Screen 5: Your Triggers
 + Add your own: [text field]
 
 Optionally, tell Spark your #1 reason for quitting:
-[text area, 200 chars, placeholder: "For my daughter. For my lungs. For myself."]
+[text area, 200 chars, placeholder: "For my daughter. For my freedom. For myself."]
 
 [Continue →]  [Skip]
 
@@ -1870,7 +1874,7 @@ AI cost ratio: ~38% of revenue at 50k MAU → healthy, improves with scale
 - [ ] Google Sign-In + account linking
 - [ ] Onboarding wizard (6 screens)
 - [ ] Home dashboard (counter, savings, CTA)
-- [ ] Health milestone timeline
+- [ ] Smoke-free milestones
 - [ ] 2-minute guided rescue (offline, no AI)
 - [ ] Private smoking log
 - [ ] Daily check-in
@@ -1924,7 +1928,7 @@ AI cost ratio: ~38% of revenue at 50k MAU → healthy, improves with scale
 - [ ] Accessibility audit (semantic labels, min touch target 48px, text scaling)
 - [ ] Performance profiling (60fps on Snapdragon 665 target device)
 - [ ] PostHog + Crashlytics integration
-- [ ] Privacy policy, terms, medical disclaimer
+- [ ] Privacy policy, terms, not-medical-advice disclaimer
 - [ ] Account deletion flow (GDPR)
 - [ ] Play Store listing (icon, screenshots, feature graphic, description)
 - [ ] Internal test track → Closed beta → Production
@@ -2085,14 +2089,13 @@ Now: [SPECIFIC TASK]
 
 ### v3 — Integrations
 - Android widget (streak + savings on home screen)
-- Amazfit / WearOS heart rate correlation with cravings
 - Calendar integration for danger-window alerts
 - WhatsApp SOS (link buddy by WhatsApp number)
 
 ### v3 — Global
 - Country-specific cigarette price database
 - Full Bangla UI (not just Banglish persona)
-- Regional health resource links
+- Regional helpline links
 - iOS release
 
 ---

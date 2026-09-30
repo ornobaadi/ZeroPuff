@@ -44,7 +44,7 @@ const _moods = [
   _MoodOption(
     5,
     'Clear',
-    'Breathing easier',
+    'Feeling light',
     'You felt lighter, confident, or mostly free from smoking thoughts.',
     Icons.wb_sunny_rounded,
   ),
