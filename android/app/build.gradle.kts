@@ -48,6 +48,21 @@ android {
         versionName = flutter.versionName
     }
 
+    flavorDimensions += "env"
+    productFlavors {
+        // Side-by-side test build: own app id, so it never touches the Play install.
+        create("dev") {
+            dimension = "env"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            resValue("string", "app_name", "ZeroPuff Dev")
+        }
+        create("prod") {
+            dimension = "env"
+            resValue("string", "app_name", "ZeroPuff")
+        }
+    }
+
     buildTypes {
         release {
             signingConfig = if (keystoreProperties["storeFile"] != null) {

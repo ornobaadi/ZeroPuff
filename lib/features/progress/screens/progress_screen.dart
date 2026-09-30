@@ -371,26 +371,20 @@ class _AchievementsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Text(
-                '$unlockedCount/${achievements.length} unlocked',
-                style: theme.textTheme.labelLarge,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: LinearProgressIndicator(
-                  year2023: false, // ignore: deprecated_member_use
-                  value: progress,
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(999),
-                  color: accents.money,
-                  backgroundColor: scheme.surfaceContainerHighest,
-                  semanticsLabel: 'Achievements unlocked',
-                  semanticsValue: '$unlockedCount of ${achievements.length}',
-                ),
-              ),
-            ],
+          Text(
+            '$unlockedCount/${achievements.length} unlocked',
+            style: theme.textTheme.labelLarge,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          LinearProgressIndicator(
+            year2023: false, // ignore: deprecated_member_use
+            value: progress,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(999),
+            color: accents.money,
+            backgroundColor: scheme.surfaceContainerHighest,
+            semanticsLabel: 'Achievements unlocked',
+            semanticsValue: '$unlockedCount of ${achievements.length}',
           ),
           const SizedBox(height: AppSpacing.md),
           SizedBox(
