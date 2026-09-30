@@ -184,6 +184,7 @@ class AppTheme {
         shape: const RoundedRectangleBorder(borderRadius: AppShapes.sheet),
       ),
       // Expressive (wavy, rounded) progress indicators.
+      // ignore: deprecated_member_use
       progressIndicatorTheme: const ProgressIndicatorThemeData(year2023: false),
       listTileTheme: ListTileThemeData(
         shape: const RoundedRectangleBorder(borderRadius: AppShapes.large),

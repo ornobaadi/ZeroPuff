@@ -16,6 +16,7 @@ class AppLoadingIndicator extends StatelessWidget {
       child: SizedBox(
         width: size,
         height: size,
+        // ignore: deprecated_member_use
         child: const CircularProgressIndicator(year2023: false),
       ),
     );

@@ -37,8 +37,7 @@ class SyncQueueRepository {
   Future<void> markFailed(SyncQueueItem item, Object error) async {
     item
       ..attemptCount += 1
-      ..lastError = error.toString().split('
-').first;
+      ..lastError = error.toString().split('\n').first;
     await _database.writeTxn(() => _database.syncQueueItems.put(item));
   }
 }

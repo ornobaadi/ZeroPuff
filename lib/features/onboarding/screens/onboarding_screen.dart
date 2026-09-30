@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/errors/friendly_error.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_motion.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/content_width.dart';
 import '../../../models/app_event.dart';
-import '../../../models/onboarding_data.dart';
 import '../../../models/profile_data.dart';
-import '../../../models/smoking_window_data.dart';
 import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/auth_repository.dart';
@@ -20,27 +18,21 @@ import '../../../repositories/profile_repository.dart';
 import '../../../services/device/device_identity_service.dart';
 import '../../../services/haptics/haptic_service.dart';
 import '../../../services/notifications/notification_service.dart';
+import '../models/onboarding_form.dart';
+import '../steps/habit_step.dart';
+import '../steps/reason_step.dart';
+import '../steps/reminders_step.dart';
+import '../steps/routine_step.dart';
+import '../steps/start_date_step.dart';
+import '../steps/welcome_step.dart';
 
-const _triggerOptions = [
-  _TriggerOption('stress', 'Stressed', Icons.bolt_rounded),
-  _TriggerOption('bored', 'Bored', Icons.hourglass_empty_rounded),
-  _TriggerOption('social', 'Social pressure', Icons.groups_rounded),
-  _TriggerOption('after food', 'After food', Icons.restaurant_rounded),
-  _TriggerOption('coffee', 'Coffee', Icons.local_cafe_rounded),
-  _TriggerOption('routine', 'Routine', Icons.repeat_rounded),
-  _TriggerOption('other', 'Something else', Icons.more_horiz_rounded),
-];
-
-const _currencyOptions = [
-  _CurrencyOption('USD', r'$', 'US dollar'),
-  _CurrencyOption('EUR', '€', 'Euro'),
-  _CurrencyOption('GBP', '£', 'British pound'),
-  _CurrencyOption('INR', '₹', 'Indian rupee'),
-  _CurrencyOption('BDT', '৳', 'Bangladeshi taka'),
-];
-
-const _totalOnboardingSteps = 5;
-const _lastOnboardingStep = _totalOnboardingSteps - 1;
+/// Page indices. Step 0 is the welcome page and is not counted in the
+/// progress indicator, which covers the five setup steps after it.
+const _welcomeStep = 0;
+const _reasonStep = 4;
+const _remindersStep = 5;
+const _lastStep = _remindersStep;
+const _setupSteps = _lastStep;
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -53,16 +45,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   final _reasonController = TextEditingController();
 
-  int _step = 0;
-  DateTime _quitDate = DateTime.now();
-  int _cigarettesPerDay = 10;
-  int _packPrice = 12;
-  int _packSize = 20;
-  int _smokeWindowStartMinutes = 18 * 60;
-  int _smokeWindowEndMinutes = 23 * 60;
-  _CurrencyOption _currency = _currencyOptions.first;
-  final Set<String> _triggers = {'stress'};
+  int _step = _welcomeStep;
+  OnboardingForm _form = OnboardingForm.initial();
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreDraft();
+  }
 
   @override
   void dispose() {
@@ -71,409 +62,276 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.dispose();
   }
 
+  /// Picks up where the user left off if the app was closed mid-setup.
+  Future<void> _restoreDraft() async {
+    try {
+      final draft = await ref.read(onboardingRepositoryProvider).loadDraft();
+      if (draft == null || draft.completed || !mounted) {
+        return;
+      }
+      final restored = OnboardingForm.fromDraft(draft);
+      final step = draft.currentStep.clamp(_welcomeStep, _lastStep);
+      setState(() {
+        _form = restored;
+        _step = step;
+        _reasonController.text = restored.reason;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _pageController.hasClients) {
+          _pageController.jumpToPage(step);
+        }
+      });
+    } on Object {
+      // A missing or unreadable draft just means starting from the beginning.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final showProgress = _step > _welcomeStep;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.pagePadding,
-                AppSpacing.md,
-                AppSpacing.pagePadding,
-                AppSpacing.sm,
+    return PopScope(
+      canPop: _step == _welcomeStep,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_isSaving) {
+          _previous();
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              _TopBar(
+                visible: showProgress,
+                step: _step,
+                onBack: _isSaving ? null : _previous,
               ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: _step == 0 || _isSaving ? null : _previous,
-                    icon: const Icon(Icons.arrow_back_rounded),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        minHeight: 8,
-                        value: (_step + 1) / _totalOnboardingSteps,
-                      ),
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    const WelcomeStep(),
+                    StartDateStep(
+                      form: _form,
+                      onChoiceSelected: _selectDateChoice,
+                      onPickDate: _pickQuitDate,
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Text(
-                    '${_step + 1}/$_totalOnboardingSteps',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    HabitStep(
+                      form: _form,
+                      onChanged: _updateForm,
+                      onSelection: _selectionHaptic,
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _StepPane(
-                    icon: Icons.flag_rounded,
-                    eyebrow: 'Your clock',
-                    title: 'When should ZeroPuff start counting?',
-                    subtitle:
-                        'Pick the moment that feels honest. You can adjust it later.',
-                    body: Column(
-                      children: [
-                        _ChoiceTile(
-                          title: 'Today',
-                          subtitle: 'Start fresh from this moment.',
-                          icon: Icons.wb_sunny_outlined,
-                          selected: _isSameDate(_quitDate, DateTime.now()),
-                          onTap: () {
-                            _selectionHaptic();
-                            setState(() => _quitDate = DateTime.now());
-                          },
-                        ),
-                        _ChoiceTile(
-                          title: 'Yesterday',
-                          subtitle: 'You have already begun.',
-                          icon: Icons.nightlight_round,
-                          selected: _isSameDate(
-                            _quitDate,
-                            DateTime.now().subtract(const Duration(days: 1)),
-                          ),
-                          onTap: () {
-                            _selectionHaptic();
-                            setState(() {
-                              _quitDate = DateTime.now().subtract(
-                                const Duration(days: 1),
-                              );
-                            });
-                          },
-                        ),
-                        _ChoiceTile(
-                          title: 'Choose a date',
-                          subtitle: _dateLabel(_quitDate),
-                          icon: Icons.event_rounded,
-                          selected:
-                              !_isSameDate(_quitDate, DateTime.now()) &&
-                              !_isSameDate(
-                                _quitDate,
-                                DateTime.now().subtract(
-                                  const Duration(days: 1),
-                                ),
-                              ),
-                          onTap: _pickQuitDate,
-                        ),
-                      ],
+                    RoutineStep(
+                      form: _form,
+                      onChanged: _updateForm,
+                      onSelection: _selectionHaptic,
+                      onPickStart: _pickWindowStart,
+                      onPickEnd: _pickWindowEnd,
                     ),
-                  ),
-                  _StepPane(
-                    icon: Icons.payments_outlined,
-                    eyebrow: 'Your baseline',
-                    title: 'Make progress measurable',
-                    subtitle:
-                        'No judgement here. These numbers turn time into real feedback.',
-                    body: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Currency', style: theme.textTheme.titleMedium),
-                        const SizedBox(height: AppSpacing.sm),
-                        Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.sm,
-                          children: _currencyOptions.map((currency) {
-                            return ChoiceChip(
-                              label: Text(
-                                '${currency.symbol} ${currency.code}',
-                              ),
-                              selected: _currency.code == currency.code,
-                              onSelected: (_) {
-                                _selectionHaptic();
-                                setState(() => _currency = currency);
-                              },
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: AppSpacing.xl),
-                        _NumberStepper(
-                          label: 'Cigarettes per day',
-                          value: _cigarettesPerDay,
-                          min: 0,
-                          max: 80,
-                          onChanged: (value) {
-                            _selectionHaptic();
-                            setState(() => _cigarettesPerDay = value);
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        _NumberStepper(
-                          label: 'Pack price',
-                          value: _packPrice,
-                          min: 0,
-                          max: 10000,
-                          prefix: _currency.symbol,
-                          step: _currency.largePriceStep ? 10 : 1,
-                          onChanged: (value) {
-                            _selectionHaptic();
-                            setState(() => _packPrice = value);
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        _NumberStepper(
-                          label: 'Cigarettes per pack',
-                          value: _packSize,
-                          min: 1,
-                          max: 60,
-                          onChanged: (value) {
-                            _selectionHaptic();
-                            setState(() => _packSize = value);
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.componentGap),
-                        _SmokingWindowCard(
-                          startMinutes: _smokeWindowStartMinutes,
-                          endMinutes: _smokeWindowEndMinutes,
-                          onRangeChanged: (start, end) {
-                            _selectionHaptic();
-                            setState(() {
-                              _smokeWindowStartMinutes = start;
-                              _smokeWindowEndMinutes = end;
-                            });
-                          },
-                          onPickStart: () => _pickSmokeWindowTime(
-                            initialMinutes: _smokeWindowStartMinutes,
-                            onPicked: (minutes) => setState(() {
-                              _smokeWindowStartMinutes = minutes;
-                              if (_smokeWindowEndMinutes <= minutes) {
-                                _smokeWindowEndMinutes = (minutes + 60).clamp(
-                                  0,
-                                  24 * 60,
-                                );
-                              }
-                            }),
-                          ),
-                          onPickEnd: () => _pickSmokeWindowTime(
-                            initialMinutes: _smokeWindowEndMinutes,
-                            onPicked: (minutes) => setState(() {
-                              _smokeWindowEndMinutes = minutes;
-                              if (_smokeWindowStartMinutes >= minutes) {
-                                _smokeWindowStartMinutes = (minutes - 60).clamp(
-                                  0,
-                                  24 * 60,
-                                );
-                              }
-                            }),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _StepPane(
-                    icon: Icons.bolt_rounded,
-                    eyebrow: 'Rescue shortcuts',
-                    title: 'What usually pulls you toward smoking?',
-                    subtitle:
-                        'Pick a few. During a craving, we will keep choices fast.',
-                    body: Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.sm,
-                      children: _triggerOptions.map((trigger) {
-                        final selected = _triggers.contains(trigger.value);
-                        return _OnboardingTriggerChip(
-                          option: trigger,
-                          selected: selected,
-                          onTap: () => _toggleTrigger(trigger.value),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  _StepPane(
-                    icon: Icons.favorite_border_rounded,
-                    eyebrow: 'Future-you',
-                    title: 'Leave yourself one honest reason',
-                    subtitle:
-                        'When a craving hits, this sentence can become the pause.',
-                    body: TextField(
+                    ReasonStep(
                       controller: _reasonController,
-                      minLines: 5,
-                      maxLines: 8,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
-                        hintText: 'Example: I want to feel free and in control.',
-                      ),
+                      onChanged: (value) =>
+                          _form = _form.copyWith(reason: value),
                     ),
-                  ),
-                  _StepPane(
-                    icon: Icons.notifications_active_outlined,
-                    eyebrow: 'Helpful nudges',
-                    title: 'Let ZeroPuff remind you at the right moment',
-                    subtitle:
-                        'Cravings often arrive when motivation is quiet. Smart reminders help you notice progress before autopilot takes over.',
-                    body: const Column(
-                      children: [
-                        _NotificationBenefitCard(
-                          icon: Icons.savings_outlined,
-                          title: 'Progress, not spam',
-                          body:
-                              'Reminders can mention money won back, cigarettes avoided, or your current streak.',
-                        ),
-                        SizedBox(height: AppSpacing.md),
-                        _NotificationBenefitCard(
-                          icon: Icons.fact_check_outlined,
-                          title: 'Skips irrelevant check-ins',
-                          body:
-                              'If today is already recorded, ZeroPuff moves the nudge to tomorrow.',
-                        ),
-                        SizedBox(height: AppSpacing.md),
-                        _NotificationBenefitCard(
-                          icon: Icons.nightlight_round,
-                          title: 'A gentle evening backup',
-                          body:
-                              'If the day is still blank, one reminder helps protect your timeline.',
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                    const RemindersStep(),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.pagePadding),
-          child: FilledButton.icon(
-            onPressed: _isSaving ? null : _next,
-            icon: Icon(
-              _step == _lastOnboardingStep
-                  ? Icons.notifications_active_rounded
-                  : Icons.arrow_forward_rounded,
-            ),
-            label: Text(_buttonLabel()),
+              _BottomBar(
+                step: _step,
+                isSaving: _isSaving,
+                canContinue: _form.canContinueFrom(_step),
+                onPrimary: _onPrimary,
+                onSecondary: _onSecondary,
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  String _buttonLabel() {
-    if (_isSaving) {
-      return 'Saving';
-    }
-    return _step == _lastOnboardingStep
-        ? 'Enable reminders & finish'
-        : 'Continue';
-  }
+  // ---- Form updates -------------------------------------------------------
 
-  String _dateLabel(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  void _updateForm(OnboardingForm form) => setState(() => _form = form);
+
+  void _selectDateChoice(QuitDateChoice choice) {
+    _selectionHaptic();
+    final now = DateTime.now();
+    setState(() {
+      _form = _form.copyWith(
+        dateChoice: choice,
+        quitDate: switch (choice) {
+          QuitDateChoice.today => now,
+          QuitDateChoice.yesterday => DateTime(
+            now.year,
+            now.month,
+            now.day - 1,
+            now.hour,
+            now.minute,
+          ),
+          QuitDateChoice.custom => _form.quitDate,
+        },
+      );
+    });
   }
 
   Future<void> _pickQuitDate() async {
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: _quitDate,
+      initialDate: _form.quitDate.isAfter(now) ? now : _form.quitDate,
       firstDate: DateTime(now.year - 10),
-      lastDate: DateTime(now.year + 1),
+      lastDate: now,
+      helpText: 'Choose your start date',
     );
-    if (picked != null) {
-      _selectionHaptic();
-      setState(() => _quitDate = picked);
+    if (picked == null || !mounted) {
+      return;
     }
-  }
-
-  void _toggleTrigger(String trigger) {
     _selectionHaptic();
     setState(() {
-      if (_triggers.contains(trigger) && _triggers.length > 1) {
-        _triggers.remove(trigger);
-      } else {
-        _triggers.add(trigger);
-      }
+      _form = _form.copyWith(
+        quitDate: OnboardingForm.dateOnDay(picked, now),
+        dateChoice: QuitDateChoice.custom,
+      );
     });
   }
 
-  Future<void> _previous() async {
-    _selectionHaptic();
-    setState(() => _step -= 1);
-    await _pageController.previousPage(
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
-  Future<void> _next() async {
-    if (_step == _lastOnboardingStep) {
-      _mediumHaptic();
-    } else {
-      _lightHaptic();
-    }
-    await _saveDraft(completed: false);
-    if (_step < _lastOnboardingStep) {
-      setState(() => _step += 1);
-      await _pageController.nextPage(
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOutCubic,
-      );
+  Future<void> _pickWindowStart() async {
+    final minutes = await _pickTime(_form.smokeWindowStartMinutes);
+    if (minutes == null || !mounted) {
       return;
     }
-
-    await _complete();
+    final end = _form.smokeWindowEndMinutes;
+    setState(() {
+      _form = _form.copyWith(
+        smokeWindowStartMinutes: minutes,
+        smokeWindowEndMinutes: end <= minutes
+            ? (minutes + 60).clamp(0, 24 * 60)
+            : end,
+      );
+    });
   }
 
-  Future<void> _saveDraft({required bool completed}) async {
-    final data = OnboardingData(
-      quitDate: _quitDate,
-      cigarettesPerDay: _cigarettesPerDay,
-      packPrice: _packPrice.toDouble(),
-      packSize: _packSize,
-      currencyCode: _currency.code,
-      currencySymbol: _currency.symbol,
-      triggers: _triggers.toList(),
-      quitReason: _reasonController.text.trim().isEmpty
-          ? null
-          : _reasonController.text.trim(),
-      usualSmokingWindow: SmokingWindowData(
-        startMinutes: _smokeWindowStartMinutes,
-        endMinutes: _smokeWindowEndMinutes,
+  Future<void> _pickWindowEnd() async {
+    final minutes = await _pickTime(_form.smokeWindowEndMinutes);
+    if (minutes == null || !mounted) {
+      return;
+    }
+    final start = _form.smokeWindowStartMinutes;
+    setState(() {
+      _form = _form.copyWith(
+        smokeWindowEndMinutes: minutes,
+        smokeWindowStartMinutes: start >= minutes
+            ? (minutes - 60).clamp(0, 24 * 60)
+            : start,
+      );
+    });
+  }
+
+  Future<int?> _pickTime(int initialMinutes) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: (initialMinutes ~/ 60).clamp(0, 23),
+        minute: initialMinutes.remainder(60),
       ),
-      currentStep: _step,
-      completed: completed,
     );
-    await ref.read(onboardingRepositoryProvider).saveDraft(data);
+    if (picked == null) {
+      return null;
+    }
+    _selectionHaptic();
+    return picked.hour * 60 + picked.minute;
   }
 
-  Future<void> _complete() async {
-    setState(() => _isSaving = true);
+  // ---- Navigation ---------------------------------------------------------
+
+  Future<void> _goToStep(int step) async {
+    setState(() => _step = step);
+    if (!_pageController.hasClients) {
+      return;
+    }
+    final duration = AppMotion.of(context, AppMotion.emphasized);
+    if (duration == Duration.zero) {
+      _pageController.jumpToPage(step);
+      return;
+    }
+    await _pageController.animateToPage(
+      step,
+      duration: duration,
+      curve: AppMotion.enter,
+    );
+  }
+
+  Future<void> _previous() async {
+    if (_step == _welcomeStep) {
+      return;
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    _selectionHaptic();
+    await _goToStep(_step - 1);
+  }
+
+  Future<void> _onPrimary() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (_step == _lastStep) {
+      _mediumHaptic();
+      await _complete(enableReminders: true);
+      return;
+    }
+    if (!_form.canContinueFrom(_step)) {
+      return;
+    }
+    _lightHaptic();
+    await _saveDraft(next: _step + 1);
+    await _goToStep(_step + 1);
+  }
+
+  /// "Skip" on the reason step, "Not now" on the reminders step.
+  Future<void> _onSecondary() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (_step == _lastStep) {
+      _lightHaptic();
+      await _complete(enableReminders: false);
+      return;
+    }
+    if (_step == _reasonStep) {
+      _lightHaptic();
+      _reasonController.clear();
+      _form = _form.copyWith(reason: '');
+      await _saveDraft(next: _step + 1);
+      await _goToStep(_step + 1);
+    }
+  }
+
+  // ---- Saving -------------------------------------------------------------
+
+  Future<void> _saveDraft({required int next, bool completed = false}) async {
     try {
-      final notificationsGranted =
-          await NotificationService.requestPermission();
+      await ref
+          .read(onboardingRepositoryProvider)
+          .saveDraft(_form.toDraft(step: next, completed: completed));
+    } on Object {
+      // Losing a draft must never block the user from continuing.
+    }
+  }
+
+  Future<void> _complete({required bool enableReminders}) async {
+    setState(() => _isSaving = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final granted = enableReminders
+          ? await NotificationService.requestPermission()
+          : false;
       final user = ref.read(currentUserProvider);
-      final profile = ProfileData(
+      final profile = _form.toProfile(
         userId: user?.id ?? DeviceIdentityService.guestUserId,
         displayName:
             user?.userMetadata?['full_name']?.toString() ??
             user?.email ??
             'Guest',
         avatarUrl: user?.userMetadata?['avatar_url']?.toString(),
-        quitDate: _quitDate,
-        cigarettesPerDay: _cigarettesPerDay,
-        packPrice: _packPrice.toDouble(),
-        packSize: _packSize,
-        currencyCode: _currency.code,
-        currencySymbol: _currency.symbol,
-        triggers: _triggers.toList(),
-        usualSmokingWindow: SmokingWindowData(
-          startMinutes: _smokeWindowStartMinutes,
-          endMinutes: _smokeWindowEndMinutes,
-        ),
-        quitReason: _reasonController.text.trim().isEmpty
-            ? null
-            : _reasonController.text.trim(),
       );
 
       await ref.read(onboardingRepositoryProvider).completeOnboarding(profile);
@@ -483,17 +341,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await ref
           .read(appEventRepositoryProvider)
           .track(const AppEvent(eventName: 'onboarding_completed'));
-      await _setupNotifications(profile, notificationsGranted);
+      await _setupNotifications(profile, granted);
 
+      if (enableReminders && !granted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Reminders are off. You can turn them on in Profile > Reminders.',
+            ),
+          ),
+        );
+      }
       if (mounted) {
         context.go(AppRoutes.home);
       }
     } on Object catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(friendlyError(error))));
-      }
+      messenger.showSnackBar(SnackBar(content: Text(friendlyError(error))));
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -528,656 +391,144 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  bool _isSameDate(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
-  Future<void> _pickSmokeWindowTime({
-    required int initialMinutes,
-    required ValueChanged<int> onPicked,
-  }) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(
-        hour: (initialMinutes ~/ 60).clamp(0, 23),
-        minute: initialMinutes.remainder(60),
-      ),
-    );
-    if (picked == null) {
-      return;
-    }
-    _selectionHaptic();
-    onPicked(picked.hour * 60 + picked.minute);
-  }
+  // ---- Haptics ------------------------------------------------------------
 
   bool get _hapticsEnabled => ref.read(hapticsEnabledControllerProvider);
 
-  void _selectionHaptic() {
-    HapticService.selection(enabled: _hapticsEnabled);
-  }
+  void _selectionHaptic() => HapticService.selection(enabled: _hapticsEnabled);
 
-  void _lightHaptic() {
-    HapticService.light(enabled: _hapticsEnabled);
-  }
+  void _lightHaptic() => HapticService.light(enabled: _hapticsEnabled);
 
-  void _mediumHaptic() {
-    HapticService.medium(enabled: _hapticsEnabled);
-  }
+  void _mediumHaptic() => HapticService.medium(enabled: _hapticsEnabled);
 }
 
-class _StepPane extends StatelessWidget {
-  const _StepPane({
-    required this.icon,
-    required this.eyebrow,
-    required this.title,
-    required this.body,
-    this.subtitle,
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.visible,
+    required this.step,
+    required this.onBack,
   });
 
-  final IconData icon;
-  final String eyebrow;
-  final String title;
-  final String? subtitle;
-  final Widget body;
+  final bool visible;
+  final int step;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.pagePadding,
-        AppSpacing.lg,
-        AppSpacing.pagePadding,
-        AppSpacing.xl,
-      ),
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, color: AppColors.primary),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Text(
-              eyebrow,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        Text(title, style: theme.textTheme.headlineMedium),
-        if (subtitle != null) ...[
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            subtitle!,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-        const SizedBox(height: AppSpacing.xl),
-        body,
-      ],
-    );
-  }
-}
-
-class _ChoiceTile extends StatelessWidget {
-  const _ChoiceTile({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.componentGap),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: selected
-                ? theme.colorScheme.primaryContainer
-                : theme.cardTheme.color,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: selected
-                  ? AppColors.primary
-                  : theme.colorScheme.outlineVariant,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: selected ? AppColors.primary : null),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    // Keep the height constant so the page does not jump between steps.
+    return SizedBox(
+      height: 64,
+      child: visible
+          ? ContentWidth(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.componentGap,
+                ),
+                child: Row(
                   children: [
-                    Text(title, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                    IconButton(
+                      tooltip: 'Back',
+                      onPressed: onBack,
+                      icon: const Icon(Icons.arrow_back_rounded),
                     ),
-                  ],
-                ),
-              ),
-              if (selected)
-                const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.primary,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NotificationBenefitCard extends StatelessWidget {
-  const _NotificationBenefitCard({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
-
-  final IconData icon;
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.componentGap,
-        AppSpacing.componentGap,
-        AppSpacing.componentGap,
-        AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: AppColors.primary),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  body,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SmokingWindowCard extends StatelessWidget {
-  const _SmokingWindowCard({
-    required this.startMinutes,
-    required this.endMinutes,
-    required this.onRangeChanged,
-    required this.onPickStart,
-    required this.onPickEnd,
-  });
-
-  final int startMinutes;
-  final int endMinutes;
-  final void Function(int startMinutes, int endMinutes) onRangeChanged;
-  final VoidCallback onPickStart;
-  final VoidCallback onPickEnd;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final start = startMinutes.clamp(0, 24 * 60);
-    final end = endMinutes.clamp(0, 24 * 60);
-    final values = RangeValues(start.toDouble(), end.toDouble());
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.componentGap),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.schedule_rounded,
-                size: 20,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Usual smoke window',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'When do cravings usually show up?',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Container(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.componentGap,
-              AppSpacing.sm,
-              AppSpacing.componentGap,
-              AppSpacing.xs,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: isDark ? 0.1 : 0.06),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.14),
-              ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
-                      child: _TimeButton(
-                        label: 'Starts',
-                        value: SmokingWindowData.labelForMinutes(start),
-                        onTap: onPickStart,
+                      child: LinearProgressIndicator(
+                        value: step / _setupSteps,
+                        minHeight: 8,
+                        semanticsLabel: 'Setup step $step of $_setupSteps',
+                        semanticsValue: '${(step / _setupSteps * 100).round()}',
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xs,
-                      ),
-                      child: Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 18,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Expanded(
-                      child: _TimeButton(
-                        label: 'Ends',
-                        value: SmokingWindowData.labelForMinutes(end),
-                        onTap: onPickEnd,
+                    const SizedBox(width: AppSpacing.md),
+                    ExcludeSemantics(
+                      child: Text(
+                        '$step of $_setupSteps',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: AppSpacing.sm),
                   ],
                 ),
-                RangeSlider(
-                  values: values,
-                  min: 0,
-                  max: 24 * 60,
-                  divisions: 48,
-                  onChanged: (next) {
-                    onRangeChanged(next.start.round(), next.end.round());
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+              ),
+            )
+          : null,
     );
   }
 }
 
-class _TimeButton extends StatelessWidget {
-  const _TimeButton({
-    required this.label,
-    required this.value,
-    required this.onTap,
+class _BottomBar extends StatelessWidget {
+  const _BottomBar({
+    required this.step,
+    required this.isSaving,
+    required this.canContinue,
+    required this.onPrimary,
+    required this.onSecondary,
   });
 
-  final String label;
-  final String value;
-  final VoidCallback onTap;
+  final int step;
+  final bool isSaving;
+  final bool canContinue;
+  final VoidCallback onPrimary;
+  final VoidCallback onSecondary;
+
+  String get _primaryLabel => switch (step) {
+    _welcomeStep => 'Get started',
+    _remindersStep => 'Turn on reminders',
+    _ => 'Continue',
+  };
+
+  String? get _secondaryLabel => switch (step) {
+    _reasonStep => 'Skip for now',
+    _remindersStep => 'Not now',
+    _ => null,
+  };
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final secondary = _secondaryLabel;
 
     return Material(
-      color: theme.colorScheme.surface.withValues(alpha: 0.84),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
+      color: Theme.of(context).colorScheme.surface,
+      child: ContentWidth(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.sm,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.pagePadding,
+            AppSpacing.sm,
+            AppSpacing.pagePadding,
+            AppSpacing.md,
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w700, fontVariations: AppTypography.w700,
-                ),
+              FilledButton(
+                onPressed: isSaving || !canContinue ? null : onPrimary,
+                child: isSaving
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          semanticsLabel: 'Saving',
+                        ),
+                      )
+                    : Text(_primaryLabel),
               ),
-              const SizedBox(height: 2),
-              FittedBox(
-                child: Text(
-                  value,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w900, fontVariations: AppTypography.w900,
-                  ),
+              if (secondary != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                TextButton(
+                  onPressed: isSaving ? null : onSecondary,
+                  child: Text(secondary),
                 ),
-              ),
+              ],
             ],
           ),
         ),
       ),
     );
   }
-}
-
-class _NumberStepper extends StatelessWidget {
-  const _NumberStepper({
-    required this.label,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-    this.prefix,
-    this.step = 1,
-  });
-
-  final String label;
-  final int value;
-  final int min;
-  final int max;
-  final ValueChanged<int> onChanged;
-  final String? prefix;
-  final int step;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(22),
-      onTap: () => _editValue(context),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(label, style: theme.textTheme.titleMedium),
-                ),
-                IconButton.filledTonal(
-                  onPressed: value <= min
-                      ? null
-                      : () => onChanged((value - step).clamp(min, max)),
-                  icon: const Icon(Icons.remove_rounded),
-                ),
-                SizedBox(
-                  width: 112,
-                  child: Text(
-                    '${prefix ?? ''}$value',
-                    textAlign: TextAlign.center,
-                    style: AppTypography.statNumber.copyWith(
-                      fontSize: 27,
-                      fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
-                      height: 1,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                IconButton.filledTonal(
-                  onPressed: value >= max
-                      ? null
-                      : () => onChanged((value + step).clamp(min, max)),
-                  icon: const Icon(Icons.add_rounded),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _editValue(BuildContext context) async {
-    final controller = TextEditingController(text: value.toString());
-    final next = await showDialog<int>(
-      context: context,
-      builder: (context) {
-        final theme = Theme.of(context);
-        return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 56),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 340),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.lg,
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(label, style: theme.textTheme.headlineSmall),
-                      const SizedBox(height: AppSpacing.md),
-                      TextField(
-                        controller: controller,
-                        autofocus: true,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.done,
-                        decoration: InputDecoration(
-                          prefixText: prefix,
-                          filled: true,
-                          helperText: 'Allowed range: $min-$max',
-                        ),
-                        onSubmitted: (_) {
-                          final parsed = int.tryParse(controller.text.trim());
-                          Navigator.of(context).pop(parsed);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    0,
-                    AppSpacing.md,
-                    AppSpacing.md,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Cancel'),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () {
-                            final parsed = int.tryParse(controller.text.trim());
-                            Navigator.of(context).pop(parsed);
-                          },
-                          child: const Text('Save'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-    controller.dispose();
-    if (next != null) {
-      onChanged(next.clamp(min, max));
-    }
-  }
-}
-
-class _OnboardingTriggerChip extends StatelessWidget {
-  const _OnboardingTriggerChip({
-    required this.option,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final _TriggerOption option;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final background = selected
-        ? AppColors.primaryLight
-        : isDark
-        ? AppColors.surfaceCardDark
-        : AppColors.surfaceElevated;
-    final foreground = selected
-        ? AppColors.textPrimary
-        : theme.colorScheme.onSurface;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        constraints: const BoxConstraints(minHeight: 32),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: selected
-                ? AppColors.primaryLight
-                : theme.colorScheme.outlineVariant,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (selected) ...[
-              const Icon(
-                Icons.check_rounded,
-                size: 16,
-                color: AppColors.textPrimary,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-            ] else ...[
-              Icon(option.icon, size: 16, color: AppColors.primary),
-              const SizedBox(width: AppSpacing.xs),
-            ],
-            Text(
-              option.label,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: foreground,
-                fontWeight: FontWeight.w800, fontVariations: AppTypography.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TriggerOption {
-  const _TriggerOption(this.value, this.label, this.icon);
-
-  final String value;
-  final String label;
-  final IconData icon;
-}
-
-class _CurrencyOption {
-  const _CurrencyOption(this.code, this.symbol, this.name);
-
-  final String code;
-  final String symbol;
-  final String name;
-
-  bool get largePriceStep => code == 'BDT' || code == 'INR';
 }
