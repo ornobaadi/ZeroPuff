@@ -40,7 +40,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: AppSpacing.xl),
-                  DecoratedBox(
+                  Semantics(
+                    container: true,
+                    child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: scheme.primaryContainer,
                       borderRadius: BorderRadius.circular(999),
@@ -69,20 +71,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       ),
                     ),
                   ),
+                  ),
                   const SizedBox(height: AppSpacing.xl),
                   Semantics(
                     header: true,
+                    container: true,
                     child: Text(
                       AppConstants.appName,
                       style: theme.textTheme.displayMedium,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text(
+                  Semantics(
+                    container: true,
+                    child: Text(
                     'Open it at the craving moment. Delay the decision, breathe, then log only what matters.',
                     style: theme.textTheme.titleLarge?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
+                  ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   const _PromiseCard(
@@ -98,7 +105,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         'Guest mode works right away. Google is only for backup and sync.',
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  FilledButton.icon(
+                  Semantics(
+                    button: true,
+                    enabled: !_isSigningIn,
+                    label: _isSigningIn
+                        ? 'Opening Google'
+                        : 'Continue with Google',
+                    excludeSemantics: true,
+                    onTap: _isSigningIn ? null : _signIn,
+                    child: FilledButton.icon(
                     onPressed: _isSigningIn ? null : _signIn,
                     icon: _isSigningIn
                         ? const SizedBox.square(
@@ -112,6 +127,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     label: Text(
                       _isSigningIn ? 'Opening Google' : 'Continue with Google',
                     ),
+                  ),
                   ),
                   const SizedBox(height: AppSpacing.componentGap),
                   OutlinedButton.icon(
@@ -189,11 +205,13 @@ class _GoogleMark extends StatelessWidget {
         color: Colors.white,
         shape: BoxShape.circle,
       ),
-      child: Image.memory(
-        _googleLogoBytes,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-        gaplessPlayback: true,
+      child: ExcludeSemantics(
+        child: Image.memory(
+          _googleLogoBytes,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+          gaplessPlayback: true,
+        ),
       ),
     );
   }
