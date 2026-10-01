@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_motion.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -221,7 +222,7 @@ class WalkVisual extends StatelessWidget {
               curve: AppMotion.enter,
               left: 18.0 + (96.0 * value),
               child: Icon(
-                Icons.directions_walk_rounded,
+                Symbols.directions_walk_rounded,
                 size: 64,
                 color: scheme.primary,
               ),
@@ -283,7 +284,7 @@ class ReasonVisual extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.favorite_rounded, color: scheme.primary),
+                Icon(Symbols.favorite_rounded, color: scheme.primary),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   reason,

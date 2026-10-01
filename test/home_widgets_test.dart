@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zeropuff/core/theme/app_theme.dart';
+import 'package:zeropuff/core/widgets/rolling_number.dart';
 import 'package:zeropuff/features/home/widgets/home_action_cards.dart';
 import 'package:zeropuff/features/home/widgets/smoke_free_timer.dart';
 
@@ -11,6 +12,10 @@ Widget _host(Widget child) {
   );
 }
 
+Finder _number(int value, {int minDigits = 1}) => find.byWidgetPredicate(
+  (w) => w is RollingNumber && w.value == value && w.minDigits == minDigits,
+);
+
 void main() {
   group('SmokeFreeTimer', () {
     testWidgets('shows days, hours, minutes and seconds', (tester) async {
@@ -19,10 +24,10 @@ void main() {
       );
       await tester.pumpWidget(_host(SmokeFreeTimer(since: since)));
 
-      expect(find.text('2'), findsOneWidget);
+      expect(_number(2), findsOneWidget);
       expect(find.text('days'), findsOneWidget);
-      expect(find.text('03'), findsOneWidget);
-      expect(find.text('04'), findsOneWidget);
+      expect(_number(3, minDigits: 2), findsOneWidget);
+      expect(_number(4, minDigits: 2), findsOneWidget);
     });
 
     testWidgets('uses the singular for one day', (tester) async {
@@ -36,8 +41,8 @@ void main() {
       final since = DateTime.now().add(const Duration(hours: 5));
       await tester.pumpWidget(_host(SmokeFreeTimer(since: since)));
 
-      expect(find.text('0'), findsOneWidget);
-      expect(find.text('00'), findsNWidgets(3));
+      expect(_number(0), findsOneWidget);
+      expect(_number(0, minDigits: 2), findsNWidgets(3));
     });
 
     testWidgets('ticks every second', (tester) async {
@@ -59,9 +64,7 @@ void main() {
       await tester.pumpWidget(_host(SmokeFreeTimer(since: since)));
 
       expect(
-        find.bySemanticsLabel(
-          'Smoke-free for 3 days, 2 hours and 10 minutes',
-        ),
+        find.bySemanticsLabel('Smoke-free for 3 days, 2 hours and 10 minutes'),
         findsOneWidget,
       );
       handle.dispose();
@@ -101,14 +104,9 @@ void main() {
 
     testWidgets('streak chip announces the streak', (tester) async {
       final handle = tester.ensureSemantics();
-      await tester.pumpWidget(
-        _host(StreakChip(streak: 1, onTap: () {})),
-      );
+      await tester.pumpWidget(_host(StreakChip(streak: 1, onTap: () {})));
 
-      expect(
-        find.bySemanticsLabel('Smoke-free streak: 1 day'),
-        findsOneWidget,
-      );
+      expect(find.bySemanticsLabel('Smoke-free streak: 1 day'), findsOneWidget);
       handle.dispose();
     });
   });

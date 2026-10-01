@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,8 +46,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('You')),
       body: SafeArea(
+        bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.pagePadding),
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.pagePadding,
+            AppSpacing.pagePadding,
+            AppSpacing.pagePadding,
+            // Clears the floating navigation bar the page scrolls under.
+            AppSpacing.pagePadding + MediaQuery.paddingOf(context).bottom,
+          ),
           children: [
             ContentWidth(
               child: Column(
@@ -62,16 +70,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     title: 'Preferences',
                     children: [
                       SettingsTile(
-                        icon: Icons.palette_outlined,
+                        icon: Symbols.palette_rounded,
                         title: 'Appearance',
                         subtitle: 'System, light or dark mode',
                         trailing: _themeModeLabel(themeMode),
                         onTap: () => _openRoute(AppRoutes.appearanceSettings),
                       ),
                       SettingsSwitchTile(
-                        icon: Icons.vibration_rounded,
+                        icon: Symbols.vibration_rounded,
                         title: 'Haptics',
-                        subtitle: 'Gentle taps for rescue steps and key actions',
+                        subtitle:
+                            'Gentle taps for rescue steps and key actions',
                         value: hapticsEnabled,
                         onChanged: (enabled) async {
                           await ref
@@ -81,13 +90,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         },
                       ),
                       SettingsTile(
-                        icon: Icons.notifications_none_rounded,
+                        icon: Symbols.notifications_rounded,
                         title: 'Reminders',
                         subtitle: 'Progress, milestone and evening nudges',
                         onTap: () => _openRoute(AppRoutes.notificationSettings),
                       ),
                       SettingsTile(
-                        icon: Icons.tune_rounded,
+                        icon: Symbols.tune_rounded,
                         title: 'Setup details',
                         subtitle: 'Quit date, smoking pace, currency, triggers',
                         onTap: () => _openRoute(AppRoutes.setupSettings),
@@ -99,7 +108,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     title: 'Backup',
                     children: [
                       SettingsTile(
-                        icon: Icons.cloud_sync_outlined,
+                        icon: Symbols.cloud_sync_rounded,
                         title: 'Account sync',
                         subtitle: isGuest
                             ? 'Optional. Guest mode stays available.'
@@ -116,7 +125,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       if (!isGuest)
                         SettingsTile(
-                          icon: Icons.sync_rounded,
+                          icon: Symbols.sync_rounded,
                           title: 'Sync now',
                           subtitle: pendingSync.when(
                             data: (count) => count == 0
@@ -135,7 +144,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                       if (!isGuest)
                         SettingsTile(
-                          icon: Icons.logout_rounded,
+                          icon: Symbols.logout_rounded,
                           title: 'Sign out',
                           subtitle:
                               'Your progress stays backed up in your account.',
@@ -151,14 +160,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     title: 'About',
                     children: [
                       SettingsTile(
-                        icon: Icons.info_outline_rounded,
+                        icon: Symbols.info_rounded,
                         title: 'App info and safety',
                         subtitle: 'Version, privacy note and disclaimer',
                         onTap: () => _openRoute(AppRoutes.appInfo),
                       ),
                       if (AppConstants.privacyPolicyUrl.isNotEmpty)
                         SettingsTile(
-                          icon: Icons.policy_outlined,
+                          icon: Symbols.policy_rounded,
                           title: 'Privacy policy',
                           subtitle: 'Opens in your browser',
                           onTap: () => launchUrl(
@@ -173,7 +182,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     title: 'Your data',
                     children: [
                       SettingsTile(
-                        icon: Icons.delete_outline_rounded,
+                        icon: Symbols.delete_rounded,
                         title: isGuest ? 'Delete local data' : 'Delete account',
                         subtitle: isGuest
                             ? 'Erase guest progress from this device.'
@@ -379,7 +388,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _confirmDeleteAccount(bool isGuest) async {
     final confirmed = await showConfirmDialog(
       context,
-      icon: Icons.delete_outline_rounded,
+      icon: Symbols.delete_rounded,
       title: isGuest ? 'Delete ZeroPuff data?' : 'Delete your account?',
       message: isGuest
           ? 'This removes your guest progress, logs, check-ins and settings from this device.'
@@ -411,13 +420,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ref.invalidate(pendingSyncCountProvider);
       if (mounted) {
         context.go(AppRoutes.signIn);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
             content: Text(
               isGuest ? 'ZeroPuff data deleted.' : 'Your account was deleted.',
             ),
-          ));
+          ),
+        );
       }
     } on Object catch (error) {
       if (mounted) {
@@ -509,7 +518,7 @@ class _ProfileAvatar extends StatelessWidget {
         onBackgroundImageError: avatarUrl == null ? null : (_, _) {},
         child: avatarUrl == null
             ? isGuest
-                  ? Icon(Icons.person_outline_rounded, color: scheme.primary)
+                  ? Icon(Symbols.person_rounded, color: scheme.primary)
                   : Text(
                       initials,
                       style: theme.textTheme.titleLarge?.copyWith(

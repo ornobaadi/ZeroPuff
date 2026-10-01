@@ -30,7 +30,10 @@ class AppBootstrap {
     await DeviceIdentityService.initialize();
     await LocalDatabaseService.initialize();
 
-    await _optional('Google sign-in', () => GoogleSignInService.initialize(config));
+    await _optional(
+      'Google sign-in',
+      () => GoogleSignInService.initialize(config),
+    );
     await _optional('Supabase', () => SupabaseService.initialize(config));
     await _optional('Notifications', NotificationService.initialize);
   }

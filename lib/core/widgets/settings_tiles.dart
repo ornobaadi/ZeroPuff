@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../theme/app_spacing.dart';
 import 'app_card.dart';
@@ -106,11 +107,11 @@ class SettingsTile extends StatelessWidget {
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
-                if (onTap != null) const Icon(Icons.chevron_right_rounded),
+                if (onTap != null) const Icon(Symbols.chevron_right_rounded),
               ],
             )
           : onTap != null
-          ? const Icon(Icons.chevron_right_rounded)
+          ? const Icon(Symbols.chevron_right_rounded)
           : null,
     );
   }

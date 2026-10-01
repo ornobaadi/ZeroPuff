@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_spacing.dart';
@@ -24,7 +25,7 @@ class StartDateStep extends StatelessWidget {
     final error = form.quitDateError(DateTime.now());
 
     return OnboardingStepLayout(
-      icon: Icons.flag_rounded,
+      icon: Symbols.flag_rounded,
       eyebrow: 'Your start',
       title: 'When should ZeroPuff start counting?',
       subtitle: 'Pick the moment that feels honest. You can change it later.',
@@ -34,14 +35,14 @@ class StartDateStep extends StatelessWidget {
           SelectableTile(
             title: 'Today',
             subtitle: 'Start fresh from this moment.',
-            icon: Icons.wb_sunny_outlined,
+            icon: Symbols.wb_sunny_rounded,
             selected: choice == QuitDateChoice.today,
             onTap: () => onChoiceSelected(QuitDateChoice.today),
           ),
           SelectableTile(
             title: 'Yesterday',
             subtitle: 'You have already begun.',
-            icon: Icons.nightlight_outlined,
+            icon: Symbols.nightlight_rounded,
             selected: choice == QuitDateChoice.yesterday,
             onTap: () => onChoiceSelected(QuitDateChoice.yesterday),
           ),
@@ -50,7 +51,7 @@ class StartDateStep extends StatelessWidget {
             subtitle: choice == QuitDateChoice.custom
                 ? DateFormat.yMMMEd().format(form.quitDate)
                 : 'Pick an earlier day.',
-            icon: Icons.event_rounded,
+            icon: Symbols.event_rounded,
             selected: choice == QuitDateChoice.custom,
             onTap: onPickDate,
           ),

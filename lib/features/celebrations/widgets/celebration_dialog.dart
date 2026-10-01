@@ -90,7 +90,9 @@ class _CelebrationDialogState extends State<CelebrationDialog>
                       child: event.badgeAsset == null
                           ? Icon(event.icon, size: 56, color: onContainer)
                           : Padding(
-                              padding: const EdgeInsets.all(AppSpacing.componentGap),
+                              padding: const EdgeInsets.all(
+                                AppSpacing.componentGap,
+                              ),
                               child: Image.asset(
                                 event.badgeAsset!,
                                 fit: BoxFit.contain,

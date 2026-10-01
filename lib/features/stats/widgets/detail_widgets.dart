@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_accents.dart';
@@ -85,7 +86,8 @@ class DetailScaffold extends ConsumerWidget {
             error: error,
             onRetry: () => ref.invalidate(homeDashboardProvider),
           ),
-          data: (data) => DetailList(gap: gap, children: builder(context, data)),
+          data: (data) =>
+              DetailList(gap: gap, children: builder(context, data)),
         ),
       ),
     );
@@ -94,7 +96,11 @@ class DetailScaffold extends ConsumerWidget {
 
 /// A padded, width-capped list with even spacing between [children].
 class DetailList extends StatelessWidget {
-  const DetailList({required this.children, this.gap = AppSpacing.md, super.key});
+  const DetailList({
+    required this.children,
+    this.gap = AppSpacing.md,
+    super.key,
+  });
 
   final List<Widget> children;
   final double gap;
@@ -218,7 +224,7 @@ class InfoCard extends StatelessWidget {
               ],
             ),
           ),
-          if (onTap != null) const Icon(Icons.chevron_right_rounded),
+          if (onTap != null) const Icon(Symbols.chevron_right_rounded),
         ],
       ),
     );
@@ -243,8 +249,9 @@ class MiniStat extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = ToneColors.of(context, tone);
 
+    // Neutral surface like every other stat tile; the tone lives in the
+    // number, so a row of tiles stays calm instead of a patchwork of blocks.
     return AppCard(
-      color: colors.container,
       semanticLabel: '$label: $value',
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -256,17 +263,14 @@ class MiniStat extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               value,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: colors.onContainer,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+              style: AppTypography.miniNumber.copyWith(color: colors.accent),
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             label,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colors.onContainer,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -304,7 +308,7 @@ Future<void> showBadgeDialog(
   required String title,
   required String body,
   String? caption,
-  IconData fallbackIcon = Icons.emoji_events_rounded,
+  IconData fallbackIcon = Symbols.emoji_events_rounded,
 }) {
   return showDialog<void>(
     context: context,

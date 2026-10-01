@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -24,35 +25,35 @@ const _levels = [
     'Hard day',
     'Strong urges',
     'Cravings felt loud, patience was low, or the day asked a lot from you.',
-    Icons.thunderstorm_rounded,
+    Symbols.thunderstorm_rounded,
   ),
   _DayLevel(
     2,
     'Unsettled',
     'On edge',
     'You felt pulled toward smoking, bored, irritated, or restless.',
-    Icons.waves_rounded,
+    Symbols.waves_rounded,
   ),
   _DayLevel(
     3,
     'Managing',
     'Still aware',
     'Some pressure showed up, but you could still pause and notice it.',
-    Icons.balance_rounded,
+    Symbols.balance_rounded,
   ),
   _DayLevel(
     4,
     'Steady',
     'Mostly calm',
     'Cravings passed more easily, or you felt more in charge today.',
-    Icons.spa_rounded,
+    Symbols.spa_rounded,
   ),
   _DayLevel(
     5,
     'Clear',
     'Feeling light',
     'You felt lighter, confident, or mostly free from smoking thoughts.',
-    Icons.wb_sunny_rounded,
+    Symbols.wb_sunny_rounded,
   ),
 ];
 
@@ -282,7 +283,7 @@ class _DailyCheckInScreenState extends ConsumerState<DailyCheckInScreen> {
                               semanticsLabel: 'Saving',
                             ),
                           )
-                        : const Icon(Icons.check_rounded),
+                        : const Icon(Symbols.check_rounded),
                     label: Text(_saving ? 'Saving' : 'Save check-in'),
                   ),
                 ),
@@ -359,7 +360,7 @@ class _DayScale extends StatelessWidget {
             IconButton(
               tooltip: 'What each level means',
               onPressed: () => _showGuide(context),
-              icon: const Icon(Icons.info_outline_rounded),
+              icon: const Icon(Symbols.info_rounded),
             ),
           ],
         ),

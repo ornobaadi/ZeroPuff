@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -193,7 +194,9 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
                         children: [
                           for (final currency in CurrencyOption.all)
                             ChoiceChip(
-                              label: Text('${currency.symbol} ${currency.code}'),
+                              label: Text(
+                                '${currency.symbol} ${currency.code}',
+                              ),
                               tooltip: currency.name,
                               selected: _currency.code == currency.code,
                               onSelected: (_) =>
@@ -227,8 +230,7 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
                         value: _packSize,
                         min: 1,
                         max: 60,
-                        onChanged: (value) =>
-                            setState(() => _packSize = value),
+                        onChanged: (value) => setState(() => _packSize = value),
                       ),
                       const SizedBox(height: AppSpacing.sectionGap),
                       Text('Your routine', style: theme.textTheme.titleLarge),
@@ -296,7 +298,8 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
                         textCapitalization: TextCapitalization.sentences,
                         decoration: const InputDecoration(
                           labelText: 'Your reason',
-                          hintText: 'The reason you want future-you to remember.',
+                          hintText:
+                              'The reason you want future-you to remember.',
                           alignLabelWithHint: true,
                         ),
                       ),
@@ -324,7 +327,7 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
                         semanticsLabel: 'Saving',
                       ),
                     )
-                  : const Icon(Icons.check_rounded),
+                  : const Icon(Symbols.check_rounded),
               label: Text(_saving ? 'Saving' : 'Save changes'),
             ),
           ),
@@ -413,7 +416,7 @@ class _QuitDateCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.event_rounded, color: scheme.onPrimaryContainer),
+              Icon(Symbols.event_rounded, color: scheme.onPrimaryContainer),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
@@ -435,7 +438,7 @@ class _QuitDateCard extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.chevron_right_rounded,
+                Symbols.chevron_right_rounded,
                 color: scheme.onPrimaryContainer,
               ),
             ],

@@ -90,9 +90,7 @@ class SmokingWindowCard extends StatelessWidget {
             if (hasError)
               Text(
                 errorText!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.error,
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: scheme.error),
               ),
           ],
         ),

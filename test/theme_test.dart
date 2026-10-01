@@ -12,7 +12,10 @@ double _contrast(Color a, Color b) {
 }
 
 void main() {
-  for (final entry in {'light': AppTheme.light, 'dark': AppTheme.dark}.entries) {
+  for (final entry in {
+    'light': AppTheme.light,
+    'dark': AppTheme.dark,
+  }.entries) {
     final theme = entry.value;
     final scheme = theme.colorScheme;
     final accents = theme.extension<AppAccents>()!;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../repositories/app_settings_repository.dart';
 import '../../services/haptics/haptic_service.dart';
 import '../../services/sync/sync_service.dart';
+import 'widgets/floating_nav_bar.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({required this.navigationShell, super.key});
@@ -143,44 +145,23 @@ class _ShellScaffold extends StatelessWidget {
   final Widget body;
 
   static const _items = [
-    _NavItem(
-      label: 'Home',
-      icon: Icons.home_outlined,
-      selectedIcon: Icons.home_rounded,
-    ),
-    _NavItem(
-      label: 'Journal',
-      icon: Icons.calendar_month_outlined,
-      selectedIcon: Icons.calendar_month_rounded,
-    ),
-    _NavItem(
-      label: 'Progress',
-      icon: Icons.timeline_outlined,
-      selectedIcon: Icons.timeline_rounded,
-    ),
-    _NavItem(
-      label: 'You',
-      icon: Icons.person_outline_rounded,
-      selectedIcon: Icons.person_rounded,
-    ),
+    FloatingNavItem(label: 'Home', icon: Symbols.home_rounded),
+    FloatingNavItem(label: 'Journal', icon: Symbols.book_2_rounded),
+    FloatingNavItem(label: 'Progress', icon: Symbols.monitoring_rounded),
+    FloatingNavItem(label: 'You', icon: Symbols.person_rounded),
   ];
 
   @override
   Widget build(BuildContext context) {
     if (WindowSize.of(context).isCompact) {
       return Scaffold(
+        // Pages scroll underneath the floating bar.
+        extendBody: true,
         body: body,
-        bottomNavigationBar: NavigationBar(
+        bottomNavigationBar: FloatingNavBar(
+          items: _items,
           selectedIndex: selectedIndex,
-          onDestinationSelected: onDestinationSelected,
-          destinations: [
-            for (final item in _items)
-              NavigationDestination(
-                icon: Icon(item.icon),
-                selectedIcon: Icon(item.selectedIcon),
-                label: item.label,
-              ),
-          ],
+          onSelected: onDestinationSelected,
         ),
       );
     }
@@ -196,7 +177,7 @@ class _ShellScaffold extends StatelessWidget {
                 for (final item in _items)
                   NavigationRailDestination(
                     icon: Icon(item.icon),
-                    selectedIcon: Icon(item.selectedIcon),
+                    selectedIcon: Icon(item.icon, fill: 1),
                     label: Text(item.label),
                   ),
               ],
@@ -207,16 +188,4 @@ class _ShellScaffold extends StatelessWidget {
       ),
     );
   }
-}
-
-class _NavItem {
-  const _NavItem({
-    required this.label,
-    required this.icon,
-    required this.selectedIcon,
-  });
-
-  final String label;
-  final IconData icon;
-  final IconData selectedIcon;
 }

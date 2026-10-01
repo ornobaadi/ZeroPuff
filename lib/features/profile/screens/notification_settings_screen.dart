@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -130,7 +131,8 @@ class _NotificationSettingsScreenState
           loading: () => const StateView.loading(),
           error: (error, _) => StateView.error(
             error: error,
-            onRetry: () => ref.invalidate(editableNotificationPreferencesProvider),
+            onRetry: () =>
+                ref.invalidate(editableNotificationPreferencesProvider),
           ),
           data: (data) {
             final checkInTime = TimeOfDay(
@@ -155,7 +157,7 @@ class _NotificationSettingsScreenState
                       SettingsSection(
                         children: [
                           SettingsSwitchTile(
-                            icon: Icons.fact_check_outlined,
+                            icon: Symbols.fact_check_rounded,
                             title: 'Progress check-in',
                             subtitle:
                                 'A personal nudge if today still needs a record.',
@@ -168,13 +170,13 @@ class _NotificationSettingsScreenState
                           ),
                           if (data.dailyCheckInEnabled)
                             SettingsTile(
-                              icon: Icons.access_time_rounded,
+                              icon: Symbols.access_time_rounded,
                               title: 'Check-in time',
                               trailing: checkInTime,
                               onTap: _saving ? null : () => _changeTime(data),
                             ),
                           SettingsSwitchTile(
-                            icon: Icons.flag_outlined,
+                            icon: Symbols.flag_rounded,
                             title: 'Milestones',
                             subtitle: 'Celebrate each smoke-free milestone.',
                             value: data.milestoneReminderEnabled,
@@ -187,7 +189,7 @@ class _NotificationSettingsScreenState
                                   ),
                           ),
                           SettingsSwitchTile(
-                            icon: Icons.schedule_rounded,
+                            icon: Symbols.schedule_rounded,
                             title: 'Danger window',
                             subtitle:
                                 'A small nudge before your usual smoking window starts.',
@@ -199,7 +201,7 @@ class _NotificationSettingsScreenState
                                   ),
                           ),
                           SettingsSwitchTile(
-                            icon: Icons.nightlight_round,
+                            icon: Symbols.nightlight_rounded,
                             title: 'Streak protection',
                             subtitle:
                                 'A later evening backup, only if today is blank.',

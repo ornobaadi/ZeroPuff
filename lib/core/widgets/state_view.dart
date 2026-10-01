@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../errors/friendly_error.dart';
 import '../theme/app_spacing.dart';
@@ -18,7 +19,7 @@ class StateView extends StatelessWidget {
 
   const StateView.loading({String label = 'Loading', Key? key})
     : this._(
-        icon: Icons.hourglass_empty_rounded,
+        icon: Symbols.hourglass_empty_rounded,
         title: label,
         loading: true,
         key: key,
@@ -43,7 +44,7 @@ class StateView extends StatelessWidget {
   /// Shows a user-safe message for [error]; the raw error is never displayed.
   StateView.error({required Object error, VoidCallback? onRetry, Key? key})
     : this._(
-        icon: Icons.error_outline_rounded,
+        icon: Symbols.error_rounded,
         title: 'Something went wrong',
         message: friendlyError(error),
         actionLabel: onRetry == null ? null : 'Try again',
@@ -94,9 +95,7 @@ class StateView extends StatelessWidget {
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: AppSpacing.lg),
               FilledButton.tonal(
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(160, 48),
-                ),
+                style: FilledButton.styleFrom(minimumSize: const Size(160, 48)),
                 onPressed: onAction,
                 child: Text(actionLabel!),
               ),

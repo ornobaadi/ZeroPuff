@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
@@ -10,7 +11,7 @@ class RemindersStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const OnboardingStepLayout(
-      icon: Icons.notifications_active_outlined,
+      icon: Symbols.notifications_active_rounded,
       eyebrow: 'Helpful nudges',
       title: 'Want a nudge at the right moment?',
       subtitle:
@@ -20,7 +21,7 @@ class RemindersStep extends StatelessWidget {
       child: Column(
         children: [
           _BenefitCard(
-            icon: Icons.savings_outlined,
+            icon: Symbols.savings_rounded,
             title: 'Progress, not spam',
             body:
                 'Reminders can mention money kept, cigarettes avoided, or '
@@ -28,14 +29,13 @@ class RemindersStep extends StatelessWidget {
           ),
           SizedBox(height: AppSpacing.md),
           _BenefitCard(
-            icon: Icons.fact_check_outlined,
+            icon: Symbols.fact_check_rounded,
             title: 'Skips what you already did',
-            body:
-                'If today is already recorded, the nudge moves to tomorrow.',
+            body: 'If today is already recorded, the nudge moves to tomorrow.',
           ),
           SizedBox(height: AppSpacing.md),
           _BenefitCard(
-            icon: Icons.nightlight_outlined,
+            icon: Symbols.nightlight_rounded,
             title: 'A gentle evening backup',
             body:
                 'If the day is still blank, one reminder helps protect '

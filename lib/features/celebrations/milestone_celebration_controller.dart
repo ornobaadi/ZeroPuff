@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/calculations/progress_calculations.dart';
@@ -70,7 +71,7 @@ class CelebrationEvent {
       title: '${milestone.title} smoke-free',
       body: milestone.body,
       duration: milestone.duration,
-      icon: Icons.emoji_events_rounded,
+      icon: Symbols.emoji_events_rounded,
       badgeAsset: milestone.badgeAsset,
     );
   }
@@ -82,7 +83,7 @@ class CelebrationEvent {
       title: achievement.title,
       body: achievement.body,
       duration: achievement.duration,
-      icon: Icons.military_tech_rounded,
+      icon: Symbols.military_tech_rounded,
       badgeAsset: achievement.badgeAsset,
     );
   }

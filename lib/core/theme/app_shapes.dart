@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Material 3 corner scale. Expressive design uses *contrast*: bold, large
-/// corners on primary surfaces and actions, subtle corners on secondary ones.
+/// Corner scale. Everything the user touches is soft: cards sit at 24,
+/// buttons at 20 (soft rectangle), chips and inputs at 16.
 class AppShapes {
   const AppShapes._();
 
@@ -10,7 +10,7 @@ class AppShapes {
   static const double mediumRadius = 12;
   static const double largeRadius = 16;
   static const double largeIncreasedRadius = 20;
-  static const double extraLargeRadius = 28;
+  static const double extraLargeRadius = 24;
   static const double extraLargeIncreasedRadius = 32;
 
   static const extraSmall = BorderRadius.all(Radius.circular(extraSmallRadius));
@@ -27,10 +27,10 @@ class AppShapes {
 
   // Semantic aliases used by components and existing screens.
   static const card = extraLarge;
-  static const button = BorderRadius.all(Radius.circular(999));
+  static const button = largeIncreased;
   static const input = large;
-  static const chip = medium;
+  static const chip = large;
   static const sheet = BorderRadius.vertical(
-    top: Radius.circular(extraLargeRadius),
+    top: Radius.circular(extraLargeIncreasedRadius),
   );
 }

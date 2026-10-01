@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_constants.dart';
@@ -32,7 +33,7 @@ class AppInfoScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
-                          Icons.air_rounded,
+                          Symbols.air_rounded,
                           color: scheme.onPrimaryContainer,
                           size: 36,
                         ),
@@ -62,21 +63,21 @@ class AppInfoScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.sectionGap),
                   const _InfoBlock(
-                    icon: Icons.info_outline_rounded,
+                    icon: Symbols.info_rounded,
                     title: 'Disclaimer',
                     body:
                         'ZeroPuff is a habit and tracking app. It is not medical advice, diagnosis, or emergency care. Talk to a qualified professional for treatment decisions or urgent concerns.',
                   ),
                   const SizedBox(height: AppSpacing.md),
                   const _InfoBlock(
-                    icon: Icons.calculate_outlined,
+                    icon: Symbols.calculate_rounded,
                     title: 'About your stats',
                     body:
                         'Cigarettes not smoked and money won back are estimates based on the daily habit you told us about and how long you have been smoke-free.',
                   ),
                   const SizedBox(height: AppSpacing.md),
                   const _InfoBlock(
-                    icon: Icons.privacy_tip_outlined,
+                    icon: Symbols.privacy_tip_rounded,
                     title: 'Privacy note',
                     body:
                         'Your habit data is stored on this device first. If you connect Google, ZeroPuff backs up supported progress to your account so it can be restored on another device.',
@@ -85,15 +86,14 @@ class AppInfoScreen extends StatelessWidget {
                     const SizedBox(height: AppSpacing.md),
                     AppCard(
                       style: AppCardStyle.outlined,
-                      semanticLabel:
-                          'Privacy policy. Opens in your browser.',
+                      semanticLabel: 'Privacy policy. Opens in your browser.',
                       onTap: () => launchUrl(
                         Uri.parse(AppConstants.privacyPolicyUrl),
                         mode: LaunchMode.externalApplication,
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.policy_outlined, color: scheme.primary),
+                          Icon(Symbols.policy_rounded, color: scheme.primary),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: Text(
@@ -101,7 +101,7 @@ class AppInfoScreen extends StatelessWidget {
                               style: theme.textTheme.titleMedium,
                             ),
                           ),
-                          const Icon(Icons.open_in_new_rounded, size: 20),
+                          const Icon(Symbols.open_in_new_rounded, size: 20),
                         ],
                       ),
                     ),

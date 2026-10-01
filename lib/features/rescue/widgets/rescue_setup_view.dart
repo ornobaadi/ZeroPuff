@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -50,7 +51,7 @@ class RescueSetupView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(
-                              Icons.air_rounded,
+                              Symbols.air_rounded,
                               size: 40,
                               color: scheme.onPrimaryContainer,
                             ),
@@ -172,7 +173,7 @@ class RescueSetupView extends StatelessWidget {
               ),
               child: FilledButton.icon(
                 onPressed: onStart,
-                icon: const Icon(Icons.timer_outlined),
+                icon: const Icon(Symbols.timer_rounded),
                 label: const Text('Start two minutes'),
               ),
             ),

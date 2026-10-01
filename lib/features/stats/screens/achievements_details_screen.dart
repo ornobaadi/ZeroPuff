@@ -48,26 +48,26 @@ class AchievementsDetailsScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.md),
                   LayoutBuilder(
                     builder: (context, constraints) => Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: [
-                      for (final achievement in achievements)
-                        _AchievementTile(
-                          width: _tileWidth(constraints.maxWidth),
-                          achievement: achievement,
-                          unlocked: unlocked.contains(achievement.key),
-                          onTap: () {
-                            HapticService.light(enabled: hapticsEnabled);
-                            showBadgeDialog(
-                              context,
-                              asset: achievement.badgeAsset,
-                              title: achievement.title,
-                              body: achievement.body,
-                            );
-                          },
-                        ),
-                    ],
-                  ),
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        for (final achievement in achievements)
+                          _AchievementTile(
+                            width: _tileWidth(constraints.maxWidth),
+                            achievement: achievement,
+                            unlocked: unlocked.contains(achievement.key),
+                            onTap: () {
+                              HapticService.light(enabled: hapticsEnabled);
+                              showBadgeDialog(
+                                context,
+                                asset: achievement.badgeAsset,
+                                title: achievement.title,
+                                body: achievement.body,
+                              );
+                            },
+                          ),
+                      ],
+                    ),
                   ),
                 ],
               ),

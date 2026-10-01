@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:zeropuff/core/theme/app_theme.dart';
 import 'package:zeropuff/core/widgets/settings_tiles.dart';
 import 'package:zeropuff/core/widgets/stat_card.dart';
@@ -16,9 +17,7 @@ Widget _host(Widget child) {
 
 void main() {
   group('Settings tiles', () {
-    testWidgets('a tile is tappable and meets the 48dp target', (
-      tester,
-    ) async {
+    testWidgets('a tile is tappable and meets the 48dp target', (tester) async {
       var taps = 0;
       await tester.pumpWidget(
         _host(
@@ -160,12 +159,12 @@ void main() {
       await tester.pumpWidget(
         _host(const BadgeImage(asset: null, unlocked: false, size: 96)),
       );
-      expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.lock_rounded), findsOneWidget);
 
       await tester.pumpWidget(
         _host(const BadgeImage(asset: null, unlocked: true, size: 96)),
       );
-      expect(find.byIcon(Icons.lock_rounded), findsNothing);
+      expect(find.byIcon(Symbols.lock_rounded), findsNothing);
     });
   });
 

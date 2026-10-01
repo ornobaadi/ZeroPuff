@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 /// The app's loading indicator: Material's expressive (wavy, rounded) circular
 /// progress. Announces itself to screen readers.
 class AppLoadingIndicator extends StatelessWidget {
-  const AppLoadingIndicator({this.size = 48, this.label = 'Loading', super.key});
+  const AppLoadingIndicator({
+    this.size = 48,
+    this.label = 'Loading',
+    super.key,
+  });
 
   final double size;
   final String label;
@@ -17,7 +21,7 @@ class AppLoadingIndicator extends StatelessWidget {
         width: size,
         height: size,
         // ignore: deprecated_member_use
-        child: const CircularProgressIndicator(year2023: false),
+        child: const CircularProgressIndicator(),
       ),
     );
   }

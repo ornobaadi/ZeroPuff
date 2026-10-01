@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
@@ -41,21 +42,21 @@ class AppearanceSettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   SelectableTile(
-                    icon: Icons.phone_android_rounded,
+                    icon: Symbols.phone_android_rounded,
                     title: 'System',
                     subtitle: 'Match your phone automatically.',
                     selected: mode == ThemeMode.system,
                     onTap: () => setMode(ThemeMode.system),
                   ),
                   SelectableTile(
-                    icon: Icons.light_mode_rounded,
+                    icon: Symbols.light_mode_rounded,
                     title: 'Light',
                     subtitle: 'Bright, warm surfaces for daytime.',
                     selected: mode == ThemeMode.light,
                     onTap: () => setMode(ThemeMode.light),
                   ),
                   SelectableTile(
-                    icon: Icons.dark_mode_rounded,
+                    icon: Symbols.dark_mode_rounded,
                     title: 'Dark',
                     subtitle: 'Calm, low-glare surfaces for night.',
                     selected: mode == ThemeMode.dark,

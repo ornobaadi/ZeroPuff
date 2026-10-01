@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/calculations/progress_calculations.dart';
 import '../../../core/theme/app_shapes.dart';
@@ -62,7 +63,7 @@ class SmokeFreeHeroCard extends StatelessWidget {
                       ),
                     ),
                     Icon(
-                      Icons.chevron_right_rounded,
+                      Symbols.chevron_right_rounded,
                       color: scheme.onPrimaryContainer,
                     ),
                   ],
@@ -91,7 +92,7 @@ class SmokeFreeHeroCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 LinearProgressIndicator(
                   value: progress,
-                  minHeight: 12,
+                  minHeight: 8,
                   borderRadius: BorderRadius.circular(999),
                   backgroundColor: scheme.surface.withValues(alpha: 0.55),
                   color: scheme.primary,

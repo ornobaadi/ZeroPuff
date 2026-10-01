@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_accents.dart';
 
@@ -16,7 +17,7 @@ class BadgeImage extends StatelessWidget {
     required this.asset,
     required this.unlocked,
     required this.size,
-    this.fallbackIcon = Icons.emoji_events_rounded,
+    this.fallbackIcon = Symbols.emoji_events_rounded,
     this.showLock = true,
     super.key,
   });
@@ -72,7 +73,7 @@ class BadgeImage extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(6),
                     child: Icon(
-                      Icons.lock_rounded,
+                      Symbols.lock_rounded,
                       size: (size * 0.2).clamp(14, 24),
                       color: scheme.onSurfaceVariant,
                     ),

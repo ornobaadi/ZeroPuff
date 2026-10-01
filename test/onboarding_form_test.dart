@@ -27,7 +27,9 @@ void main() {
     });
 
     test('requires at least one cigarette per day', () {
-      final form = OnboardingForm.initial(now: now).copyWith(cigarettesPerDay: 0);
+      final form = OnboardingForm.initial(
+        now: now,
+      ).copyWith(cigarettesPerDay: 0);
 
       expect(form.cigarettesError, isNotNull);
       expect(form.canContinueFrom(2, now: now), isFalse);

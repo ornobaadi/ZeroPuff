@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/content_width.dart';
+import '../../../core/widgets/serif_headline.dart';
 
 /// Shared layout for an onboarding step: an icon and eyebrow, a headline, an
 /// optional supporting line, then the step's content. Scrolls when the content
@@ -13,6 +15,7 @@ class OnboardingStepLayout extends StatelessWidget {
     required this.title,
     required this.child,
     this.subtitle,
+    this.emphasis,
     super.key,
   });
 
@@ -20,6 +23,9 @@ class OnboardingStepLayout extends StatelessWidget {
   final String eyebrow;
   final String title;
   final String? subtitle;
+
+  /// Optional italic, sage-colored second line of the headline.
+  final String? emphasis;
   final Widget child;
 
   @override
@@ -47,14 +53,18 @@ class OnboardingStepLayout extends StatelessWidget {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.componentGap),
-                    child: Icon(icon, color: scheme.onPrimaryContainer),
+                    child: Icon(
+                      icon,
+                      size: 20,
+                      color: scheme.onPrimaryContainer,
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
-                    eyebrow,
-                    style: theme.textTheme.labelLarge?.copyWith(
+                    eyebrow.toUpperCase(),
+                    style: AppTypography.eyebrow.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
@@ -62,9 +72,10 @@ class OnboardingStepLayout extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            Semantics(
-              header: true,
-              child: Text(title, style: theme.textTheme.headlineMedium),
+            SerifHeadline(
+              lead: title,
+              emphasis: emphasis,
+              style: theme.textTheme.headlineLarge,
             ),
             if (subtitle != null) ...[
               const SizedBox(height: AppSpacing.sm),

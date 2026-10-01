@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -24,6 +25,7 @@ class QuitJournalScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Journal')),
       body: SafeArea(
+        bottom: false,
         child: journal.when(
           loading: () => const StateView.loading(label: 'Loading journal'),
           error: (error, _) => StateView.error(
@@ -31,7 +33,13 @@ class QuitJournalScreen extends ConsumerWidget {
             onRetry: () => ref.invalidate(journalDataProvider),
           ),
           data: (data) => ListView(
-            padding: const EdgeInsets.all(AppSpacing.pagePadding),
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.pagePadding,
+              AppSpacing.pagePadding,
+              AppSpacing.pagePadding,
+              // Clears the floating navigation bar the page scrolls under.
+              AppSpacing.pagePadding + MediaQuery.paddingOf(context).bottom,
+            ),
             children: [
               ContentWidth(
                 child: Column(
@@ -172,7 +180,7 @@ class _SelectedDayDetails extends ConsumerWidget {
             title: 'Logged honestly',
             body:
                 'Edit the log if the details need a correction; the map only gets clearer.',
-            icon: Icons.favorite_rounded,
+            icon: Symbols.favorite_rounded,
             tone: StatTone.streak,
           ),
         ],
@@ -193,7 +201,7 @@ class _EmptyDayCard extends StatelessWidget {
       body: day.isAfter(DateTime.now())
           ? 'Future days will fill in as you log.'
           : 'Add a check-in or log if something happened.',
-      icon: Icons.edit_calendar_rounded,
+      icon: Symbols.edit_calendar_rounded,
     );
   }
 }
@@ -213,7 +221,7 @@ class _EntryTimeline extends StatelessWidget {
     if (checkIn != null) {
       entries.add(
         _TimelineEntry(
-          icon: Icons.fact_check_rounded,
+          icon: Symbols.fact_check_rounded,
           color: scheme.primary,
           title: checkIn.smokeFreeToday
               ? 'Daily check-in: smoke-free'
@@ -225,10 +233,9 @@ class _EntryTimeline extends StatelessWidget {
     for (final craving in summary.cravingsList) {
       entries.add(
         _TimelineEntry(
-          icon: Icons.bolt_rounded,
+          icon: Symbols.bolt_rounded,
           color: accents.craving,
-          title:
-              'Craving ${craving.outcome.replaceAll('_', ' ')}',
+          title: 'Craving ${craving.outcome.replaceAll('_', ' ')}',
           subtitle:
               '${_time(craving.startedAt)} · intensity ${craving.intensity} of 10',
         ),
@@ -237,7 +244,7 @@ class _EntryTimeline extends StatelessWidget {
     for (final log in summary.smokingLogs) {
       entries.add(
         _TimelineEntry(
-          icon: Icons.edit_note_rounded,
+          icon: Symbols.edit_note_rounded,
           color: scheme.tertiary,
           title: '${log.count} cigarette${log.count == 1 ? '' : 's'} logged',
           subtitle:
@@ -305,7 +312,7 @@ class _TimelineEntry extends StatelessWidget {
             IconButton(
               tooltip: 'Edit log',
               onPressed: onEdit,
-              icon: const Icon(Icons.edit_rounded),
+              icon: const Icon(Symbols.edit_rounded),
             ),
         ],
       ),

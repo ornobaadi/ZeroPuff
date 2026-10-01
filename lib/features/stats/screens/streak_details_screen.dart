@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -39,11 +40,11 @@ class StreakDetailsScreen extends ConsumerWidget {
             title: 'How this streak works',
             body:
                 'It counts smoke-free check-ins in a row. Missing a day breaks the streak; logging a smoke resets the clock.',
-            icon: Icons.air_rounded,
+            icon: Symbols.air_rounded,
           ),
           FilledButton.icon(
             onPressed: () => context.push(AppRoutes.checkIn),
-            icon: const Icon(Icons.check_rounded),
+            icon: const Icon(Symbols.check_rounded),
             label: Text(
               data.todayCheckIn == null ? 'Check in today' : 'Review today',
             ),
@@ -90,7 +91,7 @@ class _StreakHero extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.local_fire_department_rounded,
+                Symbols.local_fire_department_rounded,
                 size: 44,
                 color: accents.onStreakContainer,
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -88,7 +89,7 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
         leading: IconButton(
           tooltip: 'Close',
           onPressed: () => context.go(AppRoutes.home),
-          icon: const Icon(Icons.close_rounded),
+          icon: const Icon(Symbols.close_rounded),
         ),
         title: const Text('Recovery reset'),
       ),
@@ -141,8 +142,9 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
                           subtitle: action.subtitle,
                           selected: _selectedAction == action.id,
                           onTap: () => setState(
-                            () => _selectedAction =
-                                _selectedAction == action.id ? null : action.id,
+                            () => _selectedAction = _selectedAction == action.id
+                                ? null
+                                : action.id,
                           ),
                         ),
                       const SizedBox(height: AppSpacing.lg),
@@ -158,7 +160,7 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
                                   semanticsLabel: 'Starting',
                                 ),
                               )
-                            : const Icon(Icons.play_arrow_rounded),
+                            : const Icon(Symbols.play_arrow_rounded),
                         label: const Text('Start recovery'),
                       ),
                       const SizedBox(height: AppSpacing.sm),
@@ -171,7 +173,7 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
                                   : () => context.push(
                                       '${AppRoutes.logging}?logId=${widget.logId}',
                                     ),
-                              icon: const Icon(Icons.edit_rounded),
+                              icon: const Icon(Symbols.edit_rounded),
                               label: const Text('Edit log'),
                             ),
                           ),
@@ -179,7 +181,7 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () => context.go(AppRoutes.journal),
-                              icon: const Icon(Icons.calendar_month_rounded),
+                              icon: const Icon(Symbols.calendar_month_rounded),
                               label: const Text('Journal'),
                             ),
                           ),
@@ -210,19 +212,19 @@ class _ResetAction {
 const _actions = [
   _ResetAction(
     'drink_water',
-    Icons.water_drop_rounded,
+    Symbols.water_drop_rounded,
     'Drink water',
     'Give your hands and mouth a clean interruption.',
   ),
   _ResetAction(
     'reset_environment',
-    Icons.cleaning_services_rounded,
+    Symbols.cleaning_services_rounded,
     'Reset environment',
     'Move the lighter, change rooms, open a window.',
   ),
   _ResetAction(
     'plan_danger_window',
-    Icons.schedule_rounded,
+    Symbols.schedule_rounded,
     'Plan next danger window',
     'Choose the next risky moment before it chooses you.',
   ),
@@ -258,7 +260,7 @@ class _RecoveryHero extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                Icons.favorite_rounded,
+                Symbols.favorite_rounded,
                 color: scheme.onSecondaryContainer,
                 size: 40,
               ),
@@ -283,7 +285,7 @@ class _RecoveryHero extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    Icons.restart_alt_rounded,
+                    Symbols.restart_alt_rounded,
                     color: scheme.onSecondaryContainer,
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -334,7 +336,7 @@ class _TriggerWrap extends StatelessWidget {
         for (final chip in chips)
           Chip(
             avatar: chip == trigger
-                ? const Icon(Icons.check_rounded, size: 18)
+                ? const Icon(Symbols.check_rounded, size: 18)
                 : null,
             label: Text(toBeginningOfSentenceCase(chip) ?? chip),
             backgroundColor: chip == trigger
@@ -364,7 +366,7 @@ class _ResetSummary extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.map_rounded, color: scheme.primary),
+              Icon(Symbols.map_rounded, color: scheme.primary),
               const SizedBox(width: AppSpacing.sm),
               Text('What changes now', style: theme.textTheme.titleMedium),
             ],

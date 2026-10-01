@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 enum RescuePhaseInteraction { optional, requiredAtHighIntensity }
 
@@ -35,7 +36,7 @@ const rescuePhases = [
     title: 'Drink water',
     instruction: 'Take a full glass slowly. Let your hands do one simple job.',
     duration: Duration(seconds: 30),
-    icon: Icons.water_drop_rounded,
+    icon: Symbols.water_drop_rounded,
     completeLabel: 'I drank water',
     interaction: RescuePhaseInteraction.requiredAtHighIntensity,
   ),
@@ -45,7 +46,7 @@ const rescuePhases = [
     instruction:
         'Follow the circle. Inhale, hold, then let the exhale be long.',
     duration: Duration(seconds: 30),
-    icon: Icons.self_improvement_rounded,
+    icon: Symbols.self_improvement_rounded,
     completeLabel: 'I followed the breath',
     interaction: RescuePhaseInteraction.optional,
   ),
@@ -54,7 +55,7 @@ const rescuePhases = [
     title: 'Change location',
     instruction: 'Stand up or walk to another room. Change the cue around you.',
     duration: Duration(seconds: 30),
-    icon: Icons.directions_walk_rounded,
+    icon: Symbols.directions_walk_rounded,
     completeLabel: 'I moved',
     interaction: RescuePhaseInteraction.requiredAtHighIntensity,
   ),
@@ -63,7 +64,7 @@ const rescuePhases = [
     title: 'Read your reason',
     instruction: 'Read it once. You only need a gap, not a perfect mood.',
     duration: Duration(seconds: 30),
-    icon: Icons.favorite_rounded,
+    icon: Symbols.favorite_rounded,
     completeLabel: 'I read it',
     interaction: RescuePhaseInteraction.requiredAtHighIntensity,
   ),

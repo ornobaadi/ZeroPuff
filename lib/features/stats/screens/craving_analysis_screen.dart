@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/calculations/craving_analysis_calculations.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/stat_card.dart';
@@ -56,7 +58,7 @@ class CravingAnalysisScreen extends ConsumerWidget {
       DetailHero(
         value: '${analysis.totalCravings}',
         label: 'recent craving logs',
-        icon: Icons.bolt_rounded,
+        icon: Symbols.bolt_rounded,
         tone: StatTone.craving,
       ),
       _InsightList(insights: analysis.insights),
@@ -92,7 +94,7 @@ class CravingAnalysisScreen extends ConsumerWidget {
         body: analysis.peakWindow == null
             ? 'No clear time window yet.'
             : '${analysis.peakWindow!.label} has the most logged cravings.',
-        icon: Icons.schedule_rounded,
+        icon: Symbols.schedule_rounded,
         tone: StatTone.craving,
       ),
       if (analysis.topTriggers.isNotEmpty) ...[
@@ -121,7 +123,7 @@ class _InsightList extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.insights_rounded, color: colors.onContainer),
+              Icon(Symbols.insights_rounded, color: colors.onContainer),
               const SizedBox(width: AppSpacing.sm),
               Semantics(
                 header: true,
@@ -186,13 +188,13 @@ class _WarmingUp extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.bolt_rounded, color: colors.onContainer, size: 32),
+          Icon(Symbols.bolt_rounded, color: colors.onContainer, size: 32),
           const SizedBox(height: AppSpacing.lg),
           Text(
             '$totalCravings / 3 logs',
             style: theme.textTheme.headlineMedium?.copyWith(
               color: colors.onContainer,
-              fontFeatures: const [FontFeature.tabularFigures()],
+              fontFeatures: AppTypography.lining,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -213,9 +215,8 @@ class _WarmingUp extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           LinearProgressIndicator(
-            year2023: false, // ignore: deprecated_member_use
             value: (totalCravings / 3).clamp(0.0, 1.0),
-            minHeight: 10,
+            minHeight: 8,
             borderRadius: BorderRadius.circular(999),
             color: colors.onContainer,
             backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.5),
@@ -245,7 +246,7 @@ class _TriggerRow extends StatelessWidget {
       semanticLabel: '$name, ${trigger.count} times',
       child: Row(
         children: [
-          Icon(Icons.label_rounded, color: colors.accent),
+          Icon(Symbols.label_rounded, color: colors.accent),
           const SizedBox(width: AppSpacing.md),
           Expanded(child: Text(name, style: theme.textTheme.titleMedium)),
           Text(

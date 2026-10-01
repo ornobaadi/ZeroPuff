@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,8 +10,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/content_width.dart';
+import '../../../core/widgets/serif_headline.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
 import '../controllers/google_sign_in_controller.dart';
@@ -43,34 +46,34 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   Semantics(
                     container: true,
                     child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: scheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.sm,
+                      decoration: BoxDecoration(
+                        color: scheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(999),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.air_rounded,
-                            size: 18,
-                            color: scheme.onPrimaryContainer,
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            'Private by default',
-                            style: theme.textTheme.labelLarge?.copyWith(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.sm,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Symbols.air_rounded,
+                              size: 18,
                               color: scheme.onPrimaryContainer,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: AppSpacing.sm),
+                            Text(
+                              'Private by default',
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: scheme.onPrimaryContainer,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   Semantics(
@@ -78,28 +81,42 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     container: true,
                     child: Text(
                       AppConstants.appName,
-                      style: theme.textTheme.displayMedium,
+                      style: theme.textTheme.displayLarge?.copyWith(
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'A QUIET COMPANION',
+                    style: AppTypography.eyebrow.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  const SerifHeadline(
+                    lead: 'Your recovery,',
+                    emphasis: 'your pace.',
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Semantics(
                     container: true,
                     child: Text(
-                    'Open it at the craving moment. Delay the decision, breathe, then log only what matters.',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: scheme.onSurfaceVariant,
+                      'Open it at the craving moment. Delay the decision, breathe, then log only what matters.',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   const _PromiseCard(
-                    icon: Icons.air_rounded,
+                    icon: Symbols.air_rounded,
                     title: 'A two-minute pause',
                     body: 'Guided steps help the urge pass before you choose.',
                   ),
                   const SizedBox(height: AppSpacing.componentGap),
                   const _PromiseCard(
-                    icon: Icons.lock_outline_rounded,
+                    icon: Symbols.lock_rounded,
                     title: 'Start without pressure',
                     body:
                         'Guest mode works right away. Google is only for backup and sync.',
@@ -114,20 +131,22 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     excludeSemantics: true,
                     onTap: _isSigningIn ? null : _signIn,
                     child: FilledButton.icon(
-                    onPressed: _isSigningIn ? null : _signIn,
-                    icon: _isSigningIn
-                        ? const SizedBox.square(
-                            dimension: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              semanticsLabel: 'Opening Google',
-                            ),
-                          )
-                        : const _GoogleMark(),
-                    label: Text(
-                      _isSigningIn ? 'Opening Google' : 'Continue with Google',
+                      onPressed: _isSigningIn ? null : _signIn,
+                      icon: _isSigningIn
+                          ? const SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                semanticsLabel: 'Opening Google',
+                              ),
+                            )
+                          : const _GoogleMark(),
+                      label: Text(
+                        _isSigningIn
+                            ? 'Opening Google'
+                            : 'Continue with Google',
+                      ),
                     ),
-                  ),
                   ),
                   const SizedBox(height: AppSpacing.componentGap),
                   OutlinedButton.icon(
@@ -137,7 +156,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             _lightHaptic();
                             context.go(AppRoutes.onboarding);
                           },
-                    icon: const Icon(Icons.arrow_forward_rounded),
+                    icon: const Icon(Symbols.arrow_forward_rounded),
                     label: const Text('Start as guest'),
                   ),
                   const SizedBox(height: AppSpacing.lg),

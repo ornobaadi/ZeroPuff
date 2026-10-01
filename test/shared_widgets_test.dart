@@ -30,12 +30,7 @@ void main() {
     testWidgets('is tappable with at least a 48dp target', (tester) async {
       var taps = 0;
       await tester.pumpWidget(
-        _host(
-          AppCard(
-            onTap: () => taps += 1,
-            child: const Text('Card body'),
-          ),
-        ),
+        _host(AppCard(onTap: () => taps += 1, child: const Text('Card body'))),
       );
 
       final size = tester.getSize(find.byType(AppCard));

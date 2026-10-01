@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/rolling_number.dart';
 
 /// A live "smoke-free for" clock.
 ///
@@ -81,11 +82,10 @@ class _SmokeFreeTimerState extends State<SmokeFreeTimer> {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.bottomLeft,
-                    child: Text(
-                      '$days',
+                    child: RollingNumber(
+                      value: days,
+                      countUp: true,
                       style: AppTypography.displayNumber.copyWith(
-                        fontSize: 72,
-                        height: 1,
                         color: scheme.onPrimaryContainer,
                       ),
                     ),
@@ -94,7 +94,8 @@ class _SmokeFreeTimerState extends State<SmokeFreeTimer> {
                 const SizedBox(width: AppSpacing.sm),
                 Text(
                   days == 1 ? 'day' : 'days',
-                  style: theme.textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontStyle: FontStyle.italic,
                     color: scheme.onPrimaryContainer,
                   ),
                 ),
@@ -103,11 +104,17 @@ class _SmokeFreeTimerState extends State<SmokeFreeTimer> {
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
-                Expanded(child: _TimePill(value: hours, label: 'hours')),
+                Expanded(
+                  child: _TimePill(value: hours, label: 'hours'),
+                ),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(child: _TimePill(value: minutes, label: 'min')),
+                Expanded(
+                  child: _TimePill(value: minutes, label: 'min'),
+                ),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(child: _TimePill(value: seconds, label: 'sec')),
+                Expanded(
+                  child: _TimePill(value: seconds, label: 'sec'),
+                ),
               ],
             ),
           ],
@@ -137,10 +144,11 @@ class _TimePill extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.componentGap),
         child: Column(
           children: [
-            Text(
-              value.toString().padLeft(2, '0'),
+            RollingNumber(
+              value: value,
+              minDigits: 2,
               style: AppTypography.liveCounter.copyWith(
-                fontSize: 26,
+                fontSize: 30,
                 color: scheme.onSurface,
               ),
             ),

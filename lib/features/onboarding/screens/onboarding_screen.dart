@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -431,13 +432,13 @@ class _TopBar extends StatelessWidget {
                     IconButton(
                       tooltip: 'Back',
                       onPressed: onBack,
-                      icon: const Icon(Icons.arrow_back_rounded),
+                      icon: const Icon(Symbols.arrow_back_rounded),
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: LinearProgressIndicator(
                         value: step / _setupSteps,
-                        minHeight: 8,
+                        minHeight: 4,
                         semanticsLabel: 'Setup step $step of $_setupSteps',
                         semanticsValue: '${(step / _setupSteps * 100).round()}',
                       ),

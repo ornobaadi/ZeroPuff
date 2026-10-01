@@ -173,10 +173,8 @@ class SyncService {
     final preferences = _rows(preferenceRows);
     final smokingWindows = _rows(smokingWindowRows);
 
-    final existingQuitDate = (await _database.localProfiles
-            .where()
-            .findFirst())
-        ?.quitDate;
+    final existingQuitDate =
+        (await _database.localProfiles.where().findFirst())?.quitDate;
 
     await _database.writeTxn(() async {
       if (replaceLocal) {

@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.1 (build 5)
+
+A calmer, more polished look.
+
+### New
+- New visual style: soft sage and terracotta colors on warm linen (light) and deep charcoal (dark), with elegant serif headlines.
+- Floating navigation bar: the active tab expands with a smooth, springy animation.
+- The smoke-free clock counts up when you open the app, and its digits roll like an odometer.
+- Cleaner, more consistent icons throughout the app.
+
+### Fixed
+- Numbers are now full height everywhere instead of looking shrunken next to text.
+- Money amounts show thousands separators ($2,190) and keep cents for small amounts ($5.50).
+- "Packs skipped" no longer shows a trailing ".0".
+- Removed a stray dot at the end of progress bars, and made all progress bars the same height.
+- Stat tiles now share one consistent style across Home, Progress, Journal and Savings.
+- Better text contrast in dark mode.
+- The version shown in the app is now correct.
+
 ## 1.1.0 (build 4)
 
 A full redesign in Material 3 Expressive, plus reliability and privacy fixes.

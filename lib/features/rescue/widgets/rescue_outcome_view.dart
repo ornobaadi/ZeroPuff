@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_accents.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -86,7 +87,7 @@ class RescueOutcomeView extends StatelessWidget {
               Text('What happened?', style: theme.textTheme.titleMedium),
               const SizedBox(height: AppSpacing.componentGap),
               _OutcomeTile(
-                icon: Icons.check_circle_rounded,
+                icon: Symbols.check_circle_rounded,
                 title: 'I resisted',
                 subtitle: 'Save the win and return home.',
                 background: scheme.primaryContainer,
@@ -95,7 +96,7 @@ class RescueOutcomeView extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.componentGap),
               _OutcomeTile(
-                icon: Icons.refresh_rounded,
+                icon: Symbols.refresh_rounded,
                 title: 'Still craving',
                 subtitle: 'Log this round and start another immediately.',
                 background: accents.cravingContainer,
@@ -104,7 +105,7 @@ class RescueOutcomeView extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.componentGap),
               _OutcomeTile(
-                icon: Icons.edit_note_rounded,
+                icon: Symbols.edit_note_rounded,
                 title: 'I smoked',
                 subtitle: 'Log it privately. You did not lose everything.',
                 background: scheme.surfaceContainerHigh,
@@ -144,7 +145,7 @@ class _CompletedPhaseRow extends StatelessWidget {
                     children: [
                       Icon(
                         completedPhaseIds.contains(phase.id)
-                            ? Icons.check_circle_rounded
+                            ? Symbols.check_circle_rounded
                             : phase.icon,
                         color: completedPhaseIds.contains(phase.id)
                             ? scheme.primary
@@ -211,9 +212,7 @@ class _OutcomeTile extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: foreground,
-                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(color: foreground),
                 ),
               ],
             ),

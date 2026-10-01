@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -26,22 +27,22 @@ _StatusStyle? _styleFor(BuildContext context, JournalDayStatus status) {
   return switch (status) {
     JournalDayStatus.smokeFree => _StatusStyle(
       'Smoke-free',
-      Icons.check_circle_rounded,
+      Symbols.check_circle_rounded,
       scheme.primary,
     ),
     JournalDayStatus.craving => _StatusStyle(
       'Craving',
-      Icons.bolt_rounded,
+      Symbols.bolt_rounded,
       accents.craving,
     ),
     JournalDayStatus.relapse => _StatusStyle(
       'Smoked',
-      Icons.circle,
+      Symbols.circle_rounded,
       scheme.tertiary,
     ),
     JournalDayStatus.mixed => _StatusStyle(
       'Mixed',
-      Icons.contrast_rounded,
+      Symbols.contrast_rounded,
       accents.streak,
     ),
     JournalDayStatus.future || JournalDayStatus.noData => null,
@@ -82,7 +83,7 @@ class JournalCalendar extends ConsumerWidget {
                 tooltip: 'Previous month',
                 onPressed: () =>
                     ref.read(journalMonthProvider.notifier).moveBy(-1),
-                icon: const Icon(Icons.chevron_left_rounded),
+                icon: const Icon(Symbols.chevron_left_rounded),
               ),
               Expanded(
                 child: Semantics(
@@ -99,7 +100,7 @@ class JournalCalendar extends ConsumerWidget {
                 tooltip: 'Next month',
                 onPressed: () =>
                     ref.read(journalMonthProvider.notifier).moveBy(1),
-                icon: const Icon(Icons.chevron_right_rounded),
+                icon: const Icon(Symbols.chevron_right_rounded),
               ),
             ],
           ),
@@ -109,12 +110,7 @@ class JournalCalendar extends ConsumerWidget {
               children: [
                 for (final name in weekdays)
                   Expanded(
-                    child: Center(
-                      child: Text(
-                        name,
-                        style: weekdayStyle,
-                      ),
-                    ),
+                    child: Center(child: Text(name, style: weekdayStyle)),
                   ),
               ],
             ),

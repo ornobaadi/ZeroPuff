@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_motion.dart';
 import '../../../core/theme/app_shapes.dart';
@@ -129,8 +130,8 @@ class RescueActiveView extends StatelessWidget {
                       onPressed: onCompletePhase,
                       icon: Icon(
                         progress.waitingForConfirmation
-                            ? Icons.check_circle_rounded
-                            : Icons.touch_app_rounded,
+                            ? Symbols.check_circle_rounded
+                            : Symbols.touch_app_rounded,
                       ),
                       label: Text(phase.completeLabel),
                     )
@@ -139,8 +140,8 @@ class RescueActiveView extends StatelessWidget {
                       onPressed: isCompleted ? null : onCompletePhase,
                       icon: Icon(
                         isCompleted
-                            ? Icons.check_circle_rounded
-                            : Icons.check_rounded,
+                            ? Symbols.check_circle_rounded
+                            : Symbols.check_rounded,
                       ),
                       label: Text(
                         isCompleted ? 'Step noted' : phase.completeLabel,
@@ -184,9 +185,7 @@ class _PhaseTimeline extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(
-                    right: index == rescuePhases.length - 1
-                        ? 0
-                        : AppSpacing.sm,
+                    right: index == rescuePhases.length - 1 ? 0 : AppSpacing.sm,
                   ),
                   child: AnimatedContainer(
                     duration: AppMotion.of(context, AppMotion.short),
@@ -311,7 +310,7 @@ class _PhaseTaskCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      Icons.radio_button_checked_rounded,
+                      Symbols.radio_button_checked_rounded,
                       color: scheme.onSecondaryContainer,
                       size: 20,
                     ),

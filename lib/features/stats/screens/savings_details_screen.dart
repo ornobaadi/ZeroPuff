@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/stat_card.dart';
 import '../widgets/detail_widgets.dart';
+import '../../../core/utils/number_formatting.dart';
 
 const _targets = [10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0];
 
@@ -45,20 +47,20 @@ class SavingsDetailsScreen extends ConsumerWidget {
 
         return [
           DetailHero(
-            value: '$symbol${data.moneySaved.toStringAsFixed(0)}',
+            value: formatMoney(symbol, data.moneySaved),
             label: 'won back from cigarettes',
-            icon: Icons.savings_rounded,
+            icon: Symbols.savings_rounded,
             tone: StatTone.money,
           ),
           EvenRow(
             children: [
               MiniStat(
-                value: '$symbol${dailyBaseline.toStringAsFixed(0)}',
+                value: formatMoney(symbol, dailyBaseline),
                 label: 'old daily spend',
                 tone: StatTone.money,
               ),
               MiniStat(
-                value: packsSkipped.toStringAsFixed(1),
+                value: formatDecimal(packsSkipped),
                 label: 'packs skipped',
               ),
             ],
@@ -74,13 +76,13 @@ class SavingsDetailsScreen extends ConsumerWidget {
             title: 'How it is calculated',
             body:
                 'We estimate cigarettes avoided from your old daily pace, then divide by pack size and multiply by your pack price.',
-            icon: Icons.calculate_rounded,
+            icon: Symbols.calculate_rounded,
           ),
           const InfoCard(
             title: 'Make it feel real',
             body:
                 'Pick a small reward for the next target. The money is already moving back to you.',
-            icon: Icons.redeem_rounded,
+            icon: Symbols.redeem_rounded,
             tone: StatTone.streak,
           ),
         ];
@@ -109,7 +111,7 @@ class _TargetCard extends StatelessWidget {
     final target = this.target;
     final title = target == null
         ? 'Every money target reached'
-        : 'Next money win: $currencySymbol${target.toStringAsFixed(0)}';
+        : 'Next money win: ${formatMoney(currencySymbol, target)}';
     final note = target == null
         ? 'You have crossed every money target we track for now.'
         : daysToTarget == null
@@ -119,32 +121,26 @@ class _TargetCard extends StatelessWidget {
         : 'At your old pace, this could land in about $daysToTarget days.';
 
     return AppCard(
-      color: colors.container,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.flag_rounded, color: colors.onContainer),
+              Icon(Symbols.flag_rounded, color: colors.accent),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
                   title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colors.onContainer,
-                  ),
+                  style: theme.textTheme.titleMedium,
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
           LinearProgressIndicator(
-            year2023: false, // ignore: deprecated_member_use
             value: progress,
-            minHeight: 12,
-            borderRadius: BorderRadius.circular(999),
-            color: colors.onContainer,
-            backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.5),
+            minHeight: 8,
+            color: colors.accent,
             semanticsLabel: 'Progress to next money target',
             semanticsValue: '${(progress * 100).round()} percent',
           ),
@@ -152,7 +148,7 @@ class _TargetCard extends StatelessWidget {
           Text(
             note,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colors.onContainer,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -176,7 +172,7 @@ class _ProjectionCard extends StatelessWidget {
     final colors = ToneColors.of(context, StatTone.money);
 
     String amount(int days) =>
-        '$currencySymbol${(dailyBaseline * days).toStringAsFixed(0)}';
+        formatMoney(currencySymbol, (dailyBaseline * days).roundToDouble());
 
     return AppCard(
       style: AppCardStyle.outlined,
@@ -185,7 +181,7 @@ class _ProjectionCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.auto_graph_rounded, color: colors.accent),
+              Icon(Symbols.auto_graph_rounded, color: colors.accent),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
@@ -199,8 +195,16 @@ class _ProjectionCard extends StatelessWidget {
           EvenRow(
             children: [
               MiniStat(value: amount(7), label: 'a week', tone: StatTone.money),
-              MiniStat(value: amount(30), label: 'a month', tone: StatTone.money),
-              MiniStat(value: amount(365), label: 'a year', tone: StatTone.money),
+              MiniStat(
+                value: amount(30),
+                label: 'a month',
+                tone: StatTone.money,
+              ),
+              MiniStat(
+                value: amount(365),
+                label: 'a year',
+                tone: StatTone.money,
+              ),
             ],
           ),
         ],

@@ -27,7 +27,10 @@ class CurrencyOption {
   ];
 
   static CurrencyOption byCode(String code) {
-    return all.firstWhere((option) => option.code == code, orElse: () => all[0]);
+    return all.firstWhere(
+      (option) => option.code == code,
+      orElse: () => all[0],
+    );
   }
 }
 
@@ -171,8 +174,9 @@ class OnboardingForm {
     return null;
   }
 
-  String? get triggersError =>
-      triggers.isEmpty ? 'Pick at least one so we can tailor your rescue.' : null;
+  String? get triggersError => triggers.isEmpty
+      ? 'Pick at least one so we can tailor your rescue.'
+      : null;
 
   /// Whether the user may leave [step] (see the step indices on the screen).
   bool canContinueFrom(int step, {DateTime? now}) {

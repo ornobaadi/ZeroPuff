@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -21,25 +22,26 @@ class SmokeFreeDetailsScreen extends ConsumerWidget {
         DetailHero(
           value: '${data.smokeFreeDays}',
           label: data.smokeFreeDays == 1 ? 'day smoke-free' : 'days smoke-free',
-          icon: Icons.air_rounded,
+          icon: Symbols.air_rounded,
         ),
         InfoCard(
           title: 'Into today',
           body:
               '${data.smokeFreeHours}h ${data.smokeFreeMinutes}m into your current day.',
-          icon: Icons.schedule_rounded,
+          icon: Symbols.schedule_rounded,
         ),
         const InfoCard(
           title: 'How it is calculated',
           body:
               'This starts from your quit date, or from the latest cigarette you honestly logged.',
-          icon: Icons.calculate_rounded,
+          icon: Symbols.calculate_rounded,
           tone: StatTone.money,
         ),
         InfoCard(
           title: 'Milestones',
-          body: 'See the milestones you have reached and the next one coming up.',
-          icon: Icons.flag_rounded,
+          body:
+              'See the milestones you have reached and the next one coming up.',
+          icon: Symbols.flag_rounded,
           tone: StatTone.streak,
           onTap: () {
             HapticService.selection(enabled: hapticsEnabled);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_shapes.dart';
@@ -44,8 +45,12 @@ class NumberStepper extends StatelessWidget {
       value: '${prefix ?? ''}$value',
       increasedValue: '${prefix ?? ''}${(value + step).clamp(min, max)}',
       decreasedValue: '${prefix ?? ''}${(value - step).clamp(min, max)}',
-      onIncrease: value >= max ? null : () => onChanged((value + step).clamp(min, max)),
-      onDecrease: value <= min ? null : () => onChanged((value - step).clamp(min, max)),
+      onIncrease: value >= max
+          ? null
+          : () => onChanged((value + step).clamp(min, max)),
+      onDecrease: value <= min
+          ? null
+          : () => onChanged((value - step).clamp(min, max)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -75,7 +80,7 @@ class NumberStepper extends StatelessWidget {
                     onPressed: value <= min
                         ? null
                         : () => onChanged((value - step).clamp(min, max)),
-                    icon: const Icon(Icons.remove_rounded),
+                    icon: const Icon(Symbols.remove_rounded),
                   ),
                   InkWell(
                     borderRadius: AppShapes.medium,
@@ -103,7 +108,7 @@ class NumberStepper extends StatelessWidget {
                     onPressed: value >= max
                         ? null
                         : () => onChanged((value + step).clamp(min, max)),
-                    icon: const Icon(Icons.add_rounded),
+                    icon: const Icon(Symbols.add_rounded),
                   ),
                 ],
               ),
@@ -117,9 +122,7 @@ class NumberStepper extends StatelessWidget {
               ),
               child: Text(
                 errorText!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.error,
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: scheme.error),
               ),
             ),
         ],

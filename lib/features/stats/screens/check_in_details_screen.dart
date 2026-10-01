@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/stat_card.dart';
@@ -19,7 +20,7 @@ class CheckInDetailsScreen extends ConsumerWidget {
         DetailHero(
           value: '${rows.length}',
           label: 'recent check-ins',
-          icon: Icons.fact_check_rounded,
+          icon: Symbols.fact_check_rounded,
           tone: StatTone.craving,
         ),
         InfoCard(
@@ -27,13 +28,13 @@ class CheckInDetailsScreen extends ConsumerWidget {
           body: rows.isEmpty
               ? 'No check-ins yet. Start with today.'
               : '$smokeFree of your last ${rows.length} check-ins were marked smoke-free.',
-          icon: Icons.check_circle_rounded,
+          icon: Symbols.check_circle_rounded,
         ),
         const InfoCard(
           title: 'Why this matters',
           body:
               'Daily logs make the calendar useful. Even a hard day becomes data you can recover from.',
-          icon: Icons.calendar_month_rounded,
+          icon: Symbols.calendar_month_rounded,
           tone: StatTone.money,
         ),
       ],

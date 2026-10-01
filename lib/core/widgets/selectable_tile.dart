@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../theme/app_motion.dart';
 import '../theme/app_shapes.dart';
@@ -93,8 +94,9 @@ class SelectableTile extends StatelessWidget {
                       const SizedBox(width: AppSpacing.sm),
                       Icon(
                         selected
-                            ? Icons.check_circle_rounded
-                            : Icons.circle_outlined,
+                            ? Symbols.check_circle_rounded
+                            : Symbols.circle_rounded,
+                        fill: selected ? 1 : 0,
                         color: selected ? scheme.primary : scheme.outline,
                       ),
                     ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -19,6 +20,7 @@ import '../../celebrations/widgets/celebration_dialog.dart';
 import '../providers/home_dashboard_provider.dart';
 import '../widgets/home_action_cards.dart';
 import '../widgets/smoke_free_hero_card.dart';
+import '../../../core/utils/number_formatting.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, this.enableNotificationRefresh = true});
@@ -75,17 +77,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           IconButton(
             tooltip: 'Log a cigarette',
             onPressed: () => _openRoute(AppRoutes.logging, stronger: true),
-            icon: const Icon(Icons.edit_note_rounded),
+            icon: const Icon(Symbols.edit_note_rounded),
           ),
           const SizedBox(width: AppSpacing.xs),
         ],
       ),
       body: SafeArea(
+        bottom: false,
         child: dashboard.when(
-          data: (data) => _HomeContent(
-            data: data,
-            onOpen: _openRoute,
-          ),
+          data: (data) => _HomeContent(data: data, onOpen: _openRoute),
           loading: () => const StateView.loading(label: 'Loading your day'),
           error: (error, _) => StateView.error(
             error: error,
@@ -178,11 +178,12 @@ class _HomeContent extends StatelessWidget {
     final streakDays = data.smokeFreeStreakDays;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSpacing.pagePadding,
         AppSpacing.md,
         AppSpacing.pagePadding,
-        AppSpacing.xl,
+        // Clears the floating navigation bar the page scrolls under.
+        AppSpacing.xl + MediaQuery.paddingOf(context).bottom,
       ),
       children: [
         ContentWidth(
@@ -211,15 +212,15 @@ class _HomeContent extends StatelessWidget {
                     label: 'Not smoked',
                     value: '${data.cigarettesAvoided}',
                     suffix: 'cigarettes',
-                    icon: Icons.smoke_free_rounded,
+                    icon: Symbols.smoke_free_rounded,
                     onTap: () => onOpen(AppRoutes.avoidedDetails),
                   ),
                   StatCard(
                     label: 'Money won back',
                     value:
-                        '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
+                        formatMoney(data.currencySymbol, data.moneySaved),
                     suffix: 'estimated',
-                    icon: Icons.savings_rounded,
+                    icon: Symbols.savings_rounded,
                     tone: StatTone.money,
                     onTap: () => onOpen(AppRoutes.savingsDetails),
                   ),
@@ -229,14 +230,14 @@ class _HomeContent extends StatelessWidget {
                       data.smokeFreeDuration,
                     ),
                     suffix: 'so far',
-                    icon: Icons.timer_rounded,
+                    icon: Symbols.timer_rounded,
                     onTap: () => onOpen(AppRoutes.milestoneDetails),
                   ),
                   StatCard(
                     label: 'Smoke-free streak',
                     value: '$streakDays',
                     suffix: streakDays == 1 ? 'day' : 'days',
-                    icon: Icons.local_fire_department_rounded,
+                    icon: Symbols.local_fire_department_rounded,
                     tone: StatTone.streak,
                     onTap: () => onOpen(AppRoutes.streakDetails),
                   ),

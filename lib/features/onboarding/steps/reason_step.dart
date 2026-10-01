@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../models/onboarding_form.dart';
 import '../widgets/onboarding_step_layout.dart';
@@ -16,7 +17,7 @@ class ReasonStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OnboardingStepLayout(
-      icon: Icons.edit_note_rounded,
+      icon: Symbols.edit_note_rounded,
       eyebrow: 'Your reason (optional)',
       title: 'Leave yourself one honest reason',
       subtitle: 'When a craving hits, this sentence can become the pause.',

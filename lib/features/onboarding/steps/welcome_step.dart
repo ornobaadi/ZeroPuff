@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/content_width.dart';
+import '../../../core/widgets/serif_headline.dart';
 
 /// The one hero moment of onboarding: the brand, the promise, and what the
 /// app does. Deliberately calm and short.
@@ -33,7 +35,7 @@ class WelcomeStep extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.xl),
                   child: Icon(
-                    Icons.air_rounded,
+                    Symbols.air_rounded,
                     size: 72,
                     color: scheme.onPrimaryContainer,
                     semanticLabel: 'ZeroPuff',
@@ -42,34 +44,33 @@ class WelcomeStep extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
-            Semantics(
-              header: true,
-              child: Text(
-                'Build your smoke-free streak',
-                style: theme.textTheme.displaySmall,
-              ),
+            SerifHeadline(
+              lead: 'Opening this took',
+              emphasis: 'courage.',
+              style: theme.textTheme.displayMedium,
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'ZeroPuff helps you pause before you smoke, keep an honest '
-              'record, and see your progress grow.',
+              'Most people never do. You are already different. ZeroPuff '
+              'helps you pause before you smoke, keep an honest record, and '
+              'see your progress grow.',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
             const _ValueRow(
-              icon: Icons.timer_outlined,
+              icon: Symbols.timer_rounded,
               title: 'Pause when a craving hits',
               body: 'A two-minute rescue to let the urge pass.',
             ),
             const _ValueRow(
-              icon: Icons.local_fire_department_outlined,
+              icon: Symbols.local_fire_department_rounded,
               title: 'Watch your streak grow',
               body: 'Daily check-ins and milestones keep you going.',
             ),
             const _ValueRow(
-              icon: Icons.savings_outlined,
+              icon: Symbols.savings_rounded,
               title: 'See what you save',
               body: 'Cigarettes avoided and money kept, updated live.',
             ),
@@ -111,12 +112,12 @@ class _ValueRow extends StatelessWidget {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              color: scheme.secondaryContainer,
+              color: scheme.primaryContainer,
               shape: BoxShape.circle,
             ),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.componentGap),
-              child: Icon(icon, color: scheme.onSecondaryContainer),
+              child: Icon(icon, color: scheme.onPrimaryContainer),
             ),
           ),
           const SizedBox(width: AppSpacing.md),

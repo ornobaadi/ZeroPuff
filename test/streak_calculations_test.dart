@@ -193,9 +193,7 @@ void main() {
 
     test('streak walks back across many calendar days without skipping', () {
       final today = DateTime(2026, 3, 30);
-      final days = {
-        for (var i = 0; i < 40; i++) DateTime(2026, 3, 30 - i),
-      };
+      final days = {for (var i = 0; i < 40; i++) DateTime(2026, 3, 30 - i)};
 
       expect(
         StreakCalculations.consecutiveDayStreak(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -293,7 +294,7 @@ class _SmokingLogScreenState extends ConsumerState<SmokingLogScreen> {
                             semanticsLabel: 'Saving',
                           ),
                         )
-                      : const Icon(Icons.check_rounded),
+                      : const Icon(Symbols.check_rounded),
                   label: Text(_isEditing ? 'Update log' : 'Save log'),
                 ),
               ],
@@ -356,11 +357,12 @@ class _TimeSelector extends StatelessWidget {
         AppCard(
           style: AppCardStyle.outlined,
           onTap: () => _pickTime(context),
-          semanticLabel: 'Time smoked: ${_label(smokedAt, now)}. Double tap to change.',
+          semanticLabel:
+              'Time smoked: ${_label(smokedAt, now)}. Double tap to change.',
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
-              Icon(Icons.schedule_rounded, color: scheme.onSurfaceVariant),
+              Icon(Symbols.schedule_rounded, color: scheme.onSurfaceVariant),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
@@ -369,7 +371,7 @@ class _TimeSelector extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.chevron_right_rounded,
+                Symbols.chevron_right_rounded,
                 color: scheme.onSurfaceVariant,
               ),
             ],
@@ -396,7 +398,13 @@ class _TimeSelector extends StatelessWidget {
     }
     final now = DateTime.now();
     // Assume today; if that lands in the future, the user means yesterday.
-    var value = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+    var value = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      picked.hour,
+      picked.minute,
+    );
     if (value.isAfter(now)) {
       value = DateTime(
         now.year,

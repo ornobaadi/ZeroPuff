@@ -164,10 +164,7 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
       await eventRepository.track(
         AppEvent(
           eventName: 'craving_rescue_started',
-          properties: {
-            'intensity': _intensity,
-            'triggers': _triggers.toList(),
-          },
+          properties: {'intensity': _intensity, 'triggers': _triggers.toList()},
         ),
       );
       if (!mounted) {
@@ -182,10 +179,7 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
         _stage = _RescueStage.active;
       });
 
-      _timer = Timer.periodic(
-        const Duration(seconds: 1),
-        (_) => _tickRescue(),
-      );
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tickRescue());
     } on Object catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(

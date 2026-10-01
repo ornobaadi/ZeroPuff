@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_accents.dart';
 import '../../../core/theme/app_shapes.dart';
@@ -21,14 +22,12 @@ class CravingButton extends StatelessWidget {
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(72),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        shape: const RoundedRectangleBorder(
-          borderRadius: AppShapes.extraLarge,
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: AppShapes.extraLarge),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.air_rounded, size: 28),
+          const Icon(Symbols.air_rounded, size: 28),
           const SizedBox(width: AppSpacing.md),
           Text(
             "I'm craving",
@@ -75,7 +74,7 @@ class CheckInCard extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            checkedIn ? Icons.check_circle_rounded : Icons.today_rounded,
+            checkedIn ? Symbols.check_circle_rounded : Symbols.today_rounded,
             color: checkedIn
                 ? scheme.onSecondaryContainer
                 : scheme.onSurfaceVariant,
@@ -104,7 +103,7 @@ class CheckInCard extends StatelessWidget {
             ),
           ),
           Icon(
-            Icons.chevron_right_rounded,
+            Symbols.chevron_right_rounded,
             color: checkedIn
                 ? scheme.onSecondaryContainer
                 : scheme.onSurfaceVariant,
@@ -132,7 +131,7 @@ class QuickLogCard extends StatelessWidget {
       semanticLabel: 'Need to log? Private, quick, and shame-free.',
       child: Row(
         children: [
-          Icon(Icons.edit_note_rounded, color: scheme.onSurfaceVariant),
+          Icon(Symbols.edit_note_rounded, color: scheme.onSurfaceVariant),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -149,7 +148,7 @@ class QuickLogCard extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+          Icon(Symbols.chevron_right_rounded, color: scheme.onSurfaceVariant),
         ],
       ),
     );
@@ -192,7 +191,7 @@ class StreakChip extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.local_fire_department_rounded,
+                      Symbols.local_fire_department_rounded,
                       color: accents.onStreakContainer,
                       size: 22,
                     ),

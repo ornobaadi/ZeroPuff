@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../models/onboarding_form.dart';
@@ -16,13 +17,13 @@ const kTriggerOptions = [
 ];
 
 const _triggerIcons = <String, IconData>{
-  'stress': Icons.bolt_rounded,
-  'bored': Icons.hourglass_empty_rounded,
-  'social': Icons.groups_rounded,
-  'after food': Icons.restaurant_rounded,
-  'coffee': Icons.local_cafe_rounded,
-  'routine': Icons.repeat_rounded,
-  'other': Icons.more_horiz_rounded,
+  'stress': Symbols.bolt_rounded,
+  'bored': Symbols.hourglass_empty_rounded,
+  'social': Symbols.groups_rounded,
+  'after food': Symbols.restaurant_rounded,
+  'coffee': Symbols.local_cafe_rounded,
+  'routine': Symbols.repeat_rounded,
+  'other': Symbols.more_horiz_rounded,
 };
 
 class RoutineStep extends StatelessWidget {
@@ -48,7 +49,7 @@ class RoutineStep extends StatelessWidget {
     final triggersError = form.triggersError;
 
     return OnboardingStepLayout(
-      icon: Icons.schedule_rounded,
+      icon: Symbols.schedule_rounded,
       eyebrow: 'Your routine',
       title: 'When and why do cravings show up?',
       subtitle:
@@ -74,8 +75,10 @@ class RoutineStep extends StatelessWidget {
             onPickEnd: onPickEnd,
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text('What pulls you toward smoking?',
-              style: theme.textTheme.titleMedium),
+          Text(
+            'What pulls you toward smoking?',
+            style: theme.textTheme.titleMedium,
+          ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Pick all that apply.',
@@ -111,9 +114,7 @@ class RoutineStep extends StatelessWidget {
               padding: const EdgeInsets.only(top: AppSpacing.sm),
               child: Text(
                 triggersError,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.error,
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: scheme.error),
               ),
             ),
         ],

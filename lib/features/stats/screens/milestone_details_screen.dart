@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/calculations/progress_calculations.dart';
@@ -39,7 +40,7 @@ class MilestoneDetailsScreen extends ConsumerWidget {
           DetailHero(
             value: ProgressCalculations.durationLabel(elapsed),
             label: 'smoke-free so far',
-            icon: Icons.flag_rounded,
+            icon: Symbols.flag_rounded,
           ),
           _CurrentMarkerCard(
             current: current,
@@ -52,7 +53,9 @@ class MilestoneDetailsScreen extends ConsumerWidget {
             body: next == null
                 ? 'You have reached every milestone in ZeroPuff.'
                 : '${next.title}: ${next.body}',
-            icon: next == null ? Icons.emoji_events_rounded : Icons.flag_rounded,
+            icon: next == null
+                ? Symbols.emoji_events_rounded
+                : Symbols.flag_rounded,
             tone: StatTone.money,
           ),
           const SectionHeader(title: 'Milestone map'),
@@ -75,7 +78,7 @@ class MilestoneDetailsScreen extends ConsumerWidget {
                         body: milestone.body,
                         caption:
                             'Unlocked at ${compactDuration(milestone.duration)} smoke-free',
-                        fallbackIcon: Icons.flag_rounded,
+                        fallbackIcon: Symbols.flag_rounded,
                       );
                     }
                   : null,
@@ -84,7 +87,7 @@ class MilestoneDetailsScreen extends ConsumerWidget {
             title: 'A gentle note',
             body:
                 'Milestones are simple time markers to celebrate your progress. ZeroPuff does not provide medical advice.',
-            icon: Icons.info_outline_rounded,
+            icon: Symbols.info_rounded,
             tone: StatTone.streak,
           ),
         ];
@@ -129,7 +132,7 @@ class _CurrentMarkerCard extends StatelessWidget {
                 asset: current.badgeAsset,
                 unlocked: reached,
                 size: 88,
-                fallbackIcon: Icons.flag_rounded,
+                fallbackIcon: Symbols.flag_rounded,
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -172,9 +175,8 @@ class _CurrentMarkerCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           LinearProgressIndicator(
-            year2023: false, // ignore: deprecated_member_use
             value: progress,
-            minHeight: 12,
+            minHeight: 8,
             borderRadius: BorderRadius.circular(999),
             backgroundColor: scheme.surface.withValues(alpha: 0.5),
             semanticsLabel: 'Progress to next milestone',
@@ -223,7 +225,7 @@ class _MilestoneRow extends StatelessWidget {
             asset: milestone.badgeAsset,
             unlocked: reached,
             size: 64,
-            fallbackIcon: Icons.flag_rounded,
+            fallbackIcon: Symbols.flag_rounded,
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -254,7 +256,6 @@ class _MilestoneRow extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 LinearProgressIndicator(
-                  year2023: false, // ignore: deprecated_member_use
                   value: progress,
                   minHeight: 6,
                   borderRadius: BorderRadius.circular(999),

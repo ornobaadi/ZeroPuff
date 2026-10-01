@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,6 +17,7 @@ import '../../../repositories/achievement_repository.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
 import '../widgets/badge_image.dart';
+import '../../../core/utils/number_formatting.dart';
 
 final unlockedAchievementsProvider = FutureProvider<Set<String>>((ref) async {
   final data = ref.watch(homeDashboardProvider).value;
@@ -50,6 +52,7 @@ class ProgressScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Progress')),
       body: SafeArea(
+        bottom: false,
         child: dashboard.when(
           loading: () => const StateView.loading(label: 'Loading progress'),
           error: (error, _) => StateView.error(
@@ -80,7 +83,13 @@ class _ProgressContent extends ConsumerWidget {
         .length;
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.pagePadding),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.pagePadding,
+        AppSpacing.pagePadding,
+        AppSpacing.pagePadding,
+        // Clears the floating navigation bar the page scrolls under.
+        AppSpacing.pagePadding + MediaQuery.paddingOf(context).bottom,
+      ),
       children: [
         ContentWidth(
           child: Column(
@@ -110,14 +119,14 @@ class _ProgressContent extends ConsumerWidget {
                 left: StatCard(
                   label: 'Smoke-free days',
                   value: '${data.smokeFreeDays}',
-                  icon: Icons.air_rounded,
+                  icon: Symbols.air_rounded,
                   onTap: () => onOpen(AppRoutes.smokeFreeDetails),
                 ),
                 right: StatCard(
                   label: 'Money won back',
                   value:
-                      '${data.currencySymbol}${data.moneySaved.toStringAsFixed(0)}',
-                  icon: Icons.savings_rounded,
+                      formatMoney(data.currencySymbol, data.moneySaved),
+                  icon: Symbols.savings_rounded,
                   tone: StatTone.money,
                   onTap: () => onOpen(AppRoutes.savingsDetails),
                 ),
@@ -127,14 +136,14 @@ class _ProgressContent extends ConsumerWidget {
                 left: StatCard(
                   label: 'Not smoked',
                   value: '${data.cigarettesAvoided}',
-                  icon: Icons.smoke_free_rounded,
+                  icon: Symbols.smoke_free_rounded,
                   tone: StatTone.streak,
                   onTap: () => onOpen(AppRoutes.avoidedDetails),
                 ),
                 right: StatCard(
                   label: 'Check-ins',
                   value: '${recent.length}',
-                  icon: Icons.fact_check_rounded,
+                  icon: Symbols.fact_check_rounded,
                   tone: StatTone.craving,
                   onTap: () => onOpen(AppRoutes.checkInDetails),
                 ),
@@ -146,14 +155,14 @@ class _ProgressContent extends ConsumerWidget {
                   value: ProgressCalculations.durationLabel(
                     data.smokeFreeDuration,
                   ),
-                  icon: Icons.timer_rounded,
+                  icon: Symbols.timer_rounded,
                   onTap: () => onOpen(AppRoutes.milestoneDetails),
                 ),
                 right: StatCard(
                   label: 'Milestones',
                   value:
                       '${ProgressCalculations.unlockedMilestoneKeys(data.smokeFreeDuration).length}',
-                  icon: Icons.flag_rounded,
+                  icon: Symbols.flag_rounded,
                   tone: StatTone.streak,
                   onTap: () => onOpen(AppRoutes.milestoneDetails),
                 ),
@@ -164,7 +173,10 @@ class _ProgressContent extends ConsumerWidget {
                 onTap: () => onOpen(AppRoutes.cravingAnalysis),
               ),
               const SizedBox(height: AppSpacing.md),
-              _CheckInSummary(total: recent.length, smokeFree: smokeFreeCheckIns),
+              _CheckInSummary(
+                total: recent.length,
+                smokeFree: smokeFreeCheckIns,
+              ),
             ],
           ),
         ),
@@ -229,7 +241,8 @@ class _MilestonesCard extends StatelessWidget {
     return AppCard(
       style: AppCardStyle.tonal,
       onTap: onTap,
-      semanticLabel: 'Milestones. $headline. $progressText. Double tap for details.',
+      semanticLabel:
+          'Milestones. $headline. $progressText. Double tap for details.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -239,7 +252,7 @@ class _MilestonesCard extends StatelessWidget {
                 asset: current.badgeAsset ?? shown.badgeAsset,
                 unlocked: hasReachedFirst,
                 size: 72,
-                fallbackIcon: Icons.flag_rounded,
+                fallbackIcon: Symbols.flag_rounded,
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -263,7 +276,7 @@ class _MilestonesCard extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.chevron_right_rounded,
+                Symbols.chevron_right_rounded,
                 color: scheme.onPrimaryContainer,
               ),
             ],
@@ -286,9 +299,8 @@ class _MilestonesCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           LinearProgressIndicator(
-            year2023: false, // ignore: deprecated_member_use
             value: progress,
-            minHeight: 10,
+            minHeight: 8,
             borderRadius: BorderRadius.circular(999),
             backgroundColor: scheme.surface.withValues(alpha: 0.5),
             semanticsLabel: 'Progress to next milestone',
@@ -346,7 +358,7 @@ class _AchievementsCard extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.componentGap),
                   child: Icon(
-                    Icons.emoji_events_rounded,
+                    Symbols.emoji_events_rounded,
                     color: accents.onMoneyContainer,
                   ),
                 ),
@@ -367,7 +379,7 @@ class _AchievementsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded),
+              const Icon(Symbols.chevron_right_rounded),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -377,7 +389,6 @@ class _AchievementsCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           LinearProgressIndicator(
-            year2023: false, // ignore: deprecated_member_use
             value: progress,
             minHeight: 8,
             borderRadius: BorderRadius.circular(999),
@@ -438,7 +449,7 @@ class _CravingAnalysisCard extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.componentGap),
               child: Icon(
-                Icons.insights_rounded,
+                Symbols.insights_rounded,
                 color: accents.onCravingContainer,
               ),
             ),
@@ -459,7 +470,7 @@ class _CravingAnalysisCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded),
+          const Icon(Symbols.chevron_right_rounded),
         ],
       ),
     );
@@ -481,7 +492,7 @@ class _CheckInSummary extends StatelessWidget {
       style: AppCardStyle.outlined,
       child: Row(
         children: [
-          Icon(Icons.fact_check_rounded, color: scheme.primary),
+          Icon(Symbols.fact_check_rounded, color: scheme.primary),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/number_stepper.dart';
@@ -24,7 +25,7 @@ class HabitStep extends StatelessWidget {
     final theme = Theme.of(context);
 
     return OnboardingStepLayout(
-      icon: Icons.tune_rounded,
+      icon: Symbols.tune_rounded,
       eyebrow: 'Your habit',
       title: 'Make your progress measurable',
       subtitle:

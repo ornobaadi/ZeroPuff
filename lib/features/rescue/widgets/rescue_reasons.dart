@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 /// What might be pulling the user toward a cigarette right now.
 class RescueReason {
@@ -14,33 +15,37 @@ class RescueReason {
 }
 
 const rescueReasons = [
-  RescueReason(value: 'stress', title: 'Stressed', icon: Icons.bolt_rounded),
+  RescueReason(value: 'stress', title: 'Stressed', icon: Symbols.bolt_rounded),
   RescueReason(
     value: 'bored',
     title: 'Bored',
-    icon: Icons.hourglass_empty_rounded,
+    icon: Symbols.hourglass_empty_rounded,
   ),
   RescueReason(
     value: 'after food',
     title: 'After food',
-    icon: Icons.restaurant_rounded,
+    icon: Symbols.restaurant_rounded,
   ),
   RescueReason(
     value: 'coffee',
     title: 'Coffee',
-    icon: Icons.local_cafe_rounded,
+    icon: Symbols.local_cafe_rounded,
   ),
   RescueReason(
     value: 'social',
     title: 'Social pressure',
-    icon: Icons.groups_rounded,
+    icon: Symbols.groups_rounded,
   ),
-  RescueReason(value: 'routine', title: 'Routine', icon: Icons.repeat_rounded),
-  RescueReason(value: 'tired', title: 'Tired', icon: Icons.bedtime_rounded),
+  RescueReason(
+    value: 'routine',
+    title: 'Routine',
+    icon: Symbols.repeat_rounded,
+  ),
+  RescueReason(value: 'tired', title: 'Tired', icon: Symbols.bedtime_rounded),
   RescueReason(
     value: 'other',
     title: 'Something else',
-    icon: Icons.more_horiz_rounded,
+    icon: Symbols.more_horiz_rounded,
   ),
 ];
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_accents.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 import 'app_card.dart';
 
 /// Which semantic color a [StatCard] uses.
@@ -53,10 +54,7 @@ class StatCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           DecoratedBox(
-            decoration: BoxDecoration(
-              color: container,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: container, shape: BoxShape.circle),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.sm),
               child: Icon(icon, color: onContainer, size: 24),
@@ -68,9 +66,7 @@ class StatCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               value,
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+              style: AppTypography.statNumber.copyWith(color: scheme.onSurface),
             ),
           ),
           if (suffix != null)
