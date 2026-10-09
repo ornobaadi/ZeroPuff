@@ -3,11 +3,11 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../../core/widgets/brand_logo.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -79,11 +79,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   Semantics(
                     header: true,
                     container: true,
-                    child: Text(
-                      AppConstants.appName,
-                      style: theme.textTheme.displayLarge?.copyWith(
-                        fontStyle: FontStyle.italic,
-                      ),
+                    child: const Align(
+                      alignment: Alignment.centerLeft,
+                      child: BrandLogo.lockup(height: 52),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),

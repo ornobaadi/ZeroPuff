@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/brand_logo.dart';
 import '../../../core/calculations/day_history.dart';
 import '../../../core/calculations/today_card_calculations.dart';
 import '../../../core/router/app_routes.dart';
@@ -80,7 +81,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ZeroPuff'),
+        title: const BrandLogo.lockup(height: 28),
         actions: [
           dashboard.maybeWhen(
             data: (data) => StreakChip(

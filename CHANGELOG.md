@@ -5,6 +5,7 @@
 The day closes in one tap, and a missed evening no longer costs you.
 
 ### New
+- New logo, "The Snap": a snapped cigarette on the launcher icon (with an Android 13 themed version), a clean splash with the mark in the centre and the wordmark below, a proper notification icon, and the logo on the welcome, sign-in, Home and app info screens.
 - Seal the day: the daily check-in form is replaced by one tap in the evening. The app fills in what it already knows (cravings beaten, cigarettes logged, money kept) and asks only whether the day was smoke-free, with an optional tap on what helped.
 - Your run is automatic: a day counts as smoke-free unless you log a cigarette, so skipping the seal never breaks it. Sealing banks today early.
 - Logging a slip is a short sheet from Home (how many, what set it off, when). If slips keep landing at the same time of day, the app offers to add it as a smoking moment.

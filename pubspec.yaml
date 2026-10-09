@@ -68,6 +68,7 @@ dev_dependencies:
   isar_community_generator: ^3.3.2
   riverpod_generator: ^4.0.3
   flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -85,6 +86,7 @@ flutter:
   assets:
     - .env
     - assets/badges/
+    - assets/branding/logo/
     - assets/ornob-aadi-signature/ornob-aadi-signature-bold-dark.png
 
   fonts:
@@ -131,16 +133,27 @@ flutter_launcher_icons:
   ios: true
   image_path: assets/branding/app_icon.png
   remove_alpha_ios: true
+  min_sdk_android: 21
+  adaptive_icon_background: "#0F1214"
+  adaptive_icon_foreground: assets/branding/app_icon_foreground.png
+  # The foreground already contains the safe-zone padding.
+  adaptive_icon_foreground_inset: 0
+  adaptive_icon_monochrome: assets/branding/app_icon_monochrome.png
 
+# The mark alone in the centre and the wordmark at the bottom, on every
+# Android version, so the splash looks the same before and after Android 12.
 flutter_native_splash:
-  color: "#FAF6EE"
-  color_dark: "#071C16"
-  background_image: assets/branding/bg.png
-  background_image_dark: assets/branding/bg.png
-  image: assets/branding/splash_mobile.png
-  image_dark: assets/branding/splash_mobile.png
+  color: "#EBECE6"
+  color_dark: "#0F1214"
+  image: assets/branding/splash_android12.png
+  image_dark: assets/branding/splash_android12_dark.png
+  branding: assets/branding/splash_branding_android12.png
+  branding_dark: assets/branding/splash_branding_android12_dark.png
+  branding_bottom_padding: 32
   android_12:
-    color: "#00C883"
-    color_dark: "#00C883"
-    image: assets/branding/splash_mobile.png
-    image_dark: assets/branding/splash_mobile.png
+    color: "#EBECE6"
+    color_dark: "#0F1214"
+    image: assets/branding/splash_android12.png
+    image_dark: assets/branding/splash_android12_dark.png
+    branding: assets/branding/splash_branding_android12.png
+    branding_dark: assets/branding/splash_branding_android12_dark.png

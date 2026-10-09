@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/widgets/brand_logo.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
@@ -32,19 +33,8 @@ class AppInfoScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Symbols.air_rounded,
-                          color: scheme.onPrimaryContainer,
-                          size: 36,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          AppConstants.appName,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            color: scheme.onPrimaryContainer,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
+                        const BrandLogo.lockup(height: 36),
+                        const SizedBox(height: AppSpacing.md),
                         Text(
                           AppConstants.appTagline,
                           style: theme.textTheme.bodyLarge?.copyWith(
