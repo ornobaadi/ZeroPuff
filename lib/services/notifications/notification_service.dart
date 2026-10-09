@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
@@ -16,13 +16,24 @@ class NotificationService {
   static const int streakProtectionId = 1003;
   static const int _dailyCheckInBaseId = 1100;
   static const int _streakProtectionBaseId = 1200;
-  static const int _dangerWindowBaseId = 1300;
+  static const int _ritualBaseId = 1300;
+  static const int _ritualIdStride = 8;
+  static const int _maxRituals = 12;
   static const int _delayCheckId = 1400;
   static const int _rollingReminderDays = 7;
   static const _delayCheckKey = 'notifications.delay_check_at';
 
   /// Where a notification about a craving should open the app.
   static const rescueRoute = '/rescue';
+  static const checkInRoute = '/check-in';
+  static const milestonesRoute = '/stats/milestones';
+
+  /// How long before a ritual its nudge arrives.
+  static const ritualLeadMinutes = 10;
+
+  /// The route a tapped notification asked for. The app listens, navigates
+  /// and clears it.
+  static final ValueNotifier<String?> openRoute = ValueNotifier(null);
 
   static final FlutterLocalNotificationsPlugin plugin =
       FlutterLocalNotificationsPlugin();
@@ -40,7 +51,23 @@ class NotificationService {
       requestSoundPermission: false,
     );
     const settings = InitializationSettings(android: android, iOS: ios);
-    await plugin.initialize(settings: settings);
+    await plugin.initialize(
+      settings: settings,
+      onDidReceiveNotificationResponse: (response) =>
+          _requestRoute(response.payload),
+    );
+
+    // The app may have been started by tapping a notification.
+    final launch = await plugin.getNotificationAppLaunchDetails();
+    if (launch?.didNotificationLaunchApp ?? false) {
+      _requestRoute(launch?.notificationResponse?.payload);
+    }
+  }
+
+  static void _requestRoute(String? payload) {
+    if (payload != null && payload.startsWith('/')) {
+      openRoute.value = payload;
+    }
   }
 
   static Future<bool> requestPermission() async {
@@ -68,7 +95,7 @@ class NotificationService {
   static Future<void> reschedule({
     required NotificationPreferences preferences,
     DateTime? quitDate,
-    SmokingWindowData? smokingWindow,
+    List<SmokingWindowData> rituals = const [],
     NotificationScheduleSnapshot snapshot =
         const NotificationScheduleSnapshot(),
   }) async {
@@ -92,6 +119,7 @@ class NotificationService {
         skipToday: snapshot.todayCheckedIn,
         title: copy.title,
         body: copy.body,
+        payload: checkInRoute,
       );
     }
 
@@ -104,23 +132,32 @@ class NotificationService {
         skipToday: snapshot.todayCheckedIn,
         title: copy.title,
         body: copy.body,
+        payload: checkInRoute,
       );
     }
 
-    if (preferences.dangerWindowEnabled && smokingWindow != null) {
-      final reminderMinutes = smokingWindow.startMinutes - 15;
-      final normalizedMinutes = reminderMinutes < 0
-          ? reminderMinutes + 24 * 60
-          : reminderMinutes;
-      final copy = _dangerWindowCopy(smokingWindow);
-      await _scheduleRollingOneShots(
-        baseId: _dangerWindowBaseId,
-        hour: normalizedMinutes ~/ 60,
-        minute: normalizedMinutes.remainder(60),
-        skipToday: false,
-        title: copy.title,
-        body: copy.body,
-      );
+    if (preferences.dangerWindowEnabled) {
+      final enabled = rituals
+          .where((ritual) => ritual.enabled)
+          .take(_maxRituals)
+          .toList();
+      for (var index = 0; index < enabled.length; index++) {
+        final ritual = enabled[index];
+        final reminderMinutes =
+            (ritual.startMinutes - ritualLeadMinutes) % (24 * 60);
+        final copy = ritualCopy(ritual);
+        await _scheduleRollingOneShots(
+          baseId: _ritualBaseId + index * _ritualIdStride,
+          hour: reminderMinutes ~/ 60,
+          minute: reminderMinutes.remainder(60),
+          skipToday: false,
+          title: copy.title,
+          body: copy.body,
+          payload: rescueRoute,
+          details: _ritualDetails(),
+          daysOfWeek: ritual.daysOfWeek,
+        );
+      }
     }
 
     if (preferences.milestoneReminderEnabled && quitDate != null) {
@@ -143,8 +180,9 @@ class NotificationService {
           title: '${nextMilestone.title} smoke-free',
           body: nextMilestone.body,
           scheduledDate: tz.TZDateTime.from(milestoneAt, tz.local),
-          notificationDetails: _details(),
+          notificationDetails: _milestoneDetails(),
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          payload: milestonesRoute,
         );
       }
     }
@@ -188,7 +226,7 @@ class NotificationService {
       title: 'Ten minutes are up',
       body: 'Still want it? Open ZeroPuff and check in with the urge first.',
       scheduledDate: tz.TZDateTime.from(at, tz.local),
-      notificationDetails: _details(),
+      notificationDetails: _ritualDetails(),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       payload: rescueRoute,
     );
@@ -211,6 +249,9 @@ class NotificationService {
     required bool skipToday,
     required String title,
     required String body,
+    required String payload,
+    NotificationDetails? details,
+    List<int>? daysOfWeek,
   }) async {
     final firstOffset = _firstReminderOffset(
       hour: hour,
@@ -218,19 +259,32 @@ class NotificationService {
       skipToday: skipToday,
     );
     for (var index = 0; index < _rollingReminderDays; index++) {
+      final scheduledDate = _timeOnDayOffset(
+        hour: hour,
+        minute: minute,
+        daysFromToday: firstOffset + index,
+      );
+      if (daysOfWeek != null &&
+          !daysOfWeek.contains(_deviceWeekday(scheduledDate))) {
+        continue;
+      }
       await plugin.zonedSchedule(
         id: baseId + index,
         title: title,
         body: body,
-        scheduledDate: _timeOnDayOffset(
-          hour: hour,
-          minute: minute,
-          daysFromToday: firstOffset + index,
-        ),
-        notificationDetails: _details(),
+        scheduledDate: scheduledDate,
+        notificationDetails: details ?? _details(),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: payload,
       );
     }
+  }
+
+  /// The weekday on the device's own clock (tz.local is UTC here).
+  static int _deviceWeekday(tz.TZDateTime time) {
+    return DateTime.fromMillisecondsSinceEpoch(
+      time.millisecondsSinceEpoch,
+    ).weekday;
   }
 
   static int _firstReminderOffset({
@@ -320,11 +374,27 @@ class NotificationService {
     );
   }
 
-  static _NotificationCopy _dangerWindowCopy(SmokingWindowData window) {
-    return _NotificationCopy(
-      title: 'Your usual smoke window starts soon',
+  /// What a nudge says shortly before a smoking moment.
+  @visibleForTesting
+  static ({String title, String body}) ritualCopy(SmokingWindowData ritual) {
+    final time = SmokingWindowData.labelForMinutes(ritual.startMinutes);
+    if (ritual.source == 'learned') {
+      return (
+        title: 'Cravings often find you around $time',
+        body: 'Get ahead of this one. Six slow breaths before it arrives.',
+      );
+    }
+    if (ritual.isPrimary) {
+      return (
+        title: 'Your usual smoking time starts soon',
+        body:
+            'Around $time is when autopilot kicks in. Take six breaths before it does.',
+      );
+    }
+    return (
+      title: '${ritual.label} is coming up',
       body:
-          '${SmokingWindowData.labelForMinutes(window.startMinutes)}-${SmokingWindowData.labelForMinutes(window.endMinutes)} is your planned pause. Open ZeroPuff before autopilot starts.',
+          'That used to mean a cigarette. Get ahead of it: six slow breaths first.',
     );
   }
 
@@ -371,6 +441,38 @@ class NotificationService {
       'zeropuff_reminders',
       'ZeroPuff reminders',
       channelDescription: 'Daily check-ins and gentle streak reminders.',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+    );
+    const ios = DarwinNotificationDetails();
+    return const NotificationDetails(android: android, iOS: ios);
+  }
+
+  static NotificationDetails _ritualDetails() {
+    const android = AndroidNotificationDetails(
+      'zeropuff_rituals',
+      'Craving moments',
+      channelDescription:
+          'A heads-up shortly before the times you used to smoke.',
+      importance: Importance.high,
+      priority: Priority.high,
+      actions: [
+        AndroidNotificationAction(
+          'breathe',
+          'Breathe now',
+          showsUserInterface: true,
+        ),
+      ],
+    );
+    const ios = DarwinNotificationDetails();
+    return const NotificationDetails(android: android, iOS: ios);
+  }
+
+  static NotificationDetails _milestoneDetails() {
+    const android = AndroidNotificationDetails(
+      'zeropuff_milestones',
+      'Milestones',
+      channelDescription: 'When you reach a smoke-free milestone.',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
     );

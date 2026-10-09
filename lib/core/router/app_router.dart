@@ -11,6 +11,7 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/app_info_screen.dart';
 import '../../features/profile/screens/appearance_settings_screen.dart';
 import '../../features/profile/screens/notification_settings_screen.dart';
+import '../../features/profile/screens/rituals_settings_screen.dart';
 import '../../features/profile/screens/setup_settings_screen.dart';
 import '../../features/progress/screens/progress_screen.dart';
 import '../../features/recovery/screens/relapse_recovery_screen.dart';
@@ -225,6 +226,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.appearanceSettings,
         pageBuilder: (context, state) =>
             _materialPage(state, const AppearanceSettingsScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AppRoutes.ritualsSettings,
+        pageBuilder: (context, state) =>
+            _materialPage(state, const RitualsSettingsScreen()),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,

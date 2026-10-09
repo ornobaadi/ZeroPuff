@@ -23,4 +23,5 @@ class AppRoutes {
   static const notificationSettings = '/notification-settings';
   static const appearanceSettings = '/appearance-settings';
   static const appInfo = '/app-info';
+  static const ritualsSettings = '/rituals';
 }

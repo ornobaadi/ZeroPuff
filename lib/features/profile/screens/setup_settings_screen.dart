@@ -12,14 +12,13 @@ import '../../../core/widgets/content_width.dart';
 import '../../../core/widgets/number_stepper.dart';
 import '../../../core/widgets/state_view.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
+import '../../notifications/reminder_refresh.dart';
 import '../../../models/profile_data.dart';
 import '../../../models/smoking_window_data.dart';
 import '../../../repositories/auth_repository.dart';
-import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../../services/device/device_identity_service.dart';
-import '../../../services/notifications/notification_service.dart';
 import '../../onboarding/models/onboarding_form.dart';
 import '../../onboarding/steps/routine_step.dart' show kTriggerOptions;
 import '../../onboarding/widgets/smoking_window_card.dart';
@@ -110,15 +109,7 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
       if (user != null) {
         await ref.read(profileRepositoryProvider).upsertProfile(profile);
       }
-      final notificationPreferences = await ref
-          .read(notificationPreferencesRepositoryProvider)
-          .load();
-      await NotificationService.reschedule(
-        preferences: notificationPreferences,
-        quitDate: profile.quitDate,
-        smokingWindow: profile.usualSmokingWindow,
-        snapshot: _notificationSnapshot(),
-      );
+      await refreshReminders(ref);
       ref.invalidate(homeBaselineProvider);
       ref.invalidate(editableProfileProvider);
 
@@ -333,22 +324,6 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  NotificationScheduleSnapshot _notificationSnapshot() {
-    final dashboard = ref.read(homeDashboardProvider).value;
-    if (dashboard == null) {
-      return const NotificationScheduleSnapshot();
-    }
-    return NotificationScheduleSnapshot(
-      todayCheckedIn: dashboard.todayCheckIn != null,
-      smokeFreeDuration: dashboard.smokeFreeDuration,
-      smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
-      checkInStreakDays: dashboard.checkInStreakDays,
-      cigarettesAvoided: dashboard.cigarettesAvoided,
-      moneySaved: dashboard.moneySaved,
-      currencySymbol: dashboard.currencySymbol,
     );
   }
 

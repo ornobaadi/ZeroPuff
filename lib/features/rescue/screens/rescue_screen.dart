@@ -6,11 +6,11 @@ import '../../../core/calculations/craving_analysis_calculations.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
+import '../../notifications/reminder_refresh.dart';
 import '../../../models/app_event.dart';
 import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/craving_repository.dart';
-import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
 import '../../../services/notifications/notification_service.dart';
@@ -338,35 +338,8 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
   }
 
   Future<void> _restoreReminders() async {
-    if (_session == null) {
-      return;
-    }
-    try {
-      final preferences = await ref
-          .read(notificationPreferencesRepositoryProvider)
-          .load();
-      final profile = await ref
-          .read(onboardingRepositoryProvider)
-          .loadCompletedProfile();
-      final dashboard = ref.read(homeDashboardProvider).value;
-      await NotificationService.reschedule(
-        preferences: preferences,
-        quitDate: profile?.quitDate,
-        smokingWindow: profile?.usualSmokingWindow,
-        snapshot: dashboard == null
-            ? const NotificationScheduleSnapshot()
-            : NotificationScheduleSnapshot(
-                todayCheckedIn: dashboard.todayCheckIn != null,
-                smokeFreeDuration: dashboard.smokeFreeDuration,
-                smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
-                checkInStreakDays: dashboard.checkInStreakDays,
-                cigarettesAvoided: dashboard.cigarettesAvoided,
-                moneySaved: dashboard.moneySaved,
-                currencySymbol: dashboard.currencySymbol,
-              ),
-      );
-    } on Object {
-      // Home reschedules reminders again the next time it loads.
+    if (_session != null) {
+      await refreshReminders(ref);
     }
   }
 

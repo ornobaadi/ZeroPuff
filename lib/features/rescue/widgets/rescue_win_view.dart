@@ -8,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/number_formatting.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/content_width.dart';
+import '../../../core/widgets/savings_jar.dart';
 import '../../../services/haptics/haptic_service.dart';
 
 /// The payoff for getting through a craving: what just happened, in numbers
@@ -105,11 +106,12 @@ class _RescueWinViewState extends State<RescueWinView>
               ExcludeSemantics(
                 child: SizedBox(
                   height: 150,
-                  child: _CoinJar(
-                    drop: _drop,
-                    jar: accents.money,
-                    coin: accents.money,
-                    fill: accents.moneyContainer,
+                  child: AnimatedBuilder(
+                    animation: _drop,
+                    builder: (context, _) => SavingsJar(
+                      fill: 0.38,
+                      coinDrop: Curves.easeIn.transform(_drop.value),
+                    ),
                   ),
                 ),
               ),
@@ -248,116 +250,5 @@ class _WinLine extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-/// A coin falling into a jar.
-class _CoinJar extends StatelessWidget {
-  const _CoinJar({
-    required this.drop,
-    required this.jar,
-    required this.coin,
-    required this.fill,
-  });
-
-  final Animation<double> drop;
-  final Color jar;
-  final Color coin;
-  final Color fill;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: drop,
-      builder: (context, _) => CustomPaint(
-        size: Size.infinite,
-        painter: _CoinJarPainter(
-          progress: Curves.easeIn.transform(drop.value),
-          jar: jar,
-          coin: coin,
-          fill: fill,
-        ),
-      ),
-    );
-  }
-}
-
-class _CoinJarPainter extends CustomPainter {
-  const _CoinJarPainter({
-    required this.progress,
-    required this.jar,
-    required this.coin,
-    required this.fill,
-  });
-
-  final double progress;
-  final Color jar;
-  final Color coin;
-  final Color fill;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const jarWidth = 96.0;
-    const jarHeight = 92.0;
-    const coinRadius = 13.0;
-    final jarRect = Rect.fromLTWH(
-      (size.width - jarWidth) / 2,
-      size.height - jarHeight - 4,
-      jarWidth,
-      jarHeight,
-    );
-    final jarShape = RRect.fromRectAndCorners(
-      jarRect,
-      topLeft: const Radius.circular(10),
-      topRight: const Radius.circular(10),
-      bottomLeft: const Radius.circular(26),
-      bottomRight: const Radius.circular(26),
-    );
-
-    // What is already saved, sitting in the bottom of the jar.
-    canvas.save();
-    canvas.clipRRect(jarShape);
-    canvas.drawRect(
-      Rect.fromLTWH(
-        jarRect.left,
-        jarRect.bottom - jarHeight * 0.38,
-        jarWidth,
-        jarHeight * 0.38,
-      ),
-      Paint()..color = fill,
-    );
-    canvas.restore();
-
-    final restY = jarRect.bottom - jarHeight * 0.38 - coinRadius + 4;
-    final startY = coinRadius;
-    final coinCenter = Offset(
-      size.width / 2,
-      startY + (restY - startY) * progress,
-    );
-    canvas.drawCircle(coinCenter, coinRadius, Paint()..color = coin);
-    canvas.drawCircle(
-      coinCenter,
-      coinRadius - 5,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..color = fill,
-    );
-
-    canvas.drawRRect(
-      jarShape,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4
-        ..color = jar,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _CoinJarPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.jar != jar ||
-        oldDelegate.coin != coin ||
-        oldDelegate.fill != fill;
   }
 }

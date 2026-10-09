@@ -45,7 +45,7 @@ void main() {
       find.text('When should ZeroPuff start counting?', findRichText: true),
       findsOneWidget,
     );
-    expect(find.text('1 of 5'), findsOneWidget);
+    expect(find.text('1 of 6'), findsOneWidget);
 
     await tester.tap(find.text('Yesterday'));
     await tester.pumpAndSettle();
@@ -55,7 +55,7 @@ void main() {
       find.text('Make your progress measurable', findRichText: true),
       findsOneWidget,
     );
-    expect(find.text('2 of 5'), findsOneWidget);
+    expect(find.text('2 of 6'), findsOneWidget);
     await _tapPrimary(tester, 'Continue');
 
     expect(
@@ -77,10 +77,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
+      find.text('This is what helps when a craving hits', findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.text('5 of 6'), findsOneWidget);
+    await _tapPrimary(tester, 'Continue');
+
+    expect(
       find.text('Want a nudge at the right moment?', findRichText: true),
       findsOneWidget,
     );
-    expect(find.text('5 of 5'), findsOneWidget);
+    expect(find.text('6 of 6'), findsOneWidget);
     expect(find.text('Turn on reminders'), findsOneWidget);
     expect(find.text('Not now'), findsOneWidget);
   });

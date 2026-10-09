@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/errors/friendly_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/content_width.dart';
 import '../../../core/widgets/settings_tiles.dart';
 import '../../../core/widgets/state_view.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../repositories/notification_preferences_repository.dart';
-import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/profile_repository.dart';
 import '../../../services/notifications/notification_service.dart';
-import '../../home/providers/home_dashboard_provider.dart';
+import '../../notifications/reminder_refresh.dart';
 
 final editableNotificationPreferencesProvider =
     FutureProvider<NotificationPreferences>((ref) async {
@@ -45,26 +46,7 @@ class _NotificationSettingsScreenState
       final saved = await ref
           .read(notificationPreferencesRepositoryProvider)
           .save(preferences);
-      final profile = await ref
-          .read(onboardingRepositoryProvider)
-          .loadCompletedProfile();
-      final dashboard = ref.read(homeDashboardProvider).value;
-      await NotificationService.reschedule(
-        preferences: saved,
-        quitDate: profile?.quitDate,
-        smokingWindow: profile?.usualSmokingWindow,
-        snapshot: dashboard == null
-            ? const NotificationScheduleSnapshot()
-            : NotificationScheduleSnapshot(
-                todayCheckedIn: dashboard.todayCheckIn != null,
-                smokeFreeDuration: dashboard.smokeFreeDuration,
-                smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
-                checkInStreakDays: dashboard.checkInStreakDays,
-                cigarettesAvoided: dashboard.cigarettesAvoided,
-                moneySaved: dashboard.moneySaved,
-                currencySymbol: dashboard.currencySymbol,
-              ),
-      );
+      await refreshReminders(ref, preferences: saved);
 
       final user = ref.read(currentUserProvider);
       if (user != null) {
@@ -190,9 +172,9 @@ class _NotificationSettingsScreenState
                           ),
                           SettingsSwitchTile(
                             icon: Symbols.schedule_rounded,
-                            title: 'Danger window',
+                            title: 'Smoking moments',
                             subtitle:
-                                'A small nudge before your usual smoking window starts.',
+                                'A heads-up shortly before the times you used to smoke.',
                             value: data.dangerWindowEnabled,
                             onChanged: _saving
                                 ? null
@@ -200,6 +182,14 @@ class _NotificationSettingsScreenState
                                     data.copyWith(dangerWindowEnabled: value),
                                   ),
                           ),
+                          if (data.dangerWindowEnabled)
+                            SettingsTile(
+                              icon: Symbols.event_repeat_rounded,
+                              title: 'Your smoking moments',
+                              subtitle: 'Coffee, breaks, the drive home',
+                              onTap: () =>
+                                  context.push(AppRoutes.ritualsSettings),
+                            ),
                           SettingsSwitchTile(
                             icon: Symbols.nightlight_rounded,
                             title: 'Streak protection',

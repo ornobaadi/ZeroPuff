@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/calculations/progress_calculations.dart';
+import '../../../core/calculations/today_card_calculations.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/content_width.dart';
@@ -11,15 +12,16 @@ import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/state_view.dart';
 import '../../../core/widgets/stat_card.dart';
 import '../../../repositories/app_settings_repository.dart';
-import '../../../repositories/notification_preferences_repository.dart';
-import '../../../repositories/onboarding_repository.dart';
+import '../../../repositories/daily_loop_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
-import '../../../services/notifications/notification_service.dart';
 import '../../celebrations/milestone_celebration_controller.dart';
 import '../../celebrations/widgets/celebration_dialog.dart';
+import '../../notifications/reminder_refresh.dart';
 import '../providers/home_dashboard_provider.dart';
+import '../providers/today_card_provider.dart';
 import '../widgets/home_action_cards.dart';
 import '../widgets/smoke_free_hero_card.dart';
+import '../widgets/today_card.dart';
 import '../../../core/utils/number_formatting.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -32,6 +34,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  /// The opening heartbeat plays once per app launch, not per visit to Home.
+  static bool _heartbeatPlayed = false;
+
   String? _shownCelebrationKey;
   String? _lastNotificationRefreshKey;
 
@@ -61,6 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.watch(milestoneCelebrationProvider);
     if (widget.enableNotificationRefresh) {
       dashboard.whenData(_queueNotificationRefresh);
+      dashboard.whenData(_playHeartbeat);
     }
 
     return Scaffold(
@@ -85,7 +91,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: SafeArea(
         bottom: false,
         child: dashboard.when(
-          data: (data) => _HomeContent(data: data, onOpen: _openRoute),
+          data: (data) => _HomeContent(
+            data: data,
+            today: ref.watch(todayCardProvider),
+            onOpen: _openRoute,
+            onTodayAction: _onTodayAction,
+          ),
           loading: () => const StateView.loading(label: 'Loading your day'),
           error: (error, _) => StateView.error(
             error: error,
@@ -121,6 +132,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     context.push(route);
   }
 
+  /// A double beat on opening the app that gets firmer as the streak grows,
+  /// so progress can be felt before it is read.
+  void _playHeartbeat(HomeDashboardData data) {
+    if (_heartbeatPlayed || data.smokeFreeStreakDays < 1) {
+      return;
+    }
+    _heartbeatPlayed = true;
+    HapticService.heartbeat(
+      enabled: ref.read(hapticsEnabledControllerProvider),
+      strength: data.smokeFreeStreakDays / 30,
+    );
+  }
+
+  Future<void> _onTodayAction(TodayCard card) async {
+    final enabled = ref.read(hapticsEnabledControllerProvider);
+    switch (card.kind) {
+      case TodayCardKind.ritualSoon:
+        _openRoute(AppRoutes.rescue, stronger: true);
+      case TodayCardKind.pledge:
+        HapticService.success(enabled: enabled);
+        await ref.read(dailyLoopRepositoryProvider).pledge(DateTime.now());
+        ref.invalidate(pledgedTodayProvider);
+      case TodayCardKind.goal:
+        _openRoute(AppRoutes.savingsDetails);
+      case TodayCardKind.recap:
+      case TodayCardKind.insight:
+      case TodayCardKind.steady:
+        break;
+    }
+  }
+
   void _queueNotificationRefresh(HomeDashboardData data) {
     final now = DateTime.now();
     final key =
@@ -140,42 +182,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  Future<void> _rescheduleNotifications([HomeDashboardData? data]) async {
-    final preferences = await ref
-        .read(notificationPreferencesRepositoryProvider)
-        .load();
-    final profile = await ref
-        .read(onboardingRepositoryProvider)
-        .loadCompletedProfile();
-    final dashboard = data ?? ref.read(homeDashboardProvider).value;
-    await NotificationService.reschedule(
-      preferences: preferences,
-      quitDate: profile?.quitDate,
-      smokingWindow: profile?.usualSmokingWindow,
-      snapshot: dashboard == null
-          ? const NotificationScheduleSnapshot()
-          : NotificationScheduleSnapshot(
-              todayCheckedIn: dashboard.todayCheckIn != null,
-              smokeFreeDuration: dashboard.smokeFreeDuration,
-              smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
-              checkInStreakDays: dashboard.checkInStreakDays,
-              cigarettesAvoided: dashboard.cigarettesAvoided,
-              moneySaved: dashboard.moneySaved,
-              currencySymbol: dashboard.currencySymbol,
-            ),
-    );
+  Future<void> _rescheduleNotifications([HomeDashboardData? data]) {
+    return refreshReminders(ref, dashboard: data);
   }
 }
 
 class _HomeContent extends StatelessWidget {
-  const _HomeContent({required this.data, required this.onOpen});
+  const _HomeContent({
+    required this.data,
+    required this.today,
+    required this.onOpen,
+    required this.onTodayAction,
+  });
 
   final HomeDashboardData data;
+  final TodayCard? today;
   final void Function(String route, {bool stronger}) onOpen;
+  final ValueChanged<TodayCard> onTodayAction;
 
   @override
   Widget build(BuildContext context) {
     final streakDays = data.smokeFreeStreakDays;
+    final today = this.today;
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -198,6 +226,13 @@ class _HomeContent extends StatelessWidget {
               CravingButton(
                 onPressed: () => onOpen(AppRoutes.rescue, stronger: true),
               ),
+              if (today != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                TodayCardView(
+                  card: today,
+                  onAction: () => onTodayAction(today),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               CheckInCard(
                 checkedIn: data.todayCheckIn != null,

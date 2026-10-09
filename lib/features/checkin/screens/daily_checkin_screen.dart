@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/calculations/streak_calculations.dart';
 import '../../../core/errors/friendly_error.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -11,12 +12,12 @@ import '../../../core/widgets/content_width.dart';
 import '../../../core/widgets/number_stepper.dart';
 import '../../../core/widgets/state_view.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
+import '../../notifications/reminder_refresh.dart';
 import '../../../repositories/app_settings_repository.dart';
+import '../../../models/smoking_window_data.dart';
 import '../../../repositories/daily_checkin_repository.dart';
-import '../../../repositories/notification_preferences_repository.dart';
-import '../../../repositories/onboarding_repository.dart';
+import '../../../repositories/smoking_window_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
-import '../../../services/notifications/notification_service.dart';
 
 /// How the day felt with respect to smoking, from hardest (1) to clearest (5).
 const _levels = [
@@ -123,6 +124,10 @@ class _DailyCheckInScreenState extends ConsumerState<DailyCheckInScreen> {
     _mediumHaptic();
     setState(() => _saving = true);
     final messenger = ScaffoldMessenger.of(context);
+    // Read before saving: the save refreshes these.
+    final before = ref.read(homeDashboardProvider).value;
+    final checkInStreak =
+        (before?.checkInStreakDays ?? 0) + (before?.todayCheckIn == null ? 1 : 0);
     try {
       await ref
           .read(dailyCheckInRepositoryProvider)
@@ -138,10 +143,10 @@ class _DailyCheckInScreenState extends ConsumerState<DailyCheckInScreen> {
       ref.invalidate(recentCheckInsProvider);
       await _rescheduleNotificationsAfterCheckIn();
       if (mounted) {
+        await _showResult(checkInStreak);
+      }
+      if (mounted) {
         context.pop();
-        messenger.showSnackBar(
-          const SnackBar(content: Text('Check-in saved. Thank you.')),
-        );
       }
     } on Object catch (error) {
       messenger.showSnackBar(SnackBar(content: Text(friendlyError(error))));
@@ -294,6 +299,86 @@ class _DailyCheckInScreenState extends ConsumerState<DailyCheckInScreen> {
     );
   }
 
+  /// What the check-in adds up to, shown before returning Home.
+  Future<void> _showResult(int checkInStreak) async {
+    final now = DateTime.now();
+    final cravings = ref.read(recentCravingsProvider).value ?? const [];
+    final rituals = ref.read(ritualsProvider).value ?? const [];
+    final beatenToday = cravings
+        .where(
+          (craving) =>
+              craving.resisted &&
+              StreakCalculations.dateOnly(craving.startedAt) ==
+                  StreakCalculations.dateOnly(now),
+        )
+        .length;
+    final firstRitual = rituals.where((ritual) => ritual.enabled).firstOrNull;
+
+    final lines = [
+      if (checkInStreak >= 2) '$checkInStreak days checked in, in a row.',
+      if (beatenToday == 1) 'You beat a craving today.',
+      if (beatenToday > 1) 'You beat $beatenToday cravings today.',
+      if (firstRitual != null)
+        'Tomorrow starts with ${firstRitual.label.toLowerCase()} around '
+            '${SmokingWindowData.labelForMinutes(firstRitual.startMinutes)}. '
+            'ZeroPuff will check in before it.',
+    ];
+
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final scheme = theme.colorScheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.pagePadding,
+              0,
+              AppSpacing.pagePadding,
+              AppSpacing.pagePadding,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(
+                  Symbols.check_circle_rounded,
+                  size: 40,
+                  color: scheme.primary,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  _smokeFreeToday
+                      ? 'Another smoke-free day on the record'
+                      : 'Logged honestly. That counts.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                for (final line in lines)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xs),
+                    child: Text(
+                      line,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: AppSpacing.lg),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Done'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   bool get _hapticsEnabled => ref.read(hapticsEnabledControllerProvider);
 
   void _selectionHaptic() {
@@ -311,30 +396,8 @@ class _DailyCheckInScreenState extends ConsumerState<DailyCheckInScreen> {
     );
   }
 
-  Future<void> _rescheduleNotificationsAfterCheckIn() async {
-    final preferences = await ref
-        .read(notificationPreferencesRepositoryProvider)
-        .load();
-    final profile = await ref
-        .read(onboardingRepositoryProvider)
-        .loadCompletedProfile();
-    final dashboard = ref.read(homeDashboardProvider).value;
-    await NotificationService.reschedule(
-      preferences: preferences,
-      quitDate: profile?.quitDate,
-      smokingWindow: profile?.usualSmokingWindow,
-      snapshot: dashboard == null
-          ? const NotificationScheduleSnapshot(todayCheckedIn: true)
-          : NotificationScheduleSnapshot(
-              todayCheckedIn: true,
-              smokeFreeDuration: dashboard.smokeFreeDuration,
-              smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
-              checkInStreakDays: dashboard.checkInStreakDays,
-              cigarettesAvoided: dashboard.cigarettesAvoided,
-              moneySaved: dashboard.moneySaved,
-              currencySymbol: dashboard.currencySymbol,
-            ),
-    );
+  Future<void> _rescheduleNotificationsAfterCheckIn() {
+    return refreshReminders(ref, todayCheckedIn: true);
   }
 }
 

@@ -573,6 +573,18 @@ class SyncService {
         .windowIdEqualTo(windowId)
         .findFirst();
     if (window == null) {
+      // A ritual deleted on this device. Its id is the row id in the account.
+      if (windowId != SmokingWindowData.primaryWindowId) {
+        await client
+            .from('user_smoking_windows')
+            .delete()
+            .eq('user_id', userId)
+            .eq('id', windowId);
+      }
+      return;
+    }
+    if (!window.isPrimary) {
+      await _syncRitual(client, userId, window);
       return;
     }
 
@@ -608,6 +620,36 @@ class SyncService {
           .update(payload)
           .eq('id', remoteId);
     }
+
+    window
+      ..userId = userId
+      ..synced = true;
+    await _database.writeTxn(
+      () => _database.localSmokingWindows.putByWindowId(window),
+    );
+  }
+
+  Future<void> _syncRitual(
+    SupabaseClient client,
+    String userId,
+    LocalSmokingWindow window,
+  ) async {
+    final times = SmokingWindowData(
+      startMinutes: window.startMinutes,
+      endMinutes: window.endMinutes,
+    );
+    await client.from('user_smoking_windows').upsert({
+      'id': window.windowId,
+      'user_id': userId,
+      'label': window.label,
+      'start_time': times.startTimeSql,
+      'end_time': times.endTimeSql,
+      'days_of_week': window.daysOfWeek,
+      'enabled': window.enabled,
+      'is_primary': false,
+      'source': window.source,
+      'updated_at': window.updatedAt.toUtc().toIso8601String(),
+    });
 
     window
       ..userId = userId

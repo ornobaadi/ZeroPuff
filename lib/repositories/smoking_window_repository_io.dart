@@ -75,4 +75,77 @@ class SmokingWindowRepositoryIo implements SmokingWindowRepository {
       await _database.syncQueueItems.put(queueItem);
     });
   }
+
+  @override
+  Future<List<SmokingWindowData>> loadRituals() async {
+    final rows = await _database.localSmokingWindows
+        .filter()
+        .isPrimaryEqualTo(false)
+        .sortByStartMinutes()
+        .findAll();
+    return rows
+        .map(
+          (row) => SmokingWindowData(
+            windowId: row.windowId,
+            label: row.label,
+            startMinutes: row.startMinutes,
+            endMinutes: row.endMinutes,
+            daysOfWeek: row.daysOfWeek,
+            enabled: row.enabled,
+            isPrimary: false,
+            source: row.source,
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<void> saveRitual({
+    required String userId,
+    required SmokingWindowData ritual,
+  }) async {
+    final now = DateTime.now();
+    final row =
+        await _database.localSmokingWindows.getByWindowId(ritual.windowId) ??
+        LocalSmokingWindow();
+    row
+      ..windowId = ritual.windowId
+      ..userId = userId
+      ..label = ritual.label
+      ..startMinutes = ritual.startMinutes
+      ..endMinutes = ritual.endMinutes
+      ..daysOfWeek = ritual.daysOfWeek
+      ..enabled = ritual.enabled
+      ..isPrimary = false
+      ..source = ritual.source
+      ..updatedAt = now
+      ..synced = false;
+
+    await _database.writeTxn(() async {
+      await _database.localSmokingWindows.putByWindowId(row);
+      await _database.syncQueueItems.put(_queueItem(ritual.windowId, now));
+    });
+  }
+
+  @override
+  Future<void> deleteRitual(String windowId) async {
+    if (windowId == SmokingWindowData.primaryWindowId) {
+      return;
+    }
+    // Sync sees the row is gone and removes it from the account too.
+    await _database.writeTxn(() async {
+      await _database.localSmokingWindows.deleteByWindowId(windowId);
+      await _database.syncQueueItems.put(
+        _queueItem(windowId, DateTime.now()),
+      );
+    });
+  }
+
+  SyncQueueItem _queueItem(String windowId, DateTime at) {
+    return SyncQueueItem()
+      ..entityType = 'smoking_window'
+      ..entityId = windowId
+      ..operation = 'upsert'
+      ..createdAt = at;
+  }
 }

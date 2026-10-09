@@ -21,6 +21,27 @@ class SmokingWindowData {
   final bool isPrimary;
   final String source;
 
+  /// How long a ritual is treated as lasting once it starts.
+  static const ritualLengthMinutes = 30;
+
+  /// A named moment of the day that used to come with a cigarette.
+  factory SmokingWindowData.ritual({
+    required String windowId,
+    required String label,
+    required int startMinutes,
+    bool enabled = true,
+  }) {
+    return SmokingWindowData(
+      windowId: windowId,
+      label: label,
+      startMinutes: startMinutes,
+      endMinutes: (startMinutes + ritualLengthMinutes).clamp(0, 24 * 60),
+      enabled: enabled,
+      isPrimary: false,
+      source: 'ritual',
+    );
+  }
+
   String get startTimeSql => _timeSql(startMinutes);
   String get endTimeSql => _timeSql(endMinutes);
 

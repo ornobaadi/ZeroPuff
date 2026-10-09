@@ -57,6 +57,7 @@ class OnboardingForm {
     this.smokeWindowStartMinutes = 18 * 60,
     this.smokeWindowEndMinutes = 23 * 60,
     this.triggers = const {},
+    this.rituals = const {},
     this.reason = '',
   });
 
@@ -72,6 +73,9 @@ class OnboardingForm {
   final int smokeWindowStartMinutes;
   final int smokeWindowEndMinutes;
   final Set<String> triggers;
+
+  /// Ids of the [RitualPreset]s the user says come with a cigarette.
+  final Set<String> rituals;
   final String reason;
 
   factory OnboardingForm.initial({DateTime? now}) {
@@ -131,6 +135,7 @@ class OnboardingForm {
     int? smokeWindowStartMinutes,
     int? smokeWindowEndMinutes,
     Set<String>? triggers,
+    Set<String>? rituals,
     String? reason,
   }) {
     return OnboardingForm(
@@ -145,6 +150,7 @@ class OnboardingForm {
       smokeWindowEndMinutes:
           smokeWindowEndMinutes ?? this.smokeWindowEndMinutes,
       triggers: triggers ?? this.triggers,
+      rituals: rituals ?? this.rituals,
       reason: reason ?? this.reason,
     );
   }

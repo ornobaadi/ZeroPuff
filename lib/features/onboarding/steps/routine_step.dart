@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../models/ritual_preset.dart';
 import '../models/onboarding_form.dart';
 import '../widgets/onboarding_step_layout.dart';
-import '../widgets/smoking_window_card.dart';
 
 const kTriggerOptions = [
   TriggerOption('stress', 'Stressed'),
@@ -31,16 +31,12 @@ class RoutineStep extends StatelessWidget {
     required this.form,
     required this.onChanged,
     required this.onSelection,
-    required this.onPickStart,
-    required this.onPickEnd,
     super.key,
   });
 
   final OnboardingForm form;
   final ValueChanged<OnboardingForm> onChanged;
   final VoidCallback onSelection;
-  final VoidCallback onPickStart;
-  final VoidCallback onPickEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -58,21 +54,39 @@ class RoutineStep extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SmokingWindowCard(
-            startMinutes: form.smokeWindowStartMinutes,
-            endMinutes: form.smokeWindowEndMinutes,
-            errorText: form.windowError,
-            onRangeChanged: (start, end) {
-              onSelection();
-              onChanged(
-                form.copyWith(
-                  smokeWindowStartMinutes: start,
-                  smokeWindowEndMinutes: end,
+          Text(
+            'Which moments usually come with a cigarette?',
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'ZeroPuff checks in a few minutes before each one. You can change the times later.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final preset in RitualPreset.all)
+                FilterChip(
+                  avatar: Icon(preset.icon, size: 18),
+                  label: Text(preset.label),
+                  selected: form.rituals.contains(preset.id),
+                  onSelected: (selected) {
+                    onSelection();
+                    final next = {...form.rituals};
+                    if (selected) {
+                      next.add(preset.id);
+                    } else {
+                      next.remove(preset.id);
+                    }
+                    onChanged(form.copyWith(rituals: next));
+                  },
                 ),
-              );
-            },
-            onPickStart: onPickStart,
-            onPickEnd: onPickEnd,
+            ],
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(

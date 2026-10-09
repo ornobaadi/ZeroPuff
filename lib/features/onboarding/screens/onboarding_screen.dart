@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/errors/friendly_error.dart';
 import '../../../core/router/app_routes.dart';
@@ -10,16 +11,21 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/content_width.dart';
 import '../../../models/app_event.dart';
 import '../../../models/profile_data.dart';
+import '../../../models/ritual_preset.dart';
+import '../../../models/smoking_window_data.dart';
 import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/profile_repository.dart';
+import '../../../repositories/smoking_window_repository.dart';
 import '../../../services/device/device_identity_service.dart';
 import '../../../services/haptics/haptic_service.dart';
 import '../../../services/notifications/notification_service.dart';
+import '../../notifications/reminder_refresh.dart';
 import '../models/onboarding_form.dart';
+import '../steps/breath_step.dart';
 import '../steps/habit_step.dart';
 import '../steps/reason_step.dart';
 import '../steps/reminders_step.dart';
@@ -28,10 +34,10 @@ import '../steps/start_date_step.dart';
 import '../steps/welcome_step.dart';
 
 /// Page indices. Step 0 is the welcome page and is not counted in the
-/// progress indicator, which covers the five setup steps after it.
+/// progress indicator, which covers the six setup steps after it.
 const _welcomeStep = 0;
 const _reasonStep = 4;
-const _remindersStep = 5;
+const _remindersStep = 6;
 const _lastStep = _remindersStep;
 const _setupSteps = _lastStep;
 
@@ -43,6 +49,8 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+  static const _uuid = Uuid();
+
   final _pageController = PageController();
   final _reasonController = TextEditingController();
 
@@ -127,13 +135,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       form: _form,
                       onChanged: _updateForm,
                       onSelection: _selectionHaptic,
-                      onPickStart: _pickWindowStart,
-                      onPickEnd: _pickWindowEnd,
                     ),
                     ReasonStep(
                       controller: _reasonController,
                       onChanged: (value) =>
                           _form = _form.copyWith(reason: value),
+                    ),
+                    BreathStep(
+                      hapticsEnabled: ref.watch(
+                        hapticsEnabledControllerProvider,
+                      ),
                     ),
                     const RemindersStep(),
                   ],
@@ -197,53 +208,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         dateChoice: QuitDateChoice.custom,
       );
     });
-  }
-
-  Future<void> _pickWindowStart() async {
-    final minutes = await _pickTime(_form.smokeWindowStartMinutes);
-    if (minutes == null || !mounted) {
-      return;
-    }
-    final end = _form.smokeWindowEndMinutes;
-    setState(() {
-      _form = _form.copyWith(
-        smokeWindowStartMinutes: minutes,
-        smokeWindowEndMinutes: end <= minutes
-            ? (minutes + 60).clamp(0, 24 * 60)
-            : end,
-      );
-    });
-  }
-
-  Future<void> _pickWindowEnd() async {
-    final minutes = await _pickTime(_form.smokeWindowEndMinutes);
-    if (minutes == null || !mounted) {
-      return;
-    }
-    final start = _form.smokeWindowStartMinutes;
-    setState(() {
-      _form = _form.copyWith(
-        smokeWindowEndMinutes: minutes,
-        smokeWindowStartMinutes: start >= minutes
-            ? (minutes - 60).clamp(0, 24 * 60)
-            : start,
-      );
-    });
-  }
-
-  Future<int?> _pickTime(int initialMinutes) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(
-        hour: (initialMinutes ~/ 60).clamp(0, 23),
-        minute: initialMinutes.remainder(60),
-      ),
-    );
-    if (picked == null) {
-      return null;
-    }
-    _selectionHaptic();
-    return picked.hour * 60 + picked.minute;
   }
 
   // ---- Navigation ---------------------------------------------------------
@@ -336,6 +300,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       );
 
       await ref.read(onboardingRepositoryProvider).completeOnboarding(profile);
+      await _saveRituals(profile.userId);
       if (user != null) {
         await ref.read(profileRepositoryProvider).upsertProfile(profile);
       }
@@ -365,6 +330,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  /// Turns the moments picked during setup into rituals with default times.
+  Future<void> _saveRituals(String userId) async {
+    final repository = ref.read(smokingWindowRepositoryProvider);
+    for (final id in _form.rituals) {
+      final preset = RitualPreset.byId(id);
+      if (preset == null) {
+        continue;
+      }
+      await repository.saveRitual(
+        userId: userId,
+        ritual: SmokingWindowData.ritual(
+          windowId: _uuid.v4(),
+          label: preset.label,
+          startMinutes: preset.startMinutes,
+        ),
+      );
+    }
+  }
+
   Future<void> _setupNotifications(
     ProfileData profile,
     bool notificationsGranted,
@@ -373,23 +357,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       dailyCheckInEnabled: notificationsGranted,
       milestoneReminderEnabled: notificationsGranted,
       streakProtectionEnabled: notificationsGranted,
+      dangerWindowEnabled: notificationsGranted,
     );
     final preferences = await ref
         .read(notificationPreferencesRepositoryProvider)
         .save(nextPreferences);
-    final now = DateTime.now();
-    final smokeFreeDuration = now.isBefore(profile.quitDate)
-        ? Duration.zero
-        : now.difference(profile.quitDate);
-    await NotificationService.reschedule(
-      preferences: preferences,
-      quitDate: profile.quitDate,
-      smokingWindow: profile.usualSmokingWindow,
-      snapshot: NotificationScheduleSnapshot(
-        smokeFreeDuration: smokeFreeDuration,
-        currencySymbol: profile.currencySymbol,
-      ),
-    );
+    await refreshReminders(ref, preferences: preferences);
   }
 
   // ---- Haptics ------------------------------------------------------------

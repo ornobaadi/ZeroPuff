@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar_community/isar.dart';
 
 import '../models/local_models.dart';
+import 'daily_loop_repository.dart';
 import '../services/local_database/local_database_service_io.dart';
 
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {
@@ -30,5 +31,6 @@ class AccountRepository {
       await _database.syncQueueItems.clear();
       await _database.localAppEvents.clear();
     });
+    await const DailyLoopRepository().clear();
   }
 }

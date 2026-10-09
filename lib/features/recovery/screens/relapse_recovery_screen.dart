@@ -75,8 +75,13 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
     } on Object {
       // Analytics must never block moving on.
     }
-    if (mounted) {
-      context.go(AppRoutes.home);
+    if (!mounted) {
+      return;
+    }
+    final router = GoRouter.of(context);
+    router.go(AppRoutes.home);
+    if (_selectedAction == 'plan_danger_window') {
+      router.push(AppRoutes.ritualsSettings);
     }
   }
 
@@ -226,7 +231,7 @@ const _actions = [
     'plan_danger_window',
     Symbols.schedule_rounded,
     'Plan next danger window',
-    'Choose the next risky moment before it chooses you.',
+    'Add the moment this happened so ZeroPuff checks in before it next time.',
   ),
 ];
 
