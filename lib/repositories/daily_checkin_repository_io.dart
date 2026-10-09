@@ -38,9 +38,10 @@ class DailyCheckInRepositoryIO implements DailyCheckInRepository {
 
   @override
   Future<DailyCheckInRecord> saveToday({
-    required int mood,
     required bool smokeFreeToday,
     required int cigarettesSmoked,
+    int? mood,
+    List<String> tags = const [],
     String? note,
   }) async {
     final now = DateTime.now();
@@ -54,6 +55,7 @@ class DailyCheckInRepositoryIO implements DailyCheckInRepository {
       ..mood = mood
       ..smokeFreeToday = smokeFreeToday
       ..cigarettesSmoked = cigarettesSmoked
+      ..tags = tags
       ..note = note
       ..createdAt = now.toUtc()
       ..synced = false;
@@ -79,6 +81,7 @@ class DailyCheckInRepositoryIO implements DailyCheckInRepository {
       mood: row.mood,
       smokeFreeToday: row.smokeFreeToday,
       cigarettesSmoked: row.cigarettesSmoked,
+      tags: row.tags,
       note: row.note,
       createdAt: row.createdAt.toLocal(),
     );

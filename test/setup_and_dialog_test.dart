@@ -67,7 +67,9 @@ void main() {
       ),
     );
 
-    final cancel = tester.getRect(find.widgetWithText(OutlinedButton, 'Cancel'));
+    final cancel = tester.getRect(
+      find.widgetWithText(OutlinedButton, 'Cancel'),
+    );
     final delete = tester.getRect(find.widgetWithText(FilledButton, 'Delete'));
     expect(cancel.top, delete.top);
     expect(cancel.width, moreOrLessEquals(delete.width, epsilon: 0.5));

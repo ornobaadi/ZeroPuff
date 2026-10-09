@@ -16,6 +16,7 @@ import '../../../services/haptics/haptic_service.dart';
 import '../../../services/widget/home_widget_service.dart';
 import '../../celebrations/milestone_celebration_controller.dart';
 import '../../celebrations/widgets/celebration_dialog.dart';
+import '../../logging/widgets/slip_form.dart';
 import '../../notifications/reminder_refresh.dart';
 import '../../share/share_card.dart';
 import '../providers/home_dashboard_provider.dart';
@@ -87,11 +88,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             orElse: () => const SizedBox.shrink(),
           ),
-          IconButton(
-            tooltip: 'Log a cigarette',
-            onPressed: () => _openRoute(AppRoutes.logging, stronger: true),
-            icon: const Icon(Symbols.edit_note_rounded),
-          ),
           const SizedBox(width: AppSpacing.xs),
         ],
       ),
@@ -103,6 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             today: ref.watch(todayCardProvider),
             onOpen: _openRoute,
             onTodayAction: _onTodayAction,
+            onSlip: () => showSlipSheet(context),
           ),
           loading: () => const StateView.loading(label: 'Loading your day'),
           error: (error, _) => StateView.error(
@@ -221,6 +218,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     switch (card.kind) {
       case TodayCardKind.ritualSoon:
         _openRoute(AppRoutes.rescue, stronger: true);
+      case TodayCardKind.sealDay:
+        _openRoute(AppRoutes.checkIn);
       case TodayCardKind.pledge:
         HapticService.success(enabled: enabled);
         await ref.read(dailyLoopRepositoryProvider).pledge(DateTime.now());
@@ -271,12 +270,14 @@ class _HomeContent extends StatelessWidget {
     required this.today,
     required this.onOpen,
     required this.onTodayAction,
+    required this.onSlip,
   });
 
   final HomeDashboardData data;
   final TodayCard? today;
   final void Function(String route, {bool stronger}) onOpen;
   final ValueChanged<TodayCard> onTodayAction;
+  final VoidCallback onSlip;
 
   @override
   Widget build(BuildContext context) {
@@ -303,19 +304,22 @@ class _HomeContent extends StatelessWidget {
               CravingButton(
                 onPressed: () => onOpen(AppRoutes.rescue, stronger: true),
               ),
+              // Deliberately quiet: logging a slip should be easy to find
+              // without competing with the rescue.
+              Center(
+                child: TextButton.icon(
+                  onPressed: onSlip,
+                  icon: const Icon(Symbols.edit_note_rounded),
+                  label: const Text('I slipped'),
+                ),
+              ),
               if (today != null) ...[
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.xs),
                 TodayCardView(
                   card: today,
                   onAction: () => onTodayAction(today),
                 ),
               ],
-              const SizedBox(height: AppSpacing.md),
-              CheckInCard(
-                checkedIn: data.todayCheckIn != null,
-                smokeFreeToday: data.todayCheckIn?.smokeFreeToday,
-                onTap: () => onOpen(AppRoutes.checkIn),
-              ),
               const SizedBox(height: AppSpacing.sectionGap),
               const SectionHeader(title: 'Your progress'),
               _StatsGrid(
@@ -329,18 +333,13 @@ class _HomeContent extends StatelessWidget {
                   ),
                   StatCard(
                     label: 'Money won back',
-                    value:
-                        formatMoney(data.currencySymbol, data.moneySaved),
+                    value: formatMoney(data.currencySymbol, data.moneySaved),
                     suffix: 'estimated',
                     icon: Symbols.savings_rounded,
                     tone: StatTone.money,
                     onTap: () => onOpen(AppRoutes.savingsDetails),
                   ),
                 ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              QuickLogCard(
-                onTap: () => onOpen(AppRoutes.logging, stronger: true),
               ),
             ],
           ),

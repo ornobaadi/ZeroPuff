@@ -64,60 +64,6 @@ class StreakCalculations {
     return streak;
   }
 
-  static int smokeFreeCheckInStreakDays({
-    required DateTime quitDate,
-    required DateTime today,
-    required Set<DateTime> checkInDates,
-    required Set<DateTime> smokeFreeCheckInDates,
-    required Set<DateTime> smokingDates,
-    bool allowTodayPending = true,
-  }) {
-    final startDate = dateOnly(quitDate);
-    final todayDate = dateOnly(today);
-    if (todayDate.isBefore(startDate)) {
-      return 0;
-    }
-
-    final normalizedCheckIns = checkInDates.map(dateOnly).toSet();
-    final normalizedSmokeFreeCheckIns = smokeFreeCheckInDates
-        .map(dateOnly)
-        .toSet();
-    final normalizedSmokingDates = smokingDates.map(dateOnly).toSet();
-
-    if (normalizedSmokingDates.contains(todayDate)) {
-      return 0;
-    }
-
-    var cursor = todayDate;
-    var streak = 0;
-    final checkedInToday = normalizedCheckIns.contains(todayDate);
-    final smokeFreeToday = normalizedSmokeFreeCheckIns.contains(todayDate);
-
-    if (smokeFreeToday) {
-      streak = 1;
-      cursor = previousDay(cursor);
-    } else if (checkedInToday) {
-      return 0;
-    } else if (allowTodayPending) {
-      cursor = previousDay(cursor);
-    } else {
-      return 0;
-    }
-
-    while (!cursor.isBefore(startDate)) {
-      if (normalizedSmokingDates.contains(cursor)) {
-        break;
-      }
-      if (!normalizedSmokeFreeCheckIns.contains(cursor)) {
-        break;
-      }
-      streak += 1;
-      cursor = previousDay(cursor);
-    }
-
-    return streak;
-  }
-
   static int honestyStreakDaysFromActivity({
     required DateTime today,
     required Set<DateTime> checkInDates,

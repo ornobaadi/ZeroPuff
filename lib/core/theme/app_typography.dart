@@ -22,7 +22,6 @@ class AppTypography {
   static const w800 = [FontVariation('wght', 800)];
   static const w900 = [FontVariation('wght', 900)];
 
-
   /// Lining figures: Playfair defaults to old-style digits, which sit at
   /// lowercase height and look shrunken next to words ("$6", "0"). Every
   /// serif style turns them on so numbers anywhere in the app are full height.

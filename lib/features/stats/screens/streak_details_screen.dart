@@ -45,9 +45,7 @@ class StreakDetailsScreen extends ConsumerWidget {
           FilledButton.icon(
             onPressed: () => context.push(AppRoutes.checkIn),
             icon: const Icon(Symbols.check_rounded),
-            label: Text(
-              data.todayCheckIn == null ? 'Check in today' : 'Review today',
-            ),
+            label: Text(data.todaySealed ? 'Review today' : 'Seal today'),
           ),
         ];
       },

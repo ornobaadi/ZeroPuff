@@ -64,7 +64,9 @@ class RescueToolsView extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.componentGap),
+                          padding: const EdgeInsets.all(
+                            AppSpacing.componentGap,
+                          ),
                           child: Icon(
                             tool.icon,
                             color: scheme.onPrimaryContainer,
@@ -76,7 +78,10 @@ class RescueToolsView extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(tool.title, style: theme.textTheme.titleMedium),
+                            Text(
+                              tool.title,
+                              style: theme.textTheme.titleMedium,
+                            ),
                             const SizedBox(height: AppSpacing.xs),
                             Text(
                               tool.subtitle,

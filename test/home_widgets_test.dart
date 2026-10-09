@@ -87,21 +87,6 @@ void main() {
       );
     });
 
-    testWidgets('check-in card prompts, then confirms', (tester) async {
-      await tester.pumpWidget(
-        _host(
-          CheckInCard(checkedIn: false, smokeFreeToday: null, onTap: () {}),
-        ),
-      );
-      expect(find.text('Daily check-in'), findsOneWidget);
-
-      await tester.pumpWidget(
-        _host(CheckInCard(checkedIn: true, smokeFreeToday: true, onTap: () {})),
-      );
-      expect(find.text('Check-in complete'), findsOneWidget);
-      expect(find.text('Today is marked smoke-free.'), findsOneWidget);
-    });
-
     testWidgets('streak chip announces the streak', (tester) async {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(_host(StreakChip(streak: 1, onTap: () {})));

@@ -109,7 +109,9 @@ class RescueFlow {
   }
 
   RescueFlow breatheAgain() {
-    return stage == RescueStage.tools ? _copy(stage: RescueStage.breathe) : this;
+    return stage == RescueStage.tools
+        ? _copy(stage: RescueStage.breathe)
+        : this;
   }
 
   RescueFlow backToTools() {

@@ -3,7 +3,7 @@ import '../../models/smoking_window_data.dart';
 import '../utils/number_formatting.dart';
 import 'streak_calculations.dart';
 
-enum TodayCardKind { ritualSoon, pledge, recap, goal, insight, steady }
+enum TodayCardKind { ritualSoon, sealDay, pledge, recap, goal, insight, steady }
 
 /// The one thing Home puts in front of the user right now.
 class TodayCard {
@@ -33,12 +33,18 @@ class TodayCardCalculations {
   static const ritualLeadMinutes = 45;
   static const ritualTailMinutes = 30;
 
+  /// The hour from which the day can be sealed. Before it the morning
+  /// promise is offered instead.
+  static const sealFromHour = 18;
+
   /// Picks the most useful card for this moment, most urgent first: a smoking
-  /// moment that is close, today's promise, then something worth knowing.
+  /// moment that is close, the morning promise or the evening seal, then
+  /// something worth knowing.
   static TodayCard pick({
     required DateTime now,
     required List<SmokingWindowData> rituals,
     required bool pledgedToday,
+    required bool sealedToday,
     required List<CravingRescueData> cravings,
     required double moneyPerCigarette,
     required String currencySymbol,
@@ -48,12 +54,14 @@ class TodayCardCalculations {
     List<String> insights = const [],
   }) {
     final nowMinutes = now.hour * 60 + now.minute;
-    final today = rituals
-        .where(
-          (ritual) => ritual.enabled && ritual.daysOfWeek.contains(now.weekday),
-        )
-        .toList()
-      ..sort((a, b) => a.startMinutes.compareTo(b.startMinutes));
+    final today =
+        rituals
+            .where(
+              (ritual) =>
+                  ritual.enabled && ritual.daysOfWeek.contains(now.weekday),
+            )
+            .toList()
+          ..sort((a, b) => a.startMinutes.compareTo(b.startMinutes));
 
     for (final ritual in today) {
       final until = ritual.startMinutes - nowMinutes;
@@ -69,7 +77,17 @@ class TodayCardCalculations {
       }
     }
 
-    if (!pledgedToday) {
+    final evening = now.hour >= sealFromHour;
+    if (evening && !sealedToday) {
+      return const TodayCard(
+        kind: TodayCardKind.sealDay,
+        title: 'Seal today',
+        body: 'One tap closes the day and banks it. It takes a few seconds.',
+        actionLabel: 'Seal today',
+      );
+    }
+
+    if (!pledgedToday && !evening) {
       return const TodayCard(
         kind: TodayCardKind.pledge,
         title: "Today's promise",

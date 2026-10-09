@@ -20,8 +20,10 @@ void main() {
     });
 
     test('moves to the check after a full round of breaths', () {
-      expect(afterBreaths(RescueFlow.breathTarget - 1).stage,
-          RescueStage.breathe);
+      expect(
+        afterBreaths(RescueFlow.breathTarget - 1).stage,
+        RescueStage.breathe,
+      );
 
       final flow = afterBreaths(RescueFlow.breathTarget);
       expect(flow.stage, RescueStage.check);
@@ -36,9 +38,9 @@ void main() {
     });
 
     test('an urge that passed or weakened ends on the win', () {
-      final gone = afterBreaths(6)
-          .withStartStrength(UrgeStrength.intense)
-          .answerNow(UrgeNow.gone);
+      final gone = afterBreaths(
+        6,
+      ).withStartStrength(UrgeStrength.intense).answerNow(UrgeNow.gone);
       expect(gone.stage, RescueStage.win);
       expect(gone.intensityBefore, 9);
       expect(gone.intensityAfter, 1);
@@ -72,7 +74,9 @@ void main() {
     });
 
     test('breathing again starts a fresh round and keeps the total', () {
-      final flow = afterBreaths(6).answerNow(UrgeNow.stillStrong).breatheAgain();
+      final flow = afterBreaths(
+        6,
+      ).answerNow(UrgeNow.stillStrong).breatheAgain();
 
       expect(flow.stage, RescueStage.breathe);
       expect(flow.breathsThisRound, 0);

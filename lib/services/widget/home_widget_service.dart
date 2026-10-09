@@ -30,7 +30,10 @@ class HomeWidgetService {
         'daily_spend',
         dailySpend.toStringAsFixed(4),
       );
-      await HomeWidget.saveWidgetData<String>('currency_symbol', currencySymbol);
+      await HomeWidget.saveWidgetData<String>(
+        'currency_symbol',
+        currencySymbol,
+      );
       await HomeWidget.updateWidget(qualifiedAndroidName: _provider);
     } on Object {
       // The widget is optional; the app carries on without it.

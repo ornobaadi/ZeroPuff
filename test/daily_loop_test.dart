@@ -36,15 +36,18 @@ void main() {
   TodayCard pick({
     List<SmokingWindowData> rituals = const [],
     bool pledgedToday = true,
+    bool sealedToday = false,
+    DateTime? at,
     List<CravingRescueData> cravings = const [],
     String? goalName,
     double? goalTarget,
     List<String> insights = const [],
   }) {
     return TodayCardCalculations.pick(
-      now: now,
+      now: at ?? now,
       rituals: rituals,
       pledgedToday: pledgedToday,
+      sealedToday: sealedToday,
       cravings: cravings,
       moneyPerCigarette: 0.5,
       currencySymbol: r'$',
@@ -75,7 +78,11 @@ void main() {
     });
 
     test('a switched-off moment is ignored', () {
-      final off = ritual('After lunch', 13, minute: 10).copyWith(enabled: false);
+      final off = ritual(
+        'After lunch',
+        13,
+        minute: 10,
+      ).copyWith(enabled: false);
 
       expect(pick(rituals: [off]).kind, TodayCardKind.steady);
     });
@@ -83,6 +90,27 @@ void main() {
     test('asks for the promise until it is made', () {
       expect(pick(pledgedToday: false).kind, TodayCardKind.pledge);
       expect(pick().kind, isNot(TodayCardKind.pledge));
+    });
+
+    test('offers the seal in the evening until the day is sealed', () {
+      final evening = DateTime(2026, 10, 7, 19);
+
+      expect(pick(at: evening).kind, TodayCardKind.sealDay);
+      expect(
+        pick(at: evening, sealedToday: true).kind,
+        isNot(TodayCardKind.sealDay),
+      );
+      // Too early in the day to close it.
+      expect(pick().kind, isNot(TodayCardKind.sealDay));
+    });
+
+    test('the morning promise is not asked for in the evening', () {
+      final evening = DateTime(2026, 10, 7, 19);
+
+      expect(
+        pick(at: evening, pledgedToday: false, sealedToday: true).kind,
+        isNot(TodayCardKind.pledge),
+      );
     });
 
     test('recaps cravings beaten yesterday, not ones lost or older', () {
@@ -109,8 +137,10 @@ void main() {
     });
 
     test('falls back to an insight, then to a steady line', () {
-      expect(pick(insights: ['Stress shows up most often.']).kind,
-          TodayCardKind.insight);
+      expect(
+        pick(insights: ['Stress shows up most often.']).kind,
+        TodayCardKind.insight,
+      );
       expect(pick().title, 'Cravings pass in minutes');
     });
   });

@@ -11,6 +11,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/content_width.dart';
 import '../../../core/widgets/stat_card.dart';
 import '../../../core/widgets/state_view.dart';
+import '../../checkin/models/seal_question.dart';
 import '../../stats/widgets/detail_widgets.dart';
 import '../providers/journal_providers.dart';
 import '../widgets/journal_calendar.dart';
@@ -200,7 +201,7 @@ class _EmptyDayCard extends StatelessWidget {
       title: 'Nothing logged',
       body: day.isAfter(DateTime.now())
           ? 'Future days will fill in as you log.'
-          : 'Add a check-in or log if something happened.',
+          : 'Nothing was logged on this day.',
       icon: Symbols.edit_calendar_rounded,
     );
   }
@@ -224,9 +225,13 @@ class _EntryTimeline extends StatelessWidget {
           icon: Symbols.fact_check_rounded,
           color: scheme.primary,
           title: checkIn.smokeFreeToday
-              ? 'Daily check-in: smoke-free'
-              : 'Daily check-in: ${checkIn.cigarettesSmoked} smoked',
-          subtitle: checkIn.note ?? 'How it felt: ${checkIn.mood} of 5',
+              ? 'Day sealed smoke-free'
+              : 'Day closed: ${checkIn.cigarettesSmoked} smoked',
+          subtitle:
+              checkIn.note ??
+              (DayFeeling.labelFor(checkIn.mood) == null
+                  ? 'No note'
+                  : 'Felt ${DayFeeling.labelFor(checkIn.mood)!.toLowerCase()}'),
         ),
       );
     }

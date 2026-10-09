@@ -326,51 +326,37 @@ class NotificationService {
     NotificationScheduleSnapshot snapshot,
   ) {
     final progress = _progressLine(snapshot);
-    if (snapshot.smokeFreeStreakDays >= 2) {
+    if (snapshot.smokeFreeStreakDays >= 1) {
       return _NotificationCopy(
-        title: 'Protect your ${snapshot.smokeFreeStreakDays}-day streak',
-        body: '$progress One quick check-in keeps the record yours.',
+        title: 'Seal day ${snapshot.smokeFreeStreakDays + 1}',
+        body: '$progress One tap closes today and banks it.',
       );
     }
     if (snapshot.moneySaved >= 1) {
       return _NotificationCopy(
-        title: 'You won back ${_money(snapshot)} so far',
+        title: 'Seal today',
         body:
-            'Log today before the day gets noisy. Your progress is adding up.',
-      );
-    }
-    if (snapshot.cigarettesAvoided > 0) {
-      return _NotificationCopy(
-        title: '${snapshot.cigarettesAvoided} cigarettes not smoked',
-        body: 'Mark today honestly and keep that number moving.',
+            'You have kept ${_money(snapshot)} so far. One tap closes the day.',
       );
     }
     return const _NotificationCopy(
-      title: 'One honest check-in',
-      body: 'No judgement. Just mark what happened and keep going.',
+      title: 'Seal today',
+      body: 'One tap closes the day. No judgement either way.',
     );
   }
 
   static _NotificationCopy _streakProtectionCopy(
     NotificationScheduleSnapshot snapshot,
   ) {
-    if (snapshot.smokeFreeStreakDays >= 2) {
-      return _NotificationCopy(
-        title: 'Do not leave today blank',
-        body:
-            'Your ${snapshot.smokeFreeStreakDays}-day streak deserves one honest tap before bed.',
-      );
-    }
-    if (snapshot.moneySaved >= 1) {
-      return _NotificationCopy(
-        title: 'Close the day with proof',
-        body:
-            'You have won back ${_money(snapshot)} from cigarettes. Record today in ZeroPuff.',
+    if (snapshot.smokeFreeStreakDays >= 1) {
+      return const _NotificationCopy(
+        title: 'Today is not sealed yet',
+        body: 'One tap before bed banks it. Your run is safe either way.',
       );
     }
     return const _NotificationCopy(
       title: 'Close today gently',
-      body: 'A check-in or log keeps your timeline honest. That is enough.',
+      body: 'One tap seals the day, however it went.',
     );
   }
 
@@ -440,7 +426,7 @@ class NotificationService {
     const android = AndroidNotificationDetails(
       'zeropuff_reminders',
       'ZeroPuff reminders',
-      channelDescription: 'Daily check-ins and gentle streak reminders.',
+      channelDescription: 'Reminders to seal the day.',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
     );

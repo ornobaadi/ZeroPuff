@@ -8,7 +8,9 @@ import 'package:zeropuff/features/profile/screens/app_info_screen.dart';
 import 'package:zeropuff/features/progress/screens/progress_screen.dart';
 
 void main() {
-  testWidgets('home stats grid shows cigarettes and money only', (tester) async {
+  testWidgets('home stats grid shows cigarettes and money only', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(390, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 

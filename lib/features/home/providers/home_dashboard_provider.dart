@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/calculations/day_history.dart';
 import '../../../core/calculations/progress_calculations.dart';
 import '../../../core/calculations/streak_calculations.dart';
 import '../../../models/craving_rescue_data.dart';
@@ -10,6 +11,10 @@ import '../../../repositories/craving_repository.dart';
 import '../../../repositories/daily_checkin_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../repositories/smoking_log_repository.dart';
+
+/// How many recent records are loaded. Enough for over a year of runs and
+/// month views.
+const _historyLimit = 400;
 
 /// Refreshes the dashboard once a minute. The live seconds clock is owned by
 /// the timer widget itself, so ticking every second here would needlessly
@@ -138,21 +143,16 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
       .map((record) => StreakCalculations.parseLocalDateKey(record.localDate))
       .nonNulls
       .toSet();
-  final smokeFreeCheckInDates = checkIns
-      .where((record) => record.smokeFreeToday)
-      .map((record) => StreakCalculations.parseLocalDateKey(record.localDate))
-      .nonNulls
-      .toSet();
   final smokingDates = smokingLogs
       .map((record) => StreakCalculations.dateOnly(record.smokedAt))
       .toSet();
-  final smokeFreeStreakDays = StreakCalculations.smokeFreeCheckInStreakDays(
+  final history = buildDayHistory(
     quitDate: baselineQuitDate,
-    today: now,
-    checkInDates: checkInDates,
-    smokeFreeCheckInDates: smokeFreeCheckInDates,
-    smokingDates: smokingDates,
+    now: now,
+    checkIns: checkIns,
+    smokingLogs: smokingLogs,
   );
+  final smokeFreeStreakDays = history.currentRun;
   final checkInStreakDays = StreakCalculations.consecutiveDayStreak(
     today: now,
     activeDates: checkInDates,
@@ -183,9 +183,48 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
       resistanceStreak: resistanceStreak,
       lastSmokeAt: loggedSmokeAt,
       todayCheckIn: checkIn,
+      todaySealed: checkIn != null,
     ),
   );
 });
+
+/// Every day since the quit date, for runs, the week chain and the journal.
+final dayHistoryProvider = Provider<DayHistory?>((ref) {
+  final now = ref.watch(homeTickerProvider).value ?? DateTime.now();
+  final baseline = ref.watch(homeBaselineProvider).value;
+  if (baseline == null) {
+    return null;
+  }
+  return buildDayHistory(
+    quitDate: baseline.quitDate ?? now,
+    now: now,
+    checkIns: ref.watch(recentCheckInsProvider).value ?? const [],
+    smokingLogs: ref.watch(recentSmokingLogsProvider).value ?? const [],
+  );
+});
+
+/// A day counts as a slip when a cigarette was logged on it, or when it was
+/// sealed as not smoke-free.
+DayHistory buildDayHistory({
+  required DateTime quitDate,
+  required DateTime now,
+  required List<DailyCheckInRecord> checkIns,
+  required List<SmokingLogRecord> smokingLogs,
+}) {
+  DateTime? day(DailyCheckInRecord record) {
+    return StreakCalculations.parseLocalDateKey(record.localDate);
+  }
+
+  return DayHistory(
+    quitDate: quitDate,
+    today: now,
+    slipDays: [
+      ...smokingLogs.map((log) => log.smokedAt),
+      ...checkIns.where((record) => !record.smokeFreeToday).map(day).nonNulls,
+    ],
+    sealedDays: checkIns.map(day).nonNulls,
+  );
+}
 
 final latestSmokeAtProvider = FutureProvider<DateTime?>((ref) async {
   return ref.watch(smokingLogRepositoryProvider).getLatestSmokedAt();
@@ -198,19 +237,23 @@ final todayCheckInProvider = FutureProvider<DailyCheckInRecord?>((ref) async {
 final recentCheckInsProvider = FutureProvider<List<DailyCheckInRecord>>((
   ref,
 ) async {
-  return ref.watch(dailyCheckInRepositoryProvider).getRecent(limit: 90);
+  return ref
+      .watch(dailyCheckInRepositoryProvider)
+      .getRecent(limit: _historyLimit);
 });
 
 final recentSmokingLogsProvider = FutureProvider<List<SmokingLogRecord>>((
   ref,
 ) async {
-  return ref.watch(smokingLogRepositoryProvider).getRecent(limit: 90);
+  return ref
+      .watch(smokingLogRepositoryProvider)
+      .getRecent(limit: _historyLimit);
 });
 
 final recentCravingsProvider = FutureProvider<List<CravingRescueData>>((
   ref,
 ) async {
-  return ref.watch(cravingRepositoryProvider).recent(limit: 90);
+  return ref.watch(cravingRepositoryProvider).recent(limit: _historyLimit);
 });
 
 class HomeDashboardData {
@@ -229,6 +272,7 @@ class HomeDashboardData {
     required this.resistanceStreak,
     this.lastSmokeAt,
     this.todayCheckIn,
+    this.todaySealed = false,
     DateTime? smokeFreeSince,
   }) : _smokeFreeSince = smokeFreeSince;
 
@@ -253,6 +297,9 @@ class HomeDashboardData {
   final int resistanceStreak;
   final DateTime? lastSmokeAt;
   final DailyCheckInRecord? todayCheckIn;
+
+  /// Today has been closed with a seal.
+  final bool todaySealed;
 
   int get smokeFreeHours => smokeFreeDuration.inHours.remainder(24);
   int get smokeFreeMinutes => smokeFreeDuration.inMinutes.remainder(60);

@@ -156,10 +156,7 @@ class _GoalCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'What is this money for?',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('What is this money for?', style: theme.textTheme.titleMedium),
             const SizedBox(height: AppSpacing.xs),
             Text(
               'Name something you want. Every cigarette you skip moves you closer to it.',
@@ -259,9 +256,9 @@ class _GoalSheetState extends State<_GoalSheet> {
       setState(() => _error = 'Add a name and how much it costs.');
       return;
     }
-    Navigator.of(context).pop(
-      _GoalEdit(SavingsGoal(name: name, target: target)),
-    );
+    Navigator.of(
+      context,
+    ).pop(_GoalEdit(SavingsGoal(name: name, target: target)));
   }
 
   @override
@@ -358,12 +355,7 @@ class _TargetCard extends StatelessWidget {
             children: [
               Icon(Symbols.flag_rounded, color: colors.accent),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.titleMedium,
-                ),
-              ),
+              Expanded(child: Text(title, style: theme.textTheme.titleMedium)),
             ],
           ),
           const SizedBox(height: AppSpacing.md),

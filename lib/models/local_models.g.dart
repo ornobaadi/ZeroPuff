@@ -9904,6 +9904,7 @@ const DailyCheckInSchema = CollectionSchema(
       type: IsarType.bool,
     ),
     r'synced': PropertySchema(id: 7, name: r'synced', type: IsarType.bool),
+    r'tags': PropertySchema(id: 8, name: r'tags', type: IsarType.stringList),
   },
 
   estimateSize: _dailyCheckInEstimateSize,
@@ -9962,6 +9963,13 @@ int _dailyCheckInEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  bytesCount += 3 + object.tags.length * 3;
+  {
+    for (var i = 0; i < object.tags.length; i++) {
+      final value = object.tags[i];
+      bytesCount += value.length * 3;
+    }
+  }
   return bytesCount;
 }
 
@@ -9979,6 +9987,7 @@ void _dailyCheckInSerialize(
   writer.writeString(offsets[5], object.note);
   writer.writeBool(offsets[6], object.smokeFreeToday);
   writer.writeBool(offsets[7], object.synced);
+  writer.writeStringList(offsets[8], object.tags);
 }
 
 DailyCheckIn _dailyCheckInDeserialize(
@@ -9993,10 +10002,11 @@ DailyCheckIn _dailyCheckInDeserialize(
   object.createdAt = reader.readDateTime(offsets[2]);
   object.id = id;
   object.localDate = reader.readString(offsets[3]);
-  object.mood = reader.readLong(offsets[4]);
+  object.mood = reader.readLongOrNull(offsets[4]);
   object.note = reader.readStringOrNull(offsets[5]);
   object.smokeFreeToday = reader.readBool(offsets[6]);
   object.synced = reader.readBool(offsets[7]);
+  object.tags = reader.readStringList(offsets[8]) ?? [];
   return object;
 }
 
@@ -10016,13 +10026,15 @@ P _dailyCheckInDeserializeProp<P>(
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 5:
       return (reader.readStringOrNull(offset)) as P;
     case 6:
       return (reader.readBool(offset)) as P;
     case 7:
       return (reader.readBool(offset)) as P;
+    case 8:
+      return (reader.readStringList(offset) ?? []) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -10797,8 +10809,25 @@ extension DailyCheckInQueryFilter
     });
   }
 
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition> moodIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'mood'),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  moodIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'mood'),
+      );
+    });
+  }
+
   QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition> moodEqualTo(
-    int value,
+    int? value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -10808,7 +10837,7 @@ extension DailyCheckInQueryFilter
   }
 
   QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
-  moodGreaterThan(int value, {bool include = false}) {
+  moodGreaterThan(int? value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.greaterThan(
@@ -10821,7 +10850,7 @@ extension DailyCheckInQueryFilter
   }
 
   QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition> moodLessThan(
-    int value, {
+    int? value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -10836,8 +10865,8 @@ extension DailyCheckInQueryFilter
   }
 
   QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition> moodBetween(
-    int lower,
-    int upper, {
+    int? lower,
+    int? upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
@@ -11033,6 +11062,200 @@ extension DailyCheckInQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         FilterCondition.equalTo(property: r'synced', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsElementEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'tags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'tags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'tags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'tags',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsElementStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'tags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsElementEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'tags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'tags',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'tags',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'tags', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'tags', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'tags', length, true, length, true);
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'tags', 0, true, 0, true);
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'tags', 0, false, 999999, true);
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsLengthLessThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'tags', 0, true, length, include);
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsLengthGreaterThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'tags', length, include, 999999, true);
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QAfterFilterCondition>
+  tagsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'tags',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
       );
     });
   }
@@ -11319,6 +11542,12 @@ extension DailyCheckInQueryWhereDistinct
       return query.addDistinctBy(r'synced');
     });
   }
+
+  QueryBuilder<DailyCheckIn, DailyCheckIn, QDistinct> distinctByTags() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'tags');
+    });
+  }
 }
 
 extension DailyCheckInQueryProperty
@@ -11353,7 +11582,7 @@ extension DailyCheckInQueryProperty
     });
   }
 
-  QueryBuilder<DailyCheckIn, int, QQueryOperations> moodProperty() {
+  QueryBuilder<DailyCheckIn, int?, QQueryOperations> moodProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'mood');
     });
@@ -11374,6 +11603,12 @@ extension DailyCheckInQueryProperty
   QueryBuilder<DailyCheckIn, bool, QQueryOperations> syncedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'synced');
+    });
+  }
+
+  QueryBuilder<DailyCheckIn, List<String>, QQueryOperations> tagsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'tags');
     });
   }
 }

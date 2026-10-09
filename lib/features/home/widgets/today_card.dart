@@ -23,45 +23,55 @@ class TodayCardView extends StatelessWidget {
     final accents = AppAccents.of(context);
     final urgent = card.kind == TodayCardKind.ritualSoon;
 
-    final (IconData icon, Color background, Color foreground, Color accent) =
-        switch (card.kind) {
-          TodayCardKind.ritualSoon => (
-            Symbols.schedule_rounded,
-            accents.cravingContainer,
-            accents.onCravingContainer,
-            accents.craving,
-          ),
-          TodayCardKind.pledge => (
-            Symbols.wb_sunny_rounded,
-            scheme.secondaryContainer,
-            scheme.onSecondaryContainer,
-            scheme.secondary,
-          ),
-          TodayCardKind.recap => (
-            Symbols.military_tech_rounded,
-            accents.streakContainer,
-            accents.onStreakContainer,
-            accents.streak,
-          ),
-          TodayCardKind.goal => (
-            Symbols.savings_rounded,
-            accents.moneyContainer,
-            accents.onMoneyContainer,
-            accents.money,
-          ),
-          TodayCardKind.insight => (
-            Symbols.insights_rounded,
-            scheme.surfaceContainerLow,
-            scheme.onSurface,
-            scheme.primary,
-          ),
-          TodayCardKind.steady => (
-            Symbols.air_rounded,
-            scheme.surfaceContainerLow,
-            scheme.onSurface,
-            scheme.primary,
-          ),
-        };
+    final (
+      IconData icon,
+      Color background,
+      Color foreground,
+      Color accent,
+    ) = switch (card.kind) {
+      TodayCardKind.ritualSoon => (
+        Symbols.schedule_rounded,
+        accents.cravingContainer,
+        accents.onCravingContainer,
+        accents.craving,
+      ),
+      TodayCardKind.sealDay => (
+        Symbols.verified_rounded,
+        scheme.primaryContainer,
+        scheme.onPrimaryContainer,
+        scheme.primary,
+      ),
+      TodayCardKind.pledge => (
+        Symbols.wb_sunny_rounded,
+        scheme.secondaryContainer,
+        scheme.onSecondaryContainer,
+        scheme.secondary,
+      ),
+      TodayCardKind.recap => (
+        Symbols.military_tech_rounded,
+        accents.streakContainer,
+        accents.onStreakContainer,
+        accents.streak,
+      ),
+      TodayCardKind.goal => (
+        Symbols.savings_rounded,
+        accents.moneyContainer,
+        accents.onMoneyContainer,
+        accents.money,
+      ),
+      TodayCardKind.insight => (
+        Symbols.insights_rounded,
+        scheme.surfaceContainerLow,
+        scheme.onSurface,
+        scheme.primary,
+      ),
+      TodayCardKind.steady => (
+        Symbols.air_rounded,
+        scheme.surfaceContainerLow,
+        scheme.onSurface,
+        scheme.primary,
+      ),
+    };
     final action = card.actionLabel;
     final progress = card.progress;
 
@@ -75,7 +85,11 @@ class TodayCardView extends StatelessWidget {
               Icon(icon, size: 18, color: accent),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                urgent ? 'RIGHT NOW' : 'TODAY',
+                urgent
+                    ? 'RIGHT NOW'
+                    : card.kind == TodayCardKind.sealDay
+                    ? 'TONIGHT'
+                    : 'TODAY',
                 style: AppTypography.eyebrow.copyWith(color: accent),
               ),
             ],

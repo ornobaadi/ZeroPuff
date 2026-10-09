@@ -92,10 +92,7 @@ class RescueCheckView extends StatelessWidget {
                 showSelectedIcon: false,
                 segments: [
                   for (final strength in UrgeStrength.values)
-                    ButtonSegment(
-                      value: strength,
-                      label: Text(strength.label),
-                    ),
+                    ButtonSegment(value: strength, label: Text(strength.label)),
                 ],
                 selected: {startStrength},
                 onSelectionChanged: (selection) =>

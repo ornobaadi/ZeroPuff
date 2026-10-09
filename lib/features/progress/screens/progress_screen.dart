@@ -124,8 +124,7 @@ class _ProgressContent extends ConsumerWidget {
                 ),
                 right: StatCard(
                   label: 'Money won back',
-                  value:
-                      formatMoney(data.currencySymbol, data.moneySaved),
+                  value: formatMoney(data.currencySymbol, data.moneySaved),
                   icon: Symbols.savings_rounded,
                   tone: StatTone.money,
                   onTap: () => onOpen(AppRoutes.savingsDetails),
@@ -141,11 +140,11 @@ class _ProgressContent extends ConsumerWidget {
                   onTap: () => onOpen(AppRoutes.avoidedDetails),
                 ),
                 right: StatCard(
-                  label: 'Check-ins',
+                  label: 'Days sealed',
                   value: '${recent.length}',
-                  icon: Symbols.fact_check_rounded,
+                  icon: Symbols.verified_rounded,
                   tone: StatTone.craving,
-                  onTap: () => onOpen(AppRoutes.checkInDetails),
+                  onTap: () => onOpen(AppRoutes.streakDetails),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),

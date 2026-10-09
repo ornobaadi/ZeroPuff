@@ -276,9 +276,7 @@ class _WaterToolState extends State<_WaterTool> {
         FilledButton.icon(
           onPressed: _sip,
           icon: const Icon(Symbols.water_drop_rounded),
-          label: Text(
-            _sips + 1 >= _sipsToFinish ? 'Last sip' : 'Took a sip',
-          ),
+          label: Text(_sips + 1 >= _sipsToFinish ? 'Last sip' : 'Took a sip'),
         ),
       ],
     );
@@ -391,7 +389,9 @@ class _ReasonTool extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(child: _ToolPanel(child: ReasonVisual(reason: reason))),
+        Expanded(
+          child: _ToolPanel(child: ReasonVisual(reason: reason)),
+        ),
         const SizedBox(height: AppSpacing.md),
         FilledButton.icon(
           onPressed: onDone,

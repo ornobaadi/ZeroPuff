@@ -180,10 +180,7 @@ class _RescueWinViewState extends State<RescueWinView>
                   text: '${widget.streak} cravings beaten in a row',
                 ),
               const SizedBox(height: AppSpacing.xl),
-              FilledButton(
-                onPressed: widget.onDone,
-                child: const Text('Done'),
-              ),
+              FilledButton(onPressed: widget.onDone, child: const Text('Done')),
               if (widget.onShare != null) ...[
                 const SizedBox(height: AppSpacing.xs),
                 TextButton.icon(

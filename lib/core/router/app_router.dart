@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/screens/sign_in_screen.dart';
-import '../../features/checkin/screens/daily_checkin_screen.dart';
+import '../../features/checkin/screens/seal_day_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/journal/screens/quit_journal_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
@@ -20,7 +20,6 @@ import '../../features/logging/screens/smoking_log_screen.dart';
 import '../../features/shell/app_shell.dart';
 import '../../features/stats/screens/achievements_details_screen.dart';
 import '../../features/stats/screens/avoided_details_screen.dart';
-import '../../features/stats/screens/check_in_details_screen.dart';
 import '../../features/stats/screens/craving_analysis_screen.dart';
 import '../../features/stats/screens/milestone_details_screen.dart';
 import '../../features/stats/screens/savings_details_screen.dart';
@@ -159,7 +158,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         path: AppRoutes.checkIn,
         pageBuilder: (context, state) =>
-            _materialPage(state, const DailyCheckInScreen()),
+            _materialPage(state, const SealDayScreen()),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
@@ -202,12 +201,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.achievementsDetails,
         pageBuilder: (context, state) =>
             _materialPage(state, const AchievementsDetailsScreen()),
-      ),
-      GoRoute(
-        parentNavigatorKey: rootNavigatorKey,
-        path: AppRoutes.checkInDetails,
-        pageBuilder: (context, state) =>
-            _materialPage(state, const CheckInDetailsScreen()),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
