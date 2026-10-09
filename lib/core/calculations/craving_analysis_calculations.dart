@@ -70,6 +70,25 @@ class CravingAnalysisCalculations {
     );
   }
 
+  /// The trigger most often behind cravings around this time of day, to
+  /// pre-select so the user rarely has to pick. Empty until there is a pattern.
+  static List<String> likelyTriggers({
+    required List<CravingRescueData> cravings,
+    required DateTime now,
+  }) {
+    final nowMinutes = now.hour * 60 + now.minute;
+    final nearby = cravings.where((craving) {
+      final minutes = craving.startedAt.hour * 60 + craving.startedAt.minute;
+      final apart = (minutes - nowMinutes).abs();
+      return (apart > 12 * 60 ? 24 * 60 - apart : apart) <= 90;
+    }).toList();
+    final top = _topTriggers(nearby);
+    if (top.isEmpty || top.first.count < 2) {
+      return const [];
+    }
+    return [top.first.trigger];
+  }
+
   static List<CravingTriggerStat> _topTriggers(
     List<CravingRescueData> cravings,
   ) {

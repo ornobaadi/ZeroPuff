@@ -20,9 +20,11 @@ class CravingRepository {
   final Isar _database;
   final Uuid _uuid = const Uuid();
 
+  /// Opens a session the moment a rescue starts. Strength and triggers are
+  /// filled in by [completeRescue], once the user has had a chance to breathe.
   Future<String> startRescue({
-    required int intensity,
-    required List<String> triggers,
+    int intensity = 6,
+    List<String> triggers = const [],
   }) async {
     final sessionId = _uuid.v7();
     final session = CravingRescueSession()
@@ -33,22 +35,18 @@ class CravingRepository {
       ..outcome = 'unknown'
       ..synced = false;
 
-    final queueItem = SyncQueueItem()
-      ..entityType = 'craving_log'
-      ..entityId = sessionId
-      ..operation = 'upsert'
-      ..createdAt = DateTime.now();
-
-    await _database.writeTxn(() async {
-      await _database.cravingRescueSessions.put(session);
-      await _database.syncQueueItems.put(queueItem);
-    });
+    await _save(session);
     return sessionId;
   }
 
   Future<void> completeRescue({
     required String sessionId,
     required String outcome,
+    int? intensity,
+    int? intensityAfter,
+    List<String>? triggers,
+    List<String>? toolsUsed,
+    int? breaths,
   }) async {
     final session = await _database.cravingRescueSessions
         .filter()
@@ -61,18 +59,14 @@ class CravingRepository {
     session
       ..completedAt = DateTime.now()
       ..outcome = outcome
+      ..intensity = intensity ?? session.intensity
+      ..intensityAfter = intensityAfter ?? session.intensityAfter
+      ..triggers = triggers ?? session.triggers
+      ..toolsUsed = toolsUsed ?? session.toolsUsed
+      ..breaths = breaths ?? session.breaths
       ..synced = false;
 
-    final queueItem = SyncQueueItem()
-      ..entityType = 'craving_log'
-      ..entityId = sessionId
-      ..operation = 'upsert'
-      ..createdAt = DateTime.now();
-
-    await _database.writeTxn(() async {
-      await _database.cravingRescueSessions.put(session);
-      await _database.syncQueueItems.put(queueItem);
-    });
+    await _save(session);
   }
 
   Future<List<CravingRescueData>> recent({int limit = 20}) async {
@@ -90,8 +84,32 @@ class CravingRepository {
             intensity: session.intensity,
             triggers: session.triggers,
             outcome: session.outcome,
+            intensityAfter: session.intensityAfter,
+            toolsUsed: session.toolsUsed,
+            breaths: session.breaths,
           ),
         )
         .toList();
+  }
+
+  /// How many cravings the user has got through, ever.
+  Future<int> resistedCount() {
+    return _database.cravingRescueSessions
+        .filter()
+        .outcomeEqualTo('resisted')
+        .count();
+  }
+
+  Future<void> _save(CravingRescueSession session) async {
+    final queueItem = SyncQueueItem()
+      ..entityType = 'craving_log'
+      ..entityId = session.sessionId
+      ..operation = 'upsert'
+      ..createdAt = DateTime.now();
+
+    await _database.writeTxn(() async {
+      await _database.cravingRescueSessions.put(session);
+      await _database.syncQueueItems.put(queueItem);
+    });
   }
 }

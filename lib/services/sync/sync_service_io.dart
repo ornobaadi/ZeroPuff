@@ -220,6 +220,11 @@ class SyncService {
           ..intensity = _int(row['intensity'], fallback: 5)
           ..triggers = _stringList(row['triggers'])
           ..outcome = row['outcome']?.toString() ?? 'unknown'
+          ..intensityAfter = row['intensity_after'] == null
+              ? null
+              : _int(row['intensity_after'], fallback: 5)
+          ..toolsUsed = _stringList(row['tools_used'])
+          ..breaths = _int(row['breaths'], fallback: 0)
           ..synced = true;
         await _database.cravingRescueSessions.putBySessionId(session);
       }
@@ -437,6 +442,9 @@ class SyncService {
       'started_at': session.startedAt.toUtc().toIso8601String(),
       'completed_at': session.completedAt?.toUtc().toIso8601String(),
       'outcome': session.outcome,
+      'intensity_after': session.intensityAfter,
+      'tools_used': session.toolsUsed,
+      'breaths': session.breaths,
       'created_at': session.startedAt.toUtc().toIso8601String(),
     });
 

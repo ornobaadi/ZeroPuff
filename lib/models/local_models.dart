@@ -73,6 +73,11 @@ class CravingRescueSession {
   int intensity = 5;
   late List<String> triggers;
   String outcome = 'unknown';
+
+  /// How strong the urge was after the rescue, on the same 1-10 scale.
+  int? intensityAfter;
+  List<String> toolsUsed = [];
+  int breaths = 0;
   bool synced = false;
 }
 

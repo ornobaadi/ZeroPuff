@@ -2,65 +2,80 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../models/rescue_phase.dart';
-import 'rescue_active_view.dart';
-import 'rescue_outcome_view.dart';
+import '../models/rescue_flow.dart';
+import '../models/rescue_tool.dart';
+import 'rescue_breathe_view.dart';
+import 'rescue_check_view.dart';
 import 'rescue_reasons.dart';
+import 'rescue_tool_view.dart';
+import 'rescue_tools_view.dart';
+import 'rescue_win_view.dart';
 
-@Preview(name: 'Active low intensity', group: 'Rescue')
-Widget rescueActiveLowIntensityPreview() {
+@Preview(name: 'Breathe', group: 'Rescue')
+Widget rescueBreathePreview() {
   return _RescuePreviewShell(
-    child: RescueActiveView(
-      intensity: 5,
-      progress: const RescueProgressState(phaseIndex: 0),
-      quitReason: rescueFallbackReason,
-      onCompletePhase: () {},
+    child: RescueBreatheView(
+      breathsThisRound: 2,
+      hapticsEnabled: false,
+      pocketMode: false,
+      onBreath: () {},
+      onPocketModeChanged: (_) {},
+      onSkip: () {},
     ),
   );
 }
 
-@Preview(name: 'Active high intensity checkpoint', group: 'Rescue')
-Widget rescueActiveHighIntensityPreview() {
+@Preview(name: 'Check', group: 'Rescue')
+Widget rescueCheckPreview() {
   return _RescuePreviewShell(
-    child: RescueActiveView(
-      intensity: 10,
-      progress: const RescueProgressState(
-        phaseIndex: 0,
-        remainingSeconds: 91,
-        phaseRemainingSeconds: 0,
-        waitingForConfirmation: true,
-      ),
-      quitReason: rescueFallbackReason,
-      onCompletePhase: () {},
+    child: RescueCheckView(
+      startStrength: UrgeStrength.strong,
+      triggers: const {'coffee'},
+      onStartStrengthChanged: (_) {},
+      onTriggerToggled: (_) {},
+      onAnswer: (_) {},
+      onSmoked: () {},
     ),
   );
 }
 
-@Preview(name: 'Breathing phase', group: 'Rescue')
-Widget rescueBreathingPhasePreview() {
+@Preview(name: 'Other tools', group: 'Rescue')
+Widget rescueToolsPreview() {
   return _RescuePreviewShell(
-    child: RescueActiveView(
-      intensity: 6,
-      progress: const RescueProgressState(
-        phaseIndex: 1,
-        remainingSeconds: 80,
-        phaseRemainingSeconds: 20,
-        completedPhaseIds: {'water'},
-      ),
-      quitReason: rescueFallbackReason,
-      onCompletePhase: () {},
+    child: RescueToolsView(
+      toolsUsed: const ['water'],
+      onPick: (_) {},
+      onBreatheAgain: () {},
     ),
   );
 }
 
-@Preview(name: 'Outcome', group: 'Rescue')
-Widget rescueOutcomePreview() {
+@Preview(name: 'Grounding tool', group: 'Rescue')
+Widget rescueGroundingPreview() {
   return _RescuePreviewShell(
-    child: RescueOutcomeView(
-      completedPhaseIds: rescuePhases.map((phase) => phase.id).toSet(),
-      urgeAfter: 3,
-      onUrgeChanged: (_) {},
-      onOutcome: (_) {},
+    child: RescueToolView(
+      tool: rescueToolById('grounding'),
+      quitReason: rescueFallbackReason,
+      hapticsEnabled: false,
+      onDone: () {},
+      onBack: () {},
+      onStartDelay: () async => true,
+    ),
+  );
+}
+
+@Preview(name: 'Win', group: 'Rescue')
+Widget rescueWinPreview() {
+  return _RescuePreviewShell(
+    child: RescueWinView(
+      intensityBefore: 9,
+      intensityAfter: 1,
+      currencySymbol: r'$',
+      hapticsEnabled: false,
+      beatenCount: 12,
+      moneyKept: 0.6,
+      streak: 4,
+      onDone: () {},
     ),
   );
 }

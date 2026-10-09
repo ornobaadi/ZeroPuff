@@ -6243,30 +6243,41 @@ const CravingRescueSessionSchema = CollectionSchema(
   name: r'CravingRescueSession',
   id: 8027835023354374808,
   properties: {
+    r'breaths': PropertySchema(id: 0, name: r'breaths', type: IsarType.long),
     r'completedAt': PropertySchema(
-      id: 0,
+      id: 1,
       name: r'completedAt',
       type: IsarType.dateTime,
     ),
     r'intensity': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'intensity',
       type: IsarType.long,
     ),
-    r'outcome': PropertySchema(id: 2, name: r'outcome', type: IsarType.string),
-    r'sessionId': PropertySchema(
+    r'intensityAfter': PropertySchema(
       id: 3,
+      name: r'intensityAfter',
+      type: IsarType.long,
+    ),
+    r'outcome': PropertySchema(id: 4, name: r'outcome', type: IsarType.string),
+    r'sessionId': PropertySchema(
+      id: 5,
       name: r'sessionId',
       type: IsarType.string,
     ),
     r'startedAt': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'startedAt',
       type: IsarType.dateTime,
     ),
-    r'synced': PropertySchema(id: 5, name: r'synced', type: IsarType.bool),
+    r'synced': PropertySchema(id: 7, name: r'synced', type: IsarType.bool),
+    r'toolsUsed': PropertySchema(
+      id: 8,
+      name: r'toolsUsed',
+      type: IsarType.stringList,
+    ),
     r'triggers': PropertySchema(
-      id: 6,
+      id: 9,
       name: r'triggers',
       type: IsarType.stringList,
     ),
@@ -6309,6 +6320,13 @@ int _cravingRescueSessionEstimateSize(
   var bytesCount = offsets.last;
   bytesCount += 3 + object.outcome.length * 3;
   bytesCount += 3 + object.sessionId.length * 3;
+  bytesCount += 3 + object.toolsUsed.length * 3;
+  {
+    for (var i = 0; i < object.toolsUsed.length; i++) {
+      final value = object.toolsUsed[i];
+      bytesCount += value.length * 3;
+    }
+  }
   bytesCount += 3 + object.triggers.length * 3;
   {
     for (var i = 0; i < object.triggers.length; i++) {
@@ -6325,13 +6343,16 @@ void _cravingRescueSessionSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDateTime(offsets[0], object.completedAt);
-  writer.writeLong(offsets[1], object.intensity);
-  writer.writeString(offsets[2], object.outcome);
-  writer.writeString(offsets[3], object.sessionId);
-  writer.writeDateTime(offsets[4], object.startedAt);
-  writer.writeBool(offsets[5], object.synced);
-  writer.writeStringList(offsets[6], object.triggers);
+  writer.writeLong(offsets[0], object.breaths);
+  writer.writeDateTime(offsets[1], object.completedAt);
+  writer.writeLong(offsets[2], object.intensity);
+  writer.writeLong(offsets[3], object.intensityAfter);
+  writer.writeString(offsets[4], object.outcome);
+  writer.writeString(offsets[5], object.sessionId);
+  writer.writeDateTime(offsets[6], object.startedAt);
+  writer.writeBool(offsets[7], object.synced);
+  writer.writeStringList(offsets[8], object.toolsUsed);
+  writer.writeStringList(offsets[9], object.triggers);
 }
 
 CravingRescueSession _cravingRescueSessionDeserialize(
@@ -6341,14 +6362,17 @@ CravingRescueSession _cravingRescueSessionDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = CravingRescueSession();
-  object.completedAt = reader.readDateTimeOrNull(offsets[0]);
+  object.breaths = reader.readLong(offsets[0]);
+  object.completedAt = reader.readDateTimeOrNull(offsets[1]);
   object.id = id;
-  object.intensity = reader.readLong(offsets[1]);
-  object.outcome = reader.readString(offsets[2]);
-  object.sessionId = reader.readString(offsets[3]);
-  object.startedAt = reader.readDateTime(offsets[4]);
-  object.synced = reader.readBool(offsets[5]);
-  object.triggers = reader.readStringList(offsets[6]) ?? [];
+  object.intensity = reader.readLong(offsets[2]);
+  object.intensityAfter = reader.readLongOrNull(offsets[3]);
+  object.outcome = reader.readString(offsets[4]);
+  object.sessionId = reader.readString(offsets[5]);
+  object.startedAt = reader.readDateTime(offsets[6]);
+  object.synced = reader.readBool(offsets[7]);
+  object.toolsUsed = reader.readStringList(offsets[8]) ?? [];
+  object.triggers = reader.readStringList(offsets[9]) ?? [];
   return object;
 }
 
@@ -6360,18 +6384,24 @@ P _cravingRescueSessionDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 1:
       return (reader.readLong(offset)) as P;
+    case 1:
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 4:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 5:
-      return (reader.readBool(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 6:
+      return (reader.readDateTime(offset)) as P;
+    case 7:
+      return (reader.readBool(offset)) as P;
+    case 8:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 9:
       return (reader.readStringList(offset) ?? []) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -6596,6 +6626,77 @@ extension CravingRescueSessionQueryFilter
           CravingRescueSession,
           QFilterCondition
         > {
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  breathsEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'breaths', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  breathsGreaterThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'breaths',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  breathsLessThan(int value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'breaths',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  breathsBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'breaths',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
   QueryBuilder<
     CravingRescueSession,
     CravingRescueSession,
@@ -6826,6 +6927,103 @@ extension CravingRescueSessionQueryFilter
       return query.addFilterCondition(
         FilterCondition.between(
           property: r'intensity',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  intensityAfterIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'intensityAfter'),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  intensityAfterIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'intensityAfter'),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  intensityAfterEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'intensityAfter', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  intensityAfterGreaterThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'intensityAfter',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  intensityAfterLessThan(int? value, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'intensityAfter',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  intensityAfterBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'intensityAfter',
           lower: lower,
           includeLower: includeLower,
           upper: upper,
@@ -7286,6 +7484,264 @@ extension CravingRescueSessionQueryFilter
     CravingRescueSession,
     QAfterFilterCondition
   >
+  toolsUsedElementEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'toolsUsed',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'toolsUsed',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'toolsUsed',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'toolsUsed',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedElementStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'toolsUsed',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedElementEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'toolsUsed',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'toolsUsed',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'toolsUsed',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'toolsUsed', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'toolsUsed', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'toolsUsed', length, true, length, true);
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'toolsUsed', 0, true, 0, true);
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'toolsUsed', 0, false, 999999, true);
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedLengthLessThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'toolsUsed', 0, true, length, include);
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedLengthGreaterThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'toolsUsed', length, include, 999999, true);
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
+  toolsUsedLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'toolsUsed',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<
+    CravingRescueSession,
+    CravingRescueSession,
+    QAfterFilterCondition
+  >
   triggersElementEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -7559,6 +8015,20 @@ extension CravingRescueSessionQueryLinks
 extension CravingRescueSessionQuerySortBy
     on QueryBuilder<CravingRescueSession, CravingRescueSession, QSortBy> {
   QueryBuilder<CravingRescueSession, CravingRescueSession, QAfterSortBy>
+  sortByBreaths() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'breaths', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, CravingRescueSession, QAfterSortBy>
+  sortByBreathsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'breaths', Sort.desc);
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, CravingRescueSession, QAfterSortBy>
   sortByCompletedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'completedAt', Sort.asc);
@@ -7583,6 +8053,20 @@ extension CravingRescueSessionQuerySortBy
   sortByIntensityDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'intensity', Sort.desc);
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, CravingRescueSession, QAfterSortBy>
+  sortByIntensityAfter() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'intensityAfter', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, CravingRescueSession, QAfterSortBy>
+  sortByIntensityAfterDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'intensityAfter', Sort.desc);
     });
   }
 
@@ -7646,6 +8130,20 @@ extension CravingRescueSessionQuerySortBy
 extension CravingRescueSessionQuerySortThenBy
     on QueryBuilder<CravingRescueSession, CravingRescueSession, QSortThenBy> {
   QueryBuilder<CravingRescueSession, CravingRescueSession, QAfterSortBy>
+  thenByBreaths() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'breaths', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, CravingRescueSession, QAfterSortBy>
+  thenByBreathsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'breaths', Sort.desc);
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, CravingRescueSession, QAfterSortBy>
   thenByCompletedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'completedAt', Sort.asc);
@@ -7684,6 +8182,20 @@ extension CravingRescueSessionQuerySortThenBy
   thenByIntensityDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'intensity', Sort.desc);
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, CravingRescueSession, QAfterSortBy>
+  thenByIntensityAfter() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'intensityAfter', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, CravingRescueSession, QAfterSortBy>
+  thenByIntensityAfterDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'intensityAfter', Sort.desc);
     });
   }
 
@@ -7747,6 +8259,13 @@ extension CravingRescueSessionQuerySortThenBy
 extension CravingRescueSessionQueryWhereDistinct
     on QueryBuilder<CravingRescueSession, CravingRescueSession, QDistinct> {
   QueryBuilder<CravingRescueSession, CravingRescueSession, QDistinct>
+  distinctByBreaths() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'breaths');
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, CravingRescueSession, QDistinct>
   distinctByCompletedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'completedAt');
@@ -7757,6 +8276,13 @@ extension CravingRescueSessionQueryWhereDistinct
   distinctByIntensity() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'intensity');
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, CravingRescueSession, QDistinct>
+  distinctByIntensityAfter() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'intensityAfter');
     });
   }
 
@@ -7789,6 +8315,13 @@ extension CravingRescueSessionQueryWhereDistinct
   }
 
   QueryBuilder<CravingRescueSession, CravingRescueSession, QDistinct>
+  distinctByToolsUsed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'toolsUsed');
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, CravingRescueSession, QDistinct>
   distinctByTriggers() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'triggers');
@@ -7809,6 +8342,12 @@ extension CravingRescueSessionQueryProperty
     });
   }
 
+  QueryBuilder<CravingRescueSession, int, QQueryOperations> breathsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'breaths');
+    });
+  }
+
   QueryBuilder<CravingRescueSession, DateTime?, QQueryOperations>
   completedAtProperty() {
     return QueryBuilder.apply(this, (query) {
@@ -7820,6 +8359,13 @@ extension CravingRescueSessionQueryProperty
   intensityProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'intensity');
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, int?, QQueryOperations>
+  intensityAfterProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'intensityAfter');
     });
   }
 
@@ -7847,6 +8393,13 @@ extension CravingRescueSessionQueryProperty
   QueryBuilder<CravingRescueSession, bool, QQueryOperations> syncedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'synced');
+    });
+  }
+
+  QueryBuilder<CravingRescueSession, List<String>, QQueryOperations>
+  toolsUsedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'toolsUsed');
     });
   }
 

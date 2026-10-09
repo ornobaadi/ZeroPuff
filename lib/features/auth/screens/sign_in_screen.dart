@@ -111,8 +111,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   const SizedBox(height: AppSpacing.xl),
                   const _PromiseCard(
                     icon: Symbols.air_rounded,
-                    title: 'A two-minute pause',
-                    body: 'Guided steps help the urge pass before you choose.',
+                    title: 'A pause you can hold',
+                    body: 'Breathe with the urge until it passes, before you choose.',
                   ),
                   const SizedBox(height: AppSpacing.componentGap),
                   const _PromiseCard(

@@ -62,7 +62,7 @@ class WelcomeStep extends StatelessWidget {
             const _ValueRow(
               icon: Symbols.timer_rounded,
               title: 'Pause when a craving hits',
-              body: 'A two-minute rescue to let the urge pass.',
+              body: 'Hold-to-breathe rescue that lets the urge pass.',
             ),
             const _ValueRow(
               icon: Symbols.local_fire_department_rounded,

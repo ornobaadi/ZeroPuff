@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -16,7 +17,12 @@ class NotificationService {
   static const int _dailyCheckInBaseId = 1100;
   static const int _streakProtectionBaseId = 1200;
   static const int _dangerWindowBaseId = 1300;
+  static const int _delayCheckId = 1400;
   static const int _rollingReminderDays = 7;
+  static const _delayCheckKey = 'notifications.delay_check_at';
+
+  /// Where a notification about a craving should open the app.
+  static const rescueRoute = '/rescue';
 
   static final FlutterLocalNotificationsPlugin plugin =
       FlutterLocalNotificationsPlugin();
@@ -69,7 +75,13 @@ class NotificationService {
     if (kIsWeb) {
       return;
     }
+    // Clearing the schedule would also drop a pending "not for ten minutes"
+    // check, so carry it across.
+    final delayCheckAt = await _pendingDelayCheck();
     await cancelScheduledReminders();
+    if (delayCheckAt != null) {
+      await _scheduleDelayCheck(delayCheckAt);
+    }
 
     if (preferences.dailyCheckInEnabled) {
       final copy = _dailyCheckInCopy(snapshot);
@@ -145,6 +157,51 @@ class NotificationService {
     // ZeroPuff only schedules its own reminders, so clearing everything is
     // equivalent to (and much cheaper than) cancelling each id in turn.
     await plugin.cancelAll();
+    final store = await SharedPreferences.getInstance();
+    await store.remove(_delayCheckKey);
+  }
+
+  /// Asks again after a craving was put off. Returns false when the user will
+  /// not see it because notifications are turned off.
+  static Future<bool> scheduleDelayCheck({
+    Duration delay = const Duration(minutes: 10),
+  }) async {
+    if (kIsWeb) {
+      return false;
+    }
+    final android = plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (await android?.areNotificationsEnabled() == false) {
+      return false;
+    }
+    await _scheduleDelayCheck(DateTime.now().add(delay));
+    return true;
+  }
+
+  static Future<void> _scheduleDelayCheck(DateTime at) async {
+    final store = await SharedPreferences.getInstance();
+    await store.setInt(_delayCheckKey, at.millisecondsSinceEpoch);
+    await plugin.zonedSchedule(
+      id: _delayCheckId,
+      title: 'Ten minutes are up',
+      body: 'Still want it? Open ZeroPuff and check in with the urge first.',
+      scheduledDate: tz.TZDateTime.from(at, tz.local),
+      notificationDetails: _details(),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: rescueRoute,
+    );
+  }
+
+  static Future<DateTime?> _pendingDelayCheck() async {
+    final store = await SharedPreferences.getInstance();
+    final millis = store.getInt(_delayCheckKey);
+    if (millis == null) {
+      return null;
+    }
+    final at = DateTime.fromMillisecondsSinceEpoch(millis);
+    return at.isAfter(DateTime.now()) ? at : null;
   }
 
   static Future<void> _scheduleRollingOneShots({

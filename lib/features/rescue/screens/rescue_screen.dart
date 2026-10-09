@@ -1,10 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/errors/friendly_error.dart';
+import '../../../core/calculations/craving_analysis_calculations.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
@@ -16,16 +14,18 @@ import '../../../repositories/notification_preferences_repository.dart';
 import '../../../repositories/onboarding_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
 import '../../../services/notifications/notification_service.dart';
-import '../models/rescue_phase.dart';
-import '../widgets/rescue_active_view.dart';
-import '../widgets/rescue_outcome_view.dart';
+import '../models/rescue_flow.dart';
+import '../models/rescue_tool.dart';
+import '../widgets/rescue_breathe_view.dart';
+import '../widgets/rescue_check_view.dart';
 import '../widgets/rescue_reasons.dart';
-import '../widgets/rescue_setup_view.dart';
+import '../widgets/rescue_tool_view.dart';
+import '../widgets/rescue_tools_view.dart';
+import '../widgets/rescue_win_view.dart';
 
-enum _RescueStage { setup, active, outcome }
-
-/// A guided two-minute pause for a craving: set up, follow the steps, then
-/// record how it went.
+/// Help for a craving. Opens straight into breathing, then checks the urge;
+/// if it is still strong it offers a different tool, and getting through ends
+/// on a win. Nothing here needs a connection, and saving never gets in the way.
 class RescueScreen extends ConsumerStatefulWidget {
   const RescueScreen({super.key});
 
@@ -34,325 +34,358 @@ class RescueScreen extends ConsumerStatefulWidget {
 }
 
 class _RescueScreenState extends ConsumerState<RescueScreen> {
-  int _intensity = 5;
-  int _urgeAfter = 5;
-  final Set<String> _triggers = {'stress'};
-  _RescueStage _stage = _RescueStage.setup;
-  RescueProgressState _progress = const RescueProgressState();
-  Timer? _timer;
-  String? _sessionId;
+  RescueFlow _flow = const RescueFlow();
+  final Set<String> _triggers = {};
+  bool _triggersTouched = false;
+  bool _pocketMode = false;
   String _quitReason = rescueFallbackReason;
-  bool _isBusy = false;
+  Future<String?>? _session;
+  int? _beatenCount;
+  int _streakBefore = 0;
+  bool _finishing = false;
 
   @override
   void initState() {
     super.initState();
-    _preselectTriggers();
+    _loadContext();
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  /// Starts with the triggers the user named during setup, when known.
-  Future<void> _preselectTriggers() async {
+  /// Reads what personalises the rescue. Breathing never waits for it.
+  Future<void> _loadContext() async {
     try {
       final profile = await ref
           .read(onboardingRepositoryProvider)
           .loadCompletedProfile();
+      final cravings = await ref.read(cravingRepositoryProvider).recent(
+        limit: 90,
+      );
       final known = rescueReasons.map((reason) => reason.value).toSet();
-      final saved = profile?.triggers.where(known.contains).toSet() ?? {};
-      if (saved.isNotEmpty && mounted && _stage == _RescueStage.setup) {
-        setState(() {
-          _triggers
-            ..clear()
-            ..addAll(saved);
-        });
+      final likely = CravingAnalysisCalculations.likelyTriggers(
+        cravings: cravings,
+        now: DateTime.now(),
+      ).where(known.contains).toSet();
+      if (!mounted) {
+        return;
       }
+      setState(() {
+        final reason = profile?.quitReason?.trim();
+        if (reason != null && reason.isNotEmpty) {
+          _quitReason = reason;
+        }
+        if (!_triggersTouched) {
+          _triggers.addAll(likely);
+        }
+        _streakBefore = ref.read(homeDashboardProvider).value?.resistanceStreak ?? 0;
+      });
     } on Object {
-      // The default selection is fine if the profile cannot be read.
+      // The rescue works without any of this.
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final dashboard = ref.watch(homeDashboardProvider).value;
+    final hapticsEnabled = ref.watch(hapticsEnabledControllerProvider);
+    final pocket = _pocketMode && _flow.stage == RescueStage.breathe;
+
+    final Widget body = switch (_flow.stage) {
+      RescueStage.breathe => RescueBreatheView(
+        key: const ValueKey('rescue-breathe'),
+        breathsThisRound: _flow.breathsThisRound,
+        hapticsEnabled: hapticsEnabled,
+        pocketMode: _pocketMode,
+        onBreath: _onBreath,
+        onPocketModeChanged: (value) => setState(() => _pocketMode = value),
+        onSkip: () => _advance(_flow.skipToCheck()),
+      ),
+      RescueStage.check => RescueCheckView(
+        key: const ValueKey('rescue-check'),
+        startStrength: _flow.startStrength,
+        triggers: _triggers,
+        onStartStrengthChanged: (strength) {
+          _selectionHaptic();
+          setState(() => _flow = _flow.withStartStrength(strength));
+        },
+        onTriggerToggled: _toggleTrigger,
+        onAnswer: _answer,
+        onSmoked: _smoked,
+      ),
+      RescueStage.tools => RescueToolsView(
+        key: const ValueKey('rescue-tools'),
+        toolsUsed: _flow.toolsUsed,
+        onPick: (toolId) => _advance(_flow.pickTool(toolId)),
+        onBreatheAgain: () => _advance(_flow.breatheAgain()),
+      ),
+      RescueStage.tool => RescueToolView(
+        key: ValueKey('rescue-tool-${_flow.activeToolId}'),
+        tool: rescueToolById(_flow.activeToolId),
+        quitReason: _quitReason,
+        hapticsEnabled: hapticsEnabled,
+        onDone: () => _advance(_flow.finishTool()),
+        onBack: () => _advance(_flow.backToTools()),
+        onStartDelay: _startDelay,
+      ),
+      RescueStage.win => RescueWinView(
+        key: const ValueKey('rescue-win'),
+        intensityBefore: _flow.intensityBefore,
+        intensityAfter: _flow.intensityAfter ?? _flow.intensityBefore,
+        currencySymbol: dashboard?.currencySymbol ?? '',
+        hapticsEnabled: hapticsEnabled,
+        beatenCount: _beatenCount,
+        moneyKept: dashboard == null || dashboard.packSize <= 0
+            ? null
+            : dashboard.packPrice / dashboard.packSize,
+        streak: _streakBefore + 1,
+        onDone: _close,
+      ),
+    };
+
     return PopScope(
-      canPop: _stage != _RescueStage.active,
+      // Leaving is free before anything has happened and after the win.
+      canPop: !_flow.hasStarted || _flow.stage == RescueStage.win,
       onPopInvokedWithResult: (didPop, _) async {
-        if (!didPop && _stage == _RescueStage.active) {
-          final navigator = Navigator.of(context);
-          final leave = await _confirmLeave();
-          if (leave && mounted) {
-            _timer?.cancel();
-            await _restoreReminders();
-            if (mounted) {
-              navigator.pop();
-            }
+        if (didPop) {
+          if (_flow.stage == RescueStage.win) {
+            _restoreReminders();
           }
+          return;
+        }
+        if (pocket) {
+          setState(() => _pocketMode = false);
+          return;
+        }
+        final navigator = Navigator.of(context);
+        if (await _confirmLeave() && mounted) {
+          await _save(_flow.outcomeIfLeft);
+          _restoreReminders();
+          navigator.pop();
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Two-minute rescue')),
+        backgroundColor: pocket ? Colors.black : null,
+        appBar: pocket ? null : AppBar(title: const Text('Craving rescue')),
         body: SafeArea(
           child: AnimatedSwitcher(
             duration: AppMotion.of(context, AppMotion.standard),
-            child: switch (_stage) {
-              _RescueStage.setup => RescueSetupView(
-                key: const ValueKey('rescue-setup'),
-                intensity: _intensity,
-                triggers: _triggers,
-                onIntensityChanged: (value) {
-                  _selectionHaptic();
-                  setState(() => _intensity = value.round());
-                },
-                onTriggerToggled: _toggleTrigger,
-                onStart: _startRescue,
-              ),
-              _RescueStage.active => RescueActiveView(
-                key: const ValueKey('rescue-active'),
-                intensity: _intensity,
-                progress: _progress,
-                quitReason: _quitReason,
-                onCompletePhase: _completeCurrentPhase,
-              ),
-              _RescueStage.outcome => RescueOutcomeView(
-                key: const ValueKey('rescue-outcome'),
-                completedPhaseIds: _progress.completedPhaseIds,
-                urgeAfter: _urgeAfter,
-                onUrgeChanged: (value) {
-                  _selectionHaptic();
-                  setState(() => _urgeAfter = value);
-                },
-                onOutcome: _completeRescue,
-              ),
-            },
+            child: body,
           ),
         ),
       ),
     );
   }
 
+  // ---- Moving through the rescue ------------------------------------------
+
+  void _advance(RescueFlow next) {
+    if (identical(next, _flow)) {
+      return;
+    }
+    _selectionHaptic();
+    _ensureSession();
+    setState(() => _flow = next);
+  }
+
+  void _onBreath() {
+    _ensureSession();
+    final next = _flow.addBreath();
+    setState(() {
+      _flow = next;
+      if (next.stage != RescueStage.breathe) {
+        _pocketMode = false;
+      }
+    });
+    if (next.stage == RescueStage.check) {
+      _mediumHaptic();
+    }
+  }
+
   void _toggleTrigger(String trigger) {
     _selectionHaptic();
     setState(() {
+      _triggersTouched = true;
       if (!_triggers.remove(trigger)) {
         _triggers.add(trigger);
       }
     });
   }
 
-  Future<void> _startRescue() async {
-    if (_isBusy) {
+  Future<void> _answer(UrgeNow now) async {
+    if (_finishing) {
       return;
     }
-    _isBusy = true;
-    _timer?.cancel();
-    _lightHaptic();
-    try {
-      final repository = ref.read(cravingRepositoryProvider);
-      final eventRepository = ref.read(appEventRepositoryProvider);
-      final profile = await ref
-          .read(onboardingRepositoryProvider)
-          .loadCompletedProfile();
-      await NotificationService.cancelScheduledReminders();
-      final sessionId = await repository.startRescue(
-        intensity: _intensity,
-        triggers: _triggers.toList(),
-      );
-      await eventRepository.track(
-        AppEvent(
-          eventName: 'craving_rescue_started',
-          properties: {'intensity': _intensity, 'triggers': _triggers.toList()},
-        ),
-      );
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _sessionId = sessionId;
-        _urgeAfter = _intensity;
-        _quitReason = _cleanQuitReason(profile?.quitReason);
-        _progress = const RescueProgressState();
-        _stage = _RescueStage.active;
-      });
-
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tickRescue());
-    } on Object catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(friendlyError(error))));
-      }
-    } finally {
-      _isBusy = false;
+    final next = _flow.answerNow(now);
+    if (now == UrgeNow.stillStrong) {
+      _selectionHaptic();
+      setState(() => _flow = next);
+      // Saved now so the craving is on record even if the app is closed here.
+      await _save('still_craving', flow: next);
+      return;
     }
-  }
 
-  void _tickRescue() {
+    _finishing = true;
+    await _save('resisted', flow: next);
+    await _track('craving_outcome_resisted', flow: next);
+    int? beaten;
+    try {
+      beaten = await ref.read(cravingRepositoryProvider).resistedCount();
+    } on Object {
+      // The win still shows, just without its number.
+    }
+    ref.invalidate(recentCravingsProvider);
     if (!mounted) {
       return;
     }
-    final next = _progress.tick(intensity: _intensity);
-    if (identical(next, _progress)) {
-      return;
-    }
-
-    final phaseChanged = next.phaseIndex != _progress.phaseIndex;
-    final justPaused =
-        next.waitingForConfirmation && !_progress.waitingForConfirmation;
-
-    setState(() => _progress = next);
-
-    if (phaseChanged || justPaused) {
-      _selectionHaptic();
-    }
-    if (next.finished) {
-      _timer?.cancel();
-      _mediumHaptic();
-      setState(() => _stage = _RescueStage.outcome);
-    }
+    setState(() {
+      _flow = next;
+      _beatenCount = beaten == null || beaten == 0 ? null : beaten;
+    });
   }
 
-  Future<void> _completeCurrentPhase() async {
-    final phase = _progress.currentPhase;
-    _mediumHaptic();
-    await ref
-        .read(appEventRepositoryProvider)
-        .track(
-          AppEvent(
-            eventName: 'craving_rescue_phase_completed',
-            properties: {
-              'phase': phase.id,
-              'intensity': _intensity,
-              'seconds_remaining': _progress.remainingSeconds,
-            },
-          ),
-        );
-    if (!mounted) {
+  Future<void> _smoked() async {
+    if (_finishing) {
       return;
     }
-
-    final next = _progress.completeCurrent(intensity: _intensity);
-    final phaseChanged = next.phaseIndex != _progress.phaseIndex;
-    setState(() => _progress = next);
-    if (phaseChanged) {
-      _selectionHaptic();
-    }
-    if (next.finished) {
-      _timer?.cancel();
-      setState(() => _stage = _RescueStage.outcome);
-    }
-  }
-
-  Future<void> _completeRescue(String outcome) async {
-    if (_isBusy) {
-      return;
-    }
-    _isBusy = true;
-    if (outcome == 'resisted') {
-      _successHaptic();
-    } else {
-      _selectionHaptic();
-    }
-
-    try {
-      final sessionId = _sessionId;
-      if (sessionId != null) {
-        await ref
-            .read(cravingRepositoryProvider)
-            .completeRescue(sessionId: sessionId, outcome: outcome);
-        ref.invalidate(recentCravingsProvider);
-      }
-      await ref
-          .read(appEventRepositoryProvider)
-          .track(
-            AppEvent(
-              eventName: 'craving_outcome_$outcome',
-              properties: {
-                'urge_after': _urgeAfter,
-                'completed_phases': _progress.completedPhaseIds.toList(),
-              },
-            ),
-          );
-    } on Object catch (error) {
-      _isBusy = false;
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(friendlyError(error))));
-      }
-      return;
-    }
-
-    if (outcome == 'still_craving') {
-      _isBusy = false;
-      if (mounted) {
-        await _startRescue();
-      }
-      return;
-    }
-
-    await _restoreReminders();
-    _isBusy = false;
-
+    _finishing = true;
+    _selectionHaptic();
+    await _save('smoked');
+    await _track('craving_outcome_smoked');
+    ref.invalidate(recentCravingsProvider);
+    _restoreReminders();
     if (!mounted) {
       return;
     }
     final router = GoRouter.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     Navigator.of(context).pop();
-    if (outcome == 'smoked') {
-      router.push(AppRoutes.logging);
-      return;
+    router.push(AppRoutes.logging);
+  }
+
+  /// Reminders are restored by the pop handler.
+  void _close() => Navigator.of(context).pop();
+
+  Future<bool> _startDelay() async {
+    try {
+      return await NotificationService.scheduleDelayCheck();
+    } on Object {
+      return false;
     }
-    messenger.showSnackBar(SnackBar(content: Text(_outcomeMessage(outcome))));
+  }
+
+  // ---- Saving -------------------------------------------------------------
+
+  /// Opens the session on the first real interaction, so an accidental tap on
+  /// "I'm craving" leaves nothing behind.
+  Future<String?> _ensureSession() {
+    return _session ??= _openSession();
+  }
+
+  Future<String?> _openSession() async {
+    try {
+      await NotificationService.cancelScheduledReminders();
+    } on Object {
+      // Reminders are a nicety; the rescue carries on.
+    }
+    try {
+      final sessionId = await ref.read(cravingRepositoryProvider).startRescue();
+      await _track('craving_rescue_started');
+      return sessionId;
+    } on Object {
+      return null;
+    }
+  }
+
+  Future<void> _save(String outcome, {RescueFlow? flow}) async {
+    final state = flow ?? _flow;
+    try {
+      final sessionId = await _ensureSession();
+      if (sessionId == null) {
+        return;
+      }
+      await ref
+          .read(cravingRepositoryProvider)
+          .completeRescue(
+            sessionId: sessionId,
+            outcome: outcome,
+            intensity: state.intensityBefore,
+            intensityAfter: state.intensityAfter,
+            triggers: _triggers.toList(),
+            toolsUsed: state.toolsUsed,
+            breaths: state.breaths,
+          );
+    } on Object {
+      // Never let a failed save stand between the user and the next step.
+    }
+  }
+
+  Future<void> _track(String eventName, {RescueFlow? flow}) async {
+    final state = flow ?? _flow;
+    try {
+      await ref
+          .read(appEventRepositoryProvider)
+          .track(
+            AppEvent(
+              eventName: eventName,
+              properties: {
+                'breaths': state.breaths,
+                'tools': state.toolsUsed,
+                'urge_before': state.intensityBefore,
+                'urge_after': ?state.intensityAfter,
+              },
+            ),
+          );
+    } on Object {
+      // Analytics must never block the rescue.
+    }
   }
 
   Future<void> _restoreReminders() async {
-    final preferences = await ref
-        .read(notificationPreferencesRepositoryProvider)
-        .load();
-    final profile = await ref
-        .read(onboardingRepositoryProvider)
-        .loadCompletedProfile();
-    final dashboard = ref.read(homeDashboardProvider).value;
-    await NotificationService.reschedule(
-      preferences: preferences,
-      quitDate: profile?.quitDate,
-      smokingWindow: profile?.usualSmokingWindow,
-      snapshot: dashboard == null
-          ? const NotificationScheduleSnapshot()
-          : NotificationScheduleSnapshot(
-              todayCheckedIn: dashboard.todayCheckIn != null,
-              smokeFreeDuration: dashboard.smokeFreeDuration,
-              smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
-              checkInStreakDays: dashboard.checkInStreakDays,
-              cigarettesAvoided: dashboard.cigarettesAvoided,
-              moneySaved: dashboard.moneySaved,
-              currencySymbol: dashboard.currencySymbol,
-            ),
-    );
+    if (_session == null) {
+      return;
+    }
+    try {
+      final preferences = await ref
+          .read(notificationPreferencesRepositoryProvider)
+          .load();
+      final profile = await ref
+          .read(onboardingRepositoryProvider)
+          .loadCompletedProfile();
+      final dashboard = ref.read(homeDashboardProvider).value;
+      await NotificationService.reschedule(
+        preferences: preferences,
+        quitDate: profile?.quitDate,
+        smokingWindow: profile?.usualSmokingWindow,
+        snapshot: dashboard == null
+            ? const NotificationScheduleSnapshot()
+            : NotificationScheduleSnapshot(
+                todayCheckedIn: dashboard.todayCheckIn != null,
+                smokeFreeDuration: dashboard.smokeFreeDuration,
+                smokeFreeStreakDays: dashboard.smokeFreeStreakDays,
+                checkInStreakDays: dashboard.checkInStreakDays,
+                cigarettesAvoided: dashboard.cigarettesAvoided,
+                moneySaved: dashboard.moneySaved,
+                currencySymbol: dashboard.currencySymbol,
+              ),
+      );
+    } on Object {
+      // Home reschedules reminders again the next time it loads.
+    }
   }
 
   Future<bool> _confirmLeave() async {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Leave rescue?'),
+            title: const Text('Leave the rescue?'),
             content: const Text(
-              'You are in the two-minute window. Stay if you can.',
+              'The urge will pass whether or not you smoke. Stay for one more breath if you can.',
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Stay'),
-              ),
-              TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
                 child: const Text('Leave'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Stay'),
               ),
             ],
           ),
@@ -360,37 +393,9 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
         false;
   }
 
-  String _cleanQuitReason(String? value) {
-    final reason = value?.trim();
-    if (reason == null || reason.isEmpty) {
-      return rescueFallbackReason;
-    }
-    return reason;
-  }
-
-  String _outcomeMessage(String outcome) {
-    return switch (outcome) {
-      'resisted' => 'Logged. You got through this one.',
-      'smoked' => "Logged. Let's keep going.",
-      _ => 'Logged. You can restart anytime.',
-    };
-  }
-
   bool get _hapticsEnabled => ref.read(hapticsEnabledControllerProvider);
 
-  void _selectionHaptic() {
-    HapticService.selection(enabled: _hapticsEnabled);
-  }
+  void _selectionHaptic() => HapticService.selection(enabled: _hapticsEnabled);
 
-  void _lightHaptic() {
-    HapticService.light(enabled: _hapticsEnabled);
-  }
-
-  void _mediumHaptic() {
-    HapticService.medium(enabled: _hapticsEnabled);
-  }
-
-  void _successHaptic() {
-    HapticService.success(enabled: _hapticsEnabled);
-  }
+  void _mediumHaptic() => HapticService.medium(enabled: _hapticsEnabled);
 }
