@@ -15,6 +15,11 @@ class AchievementRepositoryStub implements AchievementRepository {
   }
 
   @override
+  Future<Map<String, DateTime?>> unlockedAt() async {
+    return {for (final key in _unlocked) key: null};
+  }
+
+  @override
   Future<Set<String>> unlockAll(Set<String> keys) async {
     final missing = keys.difference(_unlocked);
     _unlocked.addAll(keys);

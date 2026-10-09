@@ -3,8 +3,11 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../../core/calculations/slip_pattern.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/theme/app_accents.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -13,10 +16,15 @@ import '../../../core/widgets/content_width.dart';
 import '../../../core/widgets/selectable_tile.dart';
 import '../../../core/widgets/state_view.dart';
 import '../../../models/app_event.dart';
+import '../../../models/smoking_window_data.dart';
 import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/app_settings_repository.dart';
+import '../../../repositories/auth_repository.dart';
 import '../../../repositories/smoking_log_repository.dart';
+import '../../../repositories/smoking_window_repository.dart';
+import '../../../services/device/device_identity_service.dart';
 import '../../home/providers/home_dashboard_provider.dart';
+import '../../notifications/reminder_refresh.dart';
 import '../../rescue/models/rescue_tool.dart';
 import '../../rescue/widgets/rescue_reasons.dart';
 import '../../rescue/widgets/rescue_tool_view.dart';
@@ -149,6 +157,7 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _RecoveryHero(log: log),
+                      if (log != null) _RepeatingSlip(log: log),
                       const SizedBox(height: AppSpacing.sectionGap),
                       Semantics(
                         header: true,
@@ -239,6 +248,110 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown when slips keep landing at about the same time of day and nothing
+/// is set up to warn about it.
+class _RepeatingSlip extends ConsumerStatefulWidget {
+  const _RepeatingSlip({required this.log});
+
+  final SmokingLogRecord log;
+
+  @override
+  ConsumerState<_RepeatingSlip> createState() => _RepeatingSlipState();
+}
+
+class _RepeatingSlipState extends ConsumerState<_RepeatingSlip> {
+  bool _added = false;
+  bool _adding = false;
+
+  Future<void> _add(SlipPattern pattern) async {
+    setState(() => _adding = true);
+    try {
+      await ref
+          .read(smokingWindowRepositoryProvider)
+          .saveRitual(
+            userId:
+                ref.read(currentUserProvider)?.id ??
+                DeviceIdentityService.guestUserId,
+            ritual: SmokingWindowData.ritual(
+              windowId: const Uuid().v4(),
+              label: pattern.momentLabel,
+              startMinutes: pattern.startMinutes,
+            ),
+          );
+      ref.invalidate(ritualsProvider);
+      await refreshReminders(ref);
+      if (mounted) {
+        setState(() => _added = true);
+      }
+    } on Object {
+      // Leave the offer up so it can be tried again.
+    } finally {
+      if (mounted) {
+        setState(() => _adding = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    final logs = ref.watch(recentSmokingLogsProvider).value ?? const [];
+    final moments = ref.watch(ritualsProvider).value;
+    if (moments == null) {
+      return const SizedBox.shrink();
+    }
+    final pattern = SlipPattern.detect(
+      // The saved log may not be in the reloaded list yet.
+      slipTimes: {
+        widget.log.smokedAt,
+        ...logs.map((log) => log.smokedAt),
+      }.toList(),
+      latest: widget.log.smokedAt,
+      moments: _added ? const [] : moments,
+    );
+    if (pattern == null) {
+      return const SizedBox.shrink();
+    }
+    final time = SmokingWindowData.labelForMinutes(pattern.startMinutes);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: AppCard(
+        color: accents.cravingContainer,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This keeps happening around $time',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: accents.onCravingContainer,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              _added
+                  ? 'Added. ZeroPuff will check in a few minutes before it.'
+                  : '${pattern.count} slips at about this time of day. Add it as a smoking moment and ZeroPuff will check in before it.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: accents.onCravingContainer,
+              ),
+            ),
+            if (!_added) ...[
+              const SizedBox(height: AppSpacing.md),
+              FilledButton.tonalIcon(
+                onPressed: _adding ? null : () => _add(pattern),
+                icon: const Icon(Symbols.add_alert_rounded),
+                label: const Text('Add this moment'),
+              ),
+            ],
+          ],
         ),
       ),
     );

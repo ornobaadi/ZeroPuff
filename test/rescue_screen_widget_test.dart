@@ -51,28 +51,29 @@ void main() {
     expect(find.bySemanticsLabel('Breath 1 of 6'), findsOneWidget);
   });
 
-  testWidgets('a strong urge leads to other tools, and an easier one to a win', (
-    tester,
-  ) async {
-    await pumpRescue(tester);
+  testWidgets(
+    'a strong urge leads to other tools, and an easier one to a win',
+    (tester) async {
+      await pumpRescue(tester);
 
-    await tester.tap(find.text('Skip ahead'));
-    await tester.pumpAndSettle();
-    expect(find.text('How is the urge now?'), findsOneWidget);
+      await tester.tap(find.text('Skip ahead'));
+      await tester.pumpAndSettle();
+      expect(find.text('How is the urge now?'), findsOneWidget);
 
-    await tester.tap(find.text('Still strong'));
-    await tester.pumpAndSettle();
-    expect(find.text('Let us try something else'), findsOneWidget);
+      await tester.tap(find.text('Still strong'));
+      await tester.pumpAndSettle();
+      expect(find.text('Let us try something else'), findsOneWidget);
 
-    await tester.tap(find.text('Read your reason'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('I read it'));
-    await tester.pumpAndSettle();
-    expect(find.text('How is the urge now?'), findsOneWidget);
+      await tester.tap(find.text('Read your reason'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('I read it'));
+      await tester.pumpAndSettle();
+      expect(find.text('How is the urge now?'), findsOneWidget);
 
-    await tester.tap(find.text('It passed'));
-    await tester.pumpAndSettle();
-    expect(find.text('Craving beaten'), findsOneWidget);
-    expect(find.text('Done'), findsOneWidget);
-  });
+      await tester.tap(find.text('It passed'));
+      await tester.pumpAndSettle();
+      expect(find.text('Craving beaten'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
+    },
+  );
 }

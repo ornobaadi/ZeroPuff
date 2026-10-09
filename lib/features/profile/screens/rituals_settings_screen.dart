@@ -209,7 +209,9 @@ class _RitualCard extends StatelessWidget {
             children: [
               Icon(
                 RitualPreset.iconForLabel(ritual.label),
-                color: ritual.enabled ? scheme.primary : scheme.onSurfaceVariant,
+                color: ritual.enabled
+                    ? scheme.primary
+                    : scheme.onSurfaceVariant,
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -312,10 +314,9 @@ class _AddRitualSheetState extends State<_AddRitualSheet> {
                   ActionChip(
                     avatar: Icon(preset.icon, size: 18),
                     label: Text(preset.label),
-                    onPressed: () => Navigator.of(context).pop((
-                      label: preset.label,
-                      minutes: preset.startMinutes,
-                    )),
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pop((label: preset.label, minutes: preset.startMinutes)),
                   ),
               ],
             ),

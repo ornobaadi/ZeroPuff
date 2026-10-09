@@ -1,10 +1,26 @@
+import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/calculations/day_history.dart';
 import '../../../core/calculations/journal_calculations.dart';
+import '../../../core/calculations/journal_insights.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../../models/craving_rescue_data.dart';
 import '../../../repositories/daily_checkin_repository.dart';
 import '../../../repositories/smoking_log_repository.dart';
+import '../../checkin/models/seal_question.dart';
+
+/// What the calendar cells show.
+enum JournalLens {
+  days('Days'),
+  cravings('Cravings'),
+  mood('Mood');
+
+  const JournalLens(this.label);
+
+  final String label;
+}
 
 final journalMonthProvider = NotifierProvider<JournalMonthNotifier, DateTime>(
   JournalMonthNotifier.new,
@@ -15,12 +31,17 @@ final selectedJournalDayProvider =
       SelectedJournalDayNotifier.new,
     );
 
+final journalLensProvider = NotifierProvider<JournalLensNotifier, JournalLens>(
+  JournalLensNotifier.new,
+);
+
 final journalDataProvider = Provider<AsyncValue<JournalData>>((ref) {
   final month = ref.watch(journalMonthProvider);
   final checkIns = ref.watch(recentCheckInsProvider);
   final smokingLogs = ref.watch(recentSmokingLogsProvider);
   final cravings = ref.watch(recentCravingsProvider);
   final dashboard = ref.watch(homeDashboardProvider);
+  final history = ref.watch(dayHistoryProvider);
 
   if (checkIns is AsyncLoading ||
       smokingLogs is AsyncLoading ||
@@ -41,10 +62,9 @@ final journalDataProvider = Provider<AsyncValue<JournalData>>((ref) {
     return AsyncError<JournalData>(dashboard.error!, dashboard.stackTrace!);
   }
 
-  final today = DateTime.now();
-  final checkInRows = checkIns.value ?? const [];
-  final smokingRows = smokingLogs.value ?? const [];
-  final cravingRows = cravings.value ?? const [];
+  final checkInRows = checkIns.value ?? const <DailyCheckInRecord>[];
+  final smokingRows = smokingLogs.value ?? const <SmokingLogRecord>[];
+  final cravingRows = cravings.value ?? const <CravingRescueData>[];
   final daySummaries = <String, JournalDaySummary>{};
 
   JournalDaySummary ensureSummary(DateTime date) {
@@ -60,90 +80,127 @@ final journalDataProvider = Provider<AsyncValue<JournalData>>((ref) {
     if (date == null) {
       continue;
     }
-    final summary = ensureSummary(date);
-    summary
-      ..hasCheckIn = true
-      ..smokeFreeCheckIn = checkIn.smokeFreeToday
-      ..checkInCigarettes = checkIn.cigarettesSmoked
-      ..entries += 1
-      ..checkIn = checkIn;
+    ensureSummary(date).checkIn = checkIn;
   }
-
   for (final log in smokingRows) {
     final summary = ensureSummary(log.smokedAt);
     summary
       ..smokes += log.count
-      ..entries += 1
       ..smokingLogs.add(log);
   }
-
   for (final craving in cravingRows) {
     final summary = ensureSummary(craving.startedAt);
     summary
       ..cravings += 1
-      ..entries += 1
-      ..intensityTotal += craving.intensity
       ..cravingsList.add(craving);
   }
 
-  for (final summary in daySummaries.values) {
-    summary.status = JournalCalculations.statusForDay(
-      day: summary.date,
-      today: today,
-      hasCheckIn: summary.hasCheckIn,
-      smokeFreeCheckIn: summary.smokeFreeCheckIn,
-      checkInCigarettes: summary.checkInCigarettes,
-      smokingLogCount: summary.smokes,
-      cravingCount: summary.cravings,
-    );
-  }
-
-  final monthKeys = JournalCalculations.monthGrid(
-    month,
-  ).whereType<DateTime>().map(JournalCalculations.localDateKey).toSet();
-  final monthSummaries = daySummaries.entries
-      .where((entry) => monthKeys.contains(entry.key))
-      .map((entry) => entry.value)
-      .toList();
-  final trackedDays = monthSummaries
-      .where((summary) => summary.status != JournalDayStatus.noData)
-      .length;
-  final smokeFreeDays = monthSummaries
-      .where((summary) => summary.status == JournalDayStatus.smokeFree)
-      .length;
-  final successRate = trackedDays == 0 ? 0.0 : smokeFreeDays / trackedDays;
-
-  return AsyncData(
-    JournalData(
+  final data = JournalData(
+    month: month,
+    summariesByKey: daySummaries,
+    history: history,
+    today: DateTime.now(),
+    insights: MonthInsights.forMonth(
       month: month,
-      summariesByKey: daySummaries,
-      smokeFreeStreak: dashboard.value?.smokeFreeStreakDays ?? 0,
-      totalTrackedDays: trackedDays,
-      smokeFreeDays: smokeFreeDays,
-      successRate: successRate,
+      cravings: cravingRows,
+      checkIns: checkInRows,
+      helpfulTags: SealQuestion.helpfulValues,
     ),
   );
+  return AsyncData(data);
 });
 
+/// Everything the journal shows for the month on screen.
 class JournalData {
-  const JournalData({
+  JournalData({
     required this.month,
     required this.summariesByKey,
-    required this.smokeFreeStreak,
-    required this.totalTrackedDays,
-    required this.smokeFreeDays,
-    required this.successRate,
+    required this.history,
+    required this.today,
+    required this.insights,
   });
 
   final DateTime month;
   final Map<String, JournalDaySummary> summariesByKey;
-  final int smokeFreeStreak;
-  final int totalTrackedDays;
-  final int smokeFreeDays;
-  final double successRate;
+
+  /// Null only while the quit date is still loading.
+  final DayHistory? history;
+  final DateTime today;
+  final MonthInsights insights;
 
   JournalDaySummary? summaryFor(DateTime day) {
     return summariesByKey[JournalCalculations.localDateKey(day)];
+  }
+
+  /// What kind of day it was. Every day since the quit date is filled in:
+  /// smoke-free unless a cigarette was logged.
+  DayState stateFor(DateTime day) {
+    final known = history?.stateFor(day);
+    if (known != null) {
+      return known;
+    }
+    final date = JournalCalculations.dateOnly(day);
+    final now = JournalCalculations.dateOnly(today);
+    final summary = summaryFor(day);
+    return DayState(
+      date: date,
+      kind: date.isAfter(now)
+          ? DayKind.future
+          : (summary?.smokes ?? 0) > 0
+          ? DayKind.slipped
+          : DayKind.beforeQuit,
+      sealed: summary?.checkIn != null,
+      isToday: date == now,
+    );
+  }
+
+  JournalDayStatus statusFor(DateTime day) {
+    return JournalCalculations.statusForDay(
+      kind: stateFor(day).kind,
+      cravingCount: summaryFor(day)?.cravings ?? 0,
+    );
+  }
+
+  Iterable<DateTime> get _daysSoFar sync* {
+    final last = DateTime(month.year, month.month + 1, 0).day;
+    final now = JournalCalculations.dateOnly(today);
+    for (var day = 1; day <= last; day++) {
+      final date = DateTime(month.year, month.month, day);
+      if (date.isAfter(now)) {
+        return;
+      }
+      yield date;
+    }
+  }
+
+  /// Smoke-free days this month that are already in the bank.
+  late final int smokeFreeDays = _daysSoFar.where((day) {
+    final state = stateFor(day);
+    return state.smokeFree && (!state.isToday || state.sealed);
+  }).length;
+
+  late final int cravingsBeaten = _monthCravings
+      .where((craving) => craving.resisted)
+      .length;
+
+  late final int cigarettes = _daysSoFar.fold(0, (sum, day) {
+    final summary = summaryFor(day);
+    return sum +
+        math.max(summary?.smokes ?? 0, summary?.checkIn?.cigarettesSmoked ?? 0);
+  });
+
+  /// The share of finished cravings that were beaten, or null with none.
+  late final double? winRate = () {
+    final finished = _monthCravings
+        .where((craving) => craving.outcome != 'unknown')
+        .length;
+    return finished == 0 ? null : cravingsBeaten / finished;
+  }();
+
+  Iterable<CravingRescueData> get _monthCravings sync* {
+    for (final day in _daysSoFar) {
+      yield* summaryFor(day)?.cravingsList ?? const [];
+    }
   }
 }
 
@@ -156,6 +213,11 @@ class JournalMonthNotifier extends Notifier<DateTime> {
 
   void moveBy(int monthOffset) {
     state = DateTime(state.year, state.month + monthOffset);
+  }
+
+  /// Shows the month [day] falls in.
+  void show(DateTime day) {
+    state = DateTime(day.year, day.month);
   }
 }
 
@@ -171,26 +233,26 @@ class SelectedJournalDayNotifier extends Notifier<DateTime> {
   }
 }
 
+class JournalLensNotifier extends Notifier<JournalLens> {
+  @override
+  JournalLens build() => JournalLens.days;
+
+  void show(JournalLens lens) => state = lens;
+}
+
+/// What was logged on one day.
 class JournalDaySummary {
   JournalDaySummary({required this.date});
 
   final DateTime date;
-  bool hasCheckIn = false;
-  bool smokeFreeCheckIn = false;
-  int checkInCigarettes = 0;
   int smokes = 0;
   int cravings = 0;
-  int entries = 0;
-  int intensityTotal = 0;
-  JournalDayStatus status = JournalDayStatus.noData;
+
+  /// The day's seal, when it was closed.
   DailyCheckInRecord? checkIn;
   final List<SmokingLogRecord> smokingLogs = [];
   final List<CravingRescueData> cravingsList = [];
 
-  double get averageIntensity {
-    if (cravings == 0) {
-      return 0;
-    }
-    return intensityTotal / cravings;
-  }
+  bool get hasEntries =>
+      checkIn != null || smokingLogs.isNotEmpty || cravingsList.isNotEmpty;
 }

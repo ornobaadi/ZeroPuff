@@ -254,9 +254,10 @@ class SyncService {
         final checkIn = DailyCheckIn()
           ..checkInId = checkInId
           ..localDate = localDate
-          ..mood = _int(row['mood'], fallback: 3)
+          ..mood = row['mood'] == null ? null : _int(row['mood'], fallback: 3)
           ..smokeFreeToday = row['smoke_free_today'] == true
           ..cigarettesSmoked = _int(row['cigarettes_smoked'])
+          ..tags = _stringList(row['tags'])
           ..note = row['note']?.toString()
           ..createdAt = _dateTime(row['created_at']) ?? DateTime.now()
           ..synced = true;
@@ -501,6 +502,7 @@ class SyncService {
       'mood': checkIn.mood,
       'smoke_free_today': checkIn.smokeFreeToday,
       'cigarettes_smoked': checkIn.cigarettesSmoked,
+      'tags': checkIn.tags,
       'note': checkIn.note,
       'created_at': checkIn.createdAt.toUtc().toIso8601String(),
       'updated_at': DateTime.now().toUtc().toIso8601String(),

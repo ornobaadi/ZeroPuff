@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/calculations/journal_calculations.dart';
 import '../../../core/theme/app_accents.dart';
@@ -9,6 +9,8 @@ import '../../../core/theme/app_motion.dart';
 import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../checkin/models/seal_question.dart';
+import '../../checkin/widgets/feeling_icon.dart';
 import '../providers/journal_providers.dart';
 
 /// Icon + color + words for one calendar status, so meaning never depends on
@@ -49,7 +51,16 @@ _StatusStyle? _styleFor(BuildContext context, JournalDayStatus status) {
   };
 }
 
-/// Month grid with previous/next controls, weekday header, and a legend.
+Color _feelingColor(BuildContext context, int mood) {
+  final scheme = Theme.of(context).colorScheme;
+  if (mood >= 4) {
+    return scheme.primary;
+  }
+  return mood == 3 ? AppAccents.of(context).craving : scheme.tertiary;
+}
+
+/// Month grid with a lens switch, previous/next controls and a weekday header.
+/// Swiping sideways also changes the month.
 class JournalCalendar extends ConsumerWidget {
   const JournalCalendar({required this.data, super.key});
 
@@ -59,6 +70,7 @@ class JournalCalendar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final selectedDay = ref.watch(selectedJournalDayProvider);
+    final lens = ref.watch(journalLensProvider);
     final cells = JournalCalculations.monthGrid(data.month);
     final weekdayStyle = theme.textTheme.labelMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
@@ -70,6 +82,10 @@ class JournalCalendar extends ConsumerWidget {
         DateFormat.E().format(DateTime(2023, 1, 1 + i)),
     ];
 
+    void move(int months) {
+      ref.read(journalMonthProvider.notifier).moveBy(months);
+    }
+
     return AppCard(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -77,12 +93,22 @@ class JournalCalendar extends ConsumerWidget {
       ),
       child: Column(
         children: [
+          SegmentedButton<JournalLens>(
+            showSelectedIcon: false,
+            segments: [
+              for (final option in JournalLens.values)
+                ButtonSegment(value: option, label: Text(option.label)),
+            ],
+            selected: {lens},
+            onSelectionChanged: (selection) =>
+                ref.read(journalLensProvider.notifier).show(selection.first),
+          ),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               IconButton(
                 tooltip: 'Previous month',
-                onPressed: () =>
-                    ref.read(journalMonthProvider.notifier).moveBy(-1),
+                onPressed: () => move(-1),
                 icon: const Icon(Symbols.chevron_left_rounded),
               ),
               Expanded(
@@ -98,8 +124,7 @@ class JournalCalendar extends ConsumerWidget {
               ),
               IconButton(
                 tooltip: 'Next month',
-                onPressed: () =>
-                    ref.read(journalMonthProvider.notifier).moveBy(1),
+                onPressed: () => move(1),
                 icon: const Icon(Symbols.chevron_right_rounded),
               ),
             ],
@@ -116,46 +141,44 @@ class JournalCalendar extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          GridView.builder(
-            itemCount: cells.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: DateTime.daysPerWeek,
-              mainAxisSpacing: AppSpacing.xs,
-              childAspectRatio: 0.9,
-            ),
-            itemBuilder: (context, index) {
-              final day = cells[index];
-              if (day == null) {
-                return const SizedBox.shrink();
+          GestureDetector(
+            onHorizontalDragEnd: (details) {
+              final velocity = details.primaryVelocity ?? 0;
+              if (velocity.abs() > 200) {
+                move(velocity < 0 ? 1 : -1);
               }
-              final summary = data.summaryFor(day);
-              final status = summary?.status ?? _defaultStatus(day);
-              return _DayCell(
-                day: day,
-                status: status,
-                selected: _sameDay(day, selectedDay),
-                checkedIn: summary?.hasCheckIn ?? false,
-                onTap: () =>
-                    ref.read(selectedJournalDayProvider.notifier).select(day),
-              );
             },
+            child: GridView.builder(
+              itemCount: cells.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: DateTime.daysPerWeek,
+                mainAxisSpacing: AppSpacing.xs,
+                childAspectRatio: 0.9,
+              ),
+              itemBuilder: (context, index) {
+                final day = cells[index];
+                if (day == null) {
+                  return const SizedBox.shrink();
+                }
+                final summary = data.summaryFor(day);
+                return _DayCell(
+                  day: day,
+                  status: data.statusFor(day),
+                  sealed: data.stateFor(day).sealed,
+                  cravings: summary?.cravings ?? 0,
+                  mood: summary?.checkIn?.mood,
+                  lens: lens,
+                  selected: _sameDay(day, selectedDay),
+                  onTap: () =>
+                      ref.read(selectedJournalDayProvider.notifier).select(day),
+                );
+              },
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  JournalDayStatus _defaultStatus(DateTime day) {
-    return JournalCalculations.statusForDay(
-      day: day,
-      today: DateTime.now(),
-      hasCheckIn: false,
-      smokeFreeCheckIn: false,
-      checkInCigarettes: 0,
-      smokingLogCount: 0,
-      cravingCount: 0,
     );
   }
 
@@ -168,28 +191,73 @@ class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.day,
     required this.status,
+    required this.sealed,
+    required this.cravings,
+    required this.mood,
+    required this.lens,
     required this.selected,
-    required this.checkedIn,
     required this.onTap,
   });
 
   final DateTime day;
   final JournalDayStatus status;
+  final bool sealed;
+  final int cravings;
+  final int? mood;
+  final JournalLens lens;
   final bool selected;
-  final bool checkedIn;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final accents = AppAccents.of(context);
     final style = _styleFor(context, status);
     final isFuture = status == JournalDayStatus.future;
+    final mood = this.mood;
+    final feeling = DayFeeling.labelFor(mood);
     final spoken =
         '${DateFormat.MMMMEEEEd().format(day)}. '
-        '${style?.label ?? (isFuture ? 'Upcoming' : 'No entries')}.'
-        '${checkedIn ? ' Checked in.' : ''}'
+        '${style?.label ?? (isFuture ? 'Upcoming' : 'Before your quit date')}.'
+        '${sealed ? ' Sealed.' : ''}'
+        '${cravings == 0 ? '' : ' $cravings ${cravings == 1 ? 'craving' : 'cravings'}.'}'
+        '${feeling == null ? '' : ' Felt ${feeling.toLowerCase()}.'}'
         '${selected ? ' Selected.' : ''}';
+
+    final Widget? mark = switch (lens) {
+      JournalLens.days =>
+        style == null
+            ? null
+            : Icon(
+                // A sealed smoke-free day gets the fuller mark.
+                sealed && status == JournalDayStatus.smokeFree
+                    ? Symbols.verified_rounded
+                    : style.icon,
+                size: 12,
+                fill: sealed ? 1 : 0,
+                color: style.color,
+              ),
+      JournalLens.cravings =>
+        cravings == 0
+            ? null
+            : Text(
+                '$cravings',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: accents.craving,
+                  fontWeight: FontWeight.w700,
+                  height: 1,
+                ),
+              ),
+      JournalLens.mood =>
+        mood == null
+            ? null
+            : Icon(
+                feelingIcon(mood),
+                size: 13,
+                color: _feelingColor(context, mood),
+              ),
+    };
 
     return Semantics(
       label: spoken,
@@ -225,12 +293,7 @@ class _DayCell extends StatelessWidget {
                           : scheme.onSurface,
                     ),
                   ),
-                  SizedBox(
-                    height: 14,
-                    child: style == null
-                        ? null
-                        : Icon(style.icon, size: 12, color: style.color),
-                  ),
+                  SizedBox(height: 14, child: Center(child: mark)),
                 ],
               ),
             ),
@@ -241,19 +304,33 @@ class _DayCell extends StatelessWidget {
   }
 }
 
-/// Explains the calendar icons in words.
+/// Explains what the calendar marks mean, in words, for the lens in use.
 class JournalLegend extends StatelessWidget {
-  const JournalLegend({super.key});
+  const JournalLegend({this.lens = JournalLens.days, super.key});
+
+  final JournalLens lens;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final labelStyle = theme.textTheme.labelMedium?.copyWith(
+      color: scheme.onSurfaceVariant,
+    );
 
-    return Wrap(
-      spacing: AppSpacing.md,
-      runSpacing: AppSpacing.sm,
-      alignment: WrapAlignment.center,
-      children: [
+    Widget item(IconData icon, Color color, String label, {double fill = 0}) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color, fill: fill),
+          const SizedBox(width: AppSpacing.xs),
+          Text(label, style: labelStyle),
+        ],
+      );
+    }
+
+    final List<Widget> items = switch (lens) {
+      JournalLens.days => [
         for (final status in const [
           JournalDayStatus.smokeFree,
           JournalDayStatus.craving,
@@ -263,22 +340,29 @@ class JournalLegend extends StatelessWidget {
           Builder(
             builder: (context) {
               final style = _styleFor(context, status)!;
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(style.icon, size: 14, color: style.color),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    style.label,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              );
+              return item(style.icon, style.color, style.label);
             },
           ),
+        item(Symbols.verified_rounded, scheme.primary, 'Sealed', fill: 1),
       ],
+      JournalLens.cravings => [
+        Text('The number is how many cravings were logged.', style: labelStyle),
+      ],
+      JournalLens.mood => [
+        for (final feeling in DayFeeling.all)
+          item(
+            feelingIcon(feeling.value),
+            _feelingColor(context, feeling.value),
+            feeling.label,
+          ),
+      ],
+    };
+
+    return Wrap(
+      spacing: AppSpacing.md,
+      runSpacing: AppSpacing.sm,
+      alignment: WrapAlignment.center,
+      children: items,
     );
   }
 }

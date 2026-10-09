@@ -148,9 +148,7 @@ class _BreathOrbState extends State<BreathOrb>
             ring: widget.dimmed
                 ? scheme.primary.withValues(alpha: 0.5)
                 : scheme.primary,
-            guide: widget.dimmed
-                ? Colors.transparent
-                : scheme.outlineVariant,
+            guide: widget.dimmed ? Colors.transparent : scheme.outlineVariant,
             particle: scheme.tertiary,
           ),
           child: Center(
@@ -268,9 +266,11 @@ class _OrbPainter extends CustomPainter {
       if (t <= 0 || t >= 1) {
         continue;
       }
-      final angle = -math.pi / 2 + (seed - 0.5) * 2.4 + math.sin(index * 2.3) * 0.3;
+      final angle =
+          -math.pi / 2 + (seed - 0.5) * 2.4 + math.sin(index * 2.3) * 0.3;
       final distance = full * (0.55 + 0.75 * t);
-      final offset = center + Offset(math.cos(angle), math.sin(angle)) * distance;
+      final offset =
+          center + Offset(math.cos(angle), math.sin(angle)) * distance;
       paint.color = particle.withValues(alpha: 0.5 * (1 - t));
       canvas.drawCircle(offset, 3 + 5 * (1 - t), paint);
     }

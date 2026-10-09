@@ -32,8 +32,12 @@ Future<void> refreshReminders(
         .read(onboardingRepositoryProvider)
         .loadCompletedProfile();
     final data = dashboard ?? ref.read(homeDashboardProvider).value;
-    final rituals = await ref.read(smokingWindowRepositoryProvider).loadRituals();
-    final cravings = await ref.read(cravingRepositoryProvider).recent(limit: 90);
+    final rituals = await ref
+        .read(smokingWindowRepositoryProvider)
+        .loadRituals();
+    final cravings = await ref
+        .read(cravingRepositoryProvider)
+        .recent(limit: 90);
 
     final now = DateTime.now();
     final quitDate = profile?.quitDate;

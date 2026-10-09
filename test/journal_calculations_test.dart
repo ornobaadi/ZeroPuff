@@ -1,62 +1,56 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zeropuff/core/calculations/day_history.dart';
 import 'package:zeropuff/core/calculations/journal_calculations.dart';
 
 void main() {
   group('JournalCalculations', () {
-    test('marks future days separately', () {
+    test('a day since the quit date is smoke-free with nothing logged', () {
       final status = JournalCalculations.statusForDay(
-        day: DateTime(2026, 5, 20),
-        today: DateTime(2026, 5, 19),
-        hasCheckIn: false,
-        smokeFreeCheckIn: false,
-        checkInCigarettes: 0,
-        smokingLogCount: 0,
-        cravingCount: 0,
-      );
-
-      expect(status, JournalDayStatus.future);
-    });
-
-    test('marks smoke-free check-in days', () {
-      final status = JournalCalculations.statusForDay(
-        day: DateTime(2026, 5, 19),
-        today: DateTime(2026, 5, 19),
-        hasCheckIn: true,
-        smokeFreeCheckIn: true,
-        checkInCigarettes: 0,
-        smokingLogCount: 0,
+        kind: DayKind.smokeFree,
         cravingCount: 0,
       );
 
       expect(status, JournalDayStatus.smokeFree);
     });
 
-    test('marks relapse days from smoke logs', () {
+    test('a smoke-free day with cravings is marked for them', () {
       final status = JournalCalculations.statusForDay(
-        day: DateTime(2026, 5, 19),
-        today: DateTime(2026, 5, 19),
-        hasCheckIn: true,
-        smokeFreeCheckIn: false,
-        checkInCigarettes: 0,
-        smokingLogCount: 1,
-        cravingCount: 0,
-      );
-
-      expect(status, JournalDayStatus.relapse);
-    });
-
-    test('marks mixed days when cravings and smoking both happened', () {
-      final status = JournalCalculations.statusForDay(
-        day: DateTime(2026, 5, 19),
-        today: DateTime(2026, 5, 19),
-        hasCheckIn: false,
-        smokeFreeCheckIn: false,
-        checkInCigarettes: 0,
-        smokingLogCount: 1,
+        kind: DayKind.smokeFree,
         cravingCount: 2,
       );
 
-      expect(status, JournalDayStatus.mixed);
+      expect(status, JournalDayStatus.craving);
+    });
+
+    test('a day with a cigarette is a relapse, or mixed with cravings', () {
+      expect(
+        JournalCalculations.statusForDay(
+          kind: DayKind.slipped,
+          cravingCount: 0,
+        ),
+        JournalDayStatus.relapse,
+      );
+      expect(
+        JournalCalculations.statusForDay(
+          kind: DayKind.slipped,
+          cravingCount: 1,
+        ),
+        JournalDayStatus.mixed,
+      );
+    });
+
+    test('days ahead and days before quitting say nothing', () {
+      expect(
+        JournalCalculations.statusForDay(kind: DayKind.future, cravingCount: 0),
+        JournalDayStatus.future,
+      );
+      expect(
+        JournalCalculations.statusForDay(
+          kind: DayKind.beforeQuit,
+          cravingCount: 3,
+        ),
+        JournalDayStatus.noData,
+      );
     });
 
     test('builds a complete month grid with leading blanks', () {

@@ -112,7 +112,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   const _PromiseCard(
                     icon: Symbols.air_rounded,
                     title: 'A pause you can hold',
-                    body: 'Breathe with the urge until it passes, before you choose.',
+                    body:
+                        'Breathe with the urge until it passes, before you choose.',
                   ),
                   const SizedBox(height: AppSpacing.componentGap),
                   const _PromiseCard(

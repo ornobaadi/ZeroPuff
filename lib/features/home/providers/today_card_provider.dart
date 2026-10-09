@@ -30,6 +30,7 @@ final todayCardProvider = Provider<TodayCard?>((ref) {
     rituals: rituals,
     // Until the answer is known, do not ask for a promise already made.
     pledgedToday: pledge.value ?? true,
+    sealedToday: dashboard.todaySealed,
     cravings: cravings,
     moneyPerCigarette: dashboard.packSize <= 0
         ? 0

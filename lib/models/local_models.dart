@@ -106,9 +106,13 @@ class DailyCheckIn {
   @Index(unique: true, replace: true)
   late String localDate;
 
-  int mood = 3;
+  /// How the day felt, 1 to 5. Null when it was not asked or answered.
+  int? mood;
   bool smokeFreeToday = true;
   int cigarettesSmoked = 0;
+
+  /// Answers to the seal question, such as what helped.
+  List<String> tags = [];
   String? note;
   late DateTime createdAt;
   bool synced = false;

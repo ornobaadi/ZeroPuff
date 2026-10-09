@@ -3,26 +3,28 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/calculations/day_history.dart';
 import '../../../core/calculations/today_card_calculations.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/content_width.dart';
-import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/state_view.dart';
-import '../../../core/widgets/stat_card.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/daily_loop_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
 import '../../../services/widget/home_widget_service.dart';
 import '../../celebrations/milestone_celebration_controller.dart';
 import '../../celebrations/widgets/celebration_dialog.dart';
+import '../../logging/widgets/slip_form.dart';
 import '../../notifications/reminder_refresh.dart';
 import '../../share/share_card.dart';
 import '../providers/home_dashboard_provider.dart';
 import '../providers/today_card_provider.dart';
 import '../widgets/home_action_cards.dart';
+import '../widgets/jar_card.dart';
 import '../widgets/smoke_free_hero_card.dart';
 import '../widgets/today_card.dart';
+import '../widgets/week_chain.dart';
 import '../../../core/utils/number_formatting.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -87,11 +89,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             orElse: () => const SizedBox.shrink(),
           ),
-          IconButton(
-            tooltip: 'Log a cigarette',
-            onPressed: () => _openRoute(AppRoutes.logging, stronger: true),
-            icon: const Icon(Symbols.edit_note_rounded),
-          ),
           const SizedBox(width: AppSpacing.xs),
         ],
       ),
@@ -101,8 +98,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           data: (data) => _HomeContent(
             data: data,
             today: ref.watch(todayCardProvider),
+            history: ref.watch(dayHistoryProvider),
             onOpen: _openRoute,
             onTodayAction: _onTodayAction,
+            onSlip: () => showSlipSheet(context),
           ),
           loading: () => const StateView.loading(label: 'Loading your day'),
           error: (error, _) => StateView.error(
@@ -221,6 +220,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     switch (card.kind) {
       case TodayCardKind.ritualSoon:
         _openRoute(AppRoutes.rescue, stronger: true);
+      case TodayCardKind.sealDay:
+        _openRoute(AppRoutes.checkIn);
       case TodayCardKind.pledge:
         HapticService.success(enabled: enabled);
         await ref.read(dailyLoopRepositoryProvider).pledge(DateTime.now());
@@ -254,6 +255,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           dailySpend: data.packSize <= 0
               ? 0
               : data.cigarettesPerDay / data.packSize * data.packPrice,
+          moneyKept: data.moneySaved,
           currencySymbol: data.currencySymbol,
         );
       }
@@ -269,18 +271,24 @@ class _HomeContent extends StatelessWidget {
   const _HomeContent({
     required this.data,
     required this.today,
+    required this.history,
     required this.onOpen,
     required this.onTodayAction,
+    required this.onSlip,
   });
 
   final HomeDashboardData data;
   final TodayCard? today;
+  final DayHistory? history;
   final void Function(String route, {bool stronger}) onOpen;
   final ValueChanged<TodayCard> onTodayAction;
+  final VoidCallback onSlip;
 
   @override
   Widget build(BuildContext context) {
     final today = this.today;
+    final history = this.history;
+    final evening = DateTime.now().hour >= TodayCardCalculations.sealFromHour;
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -303,83 +311,45 @@ class _HomeContent extends StatelessWidget {
               CravingButton(
                 onPressed: () => onOpen(AppRoutes.rescue, stronger: true),
               ),
+              // Deliberately quiet: logging a slip should be easy to find
+              // without competing with the rescue.
+              Center(
+                child: TextButton.icon(
+                  onPressed: onSlip,
+                  icon: const Icon(Symbols.edit_note_rounded),
+                  label: const Text('I slipped'),
+                ),
+              ),
               if (today != null) ...[
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.xs),
                 TodayCardView(
                   card: today,
                   onAction: () => onTodayAction(today),
                 ),
               ],
+              if (history != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                WeekChain(
+                  history: history,
+                  onTap: () => onOpen(AppRoutes.streakDetails),
+                  // One thing asked at a time: the promise by day, the seal
+                  // from the evening. The Today card carries the seal unless
+                  // a smoking moment has taken it over.
+                  sealOffered: evening,
+                  onSeal: evening && today?.kind != TodayCardKind.sealDay
+                      ? () => onOpen(AppRoutes.checkIn)
+                      : null,
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
-              CheckInCard(
-                checkedIn: data.todayCheckIn != null,
-                smokeFreeToday: data.todayCheckIn?.smokeFreeToday,
-                onTap: () => onOpen(AppRoutes.checkIn),
-              ),
-              const SizedBox(height: AppSpacing.sectionGap),
-              const SectionHeader(title: 'Your progress'),
-              _StatsGrid(
-                cards: [
-                  StatCard(
-                    label: 'Not smoked',
-                    value: '${data.cigarettesAvoided}',
-                    suffix: 'cigarettes',
-                    icon: Symbols.smoke_free_rounded,
-                    onTap: () => onOpen(AppRoutes.avoidedDetails),
-                  ),
-                  StatCard(
-                    label: 'Money won back',
-                    value:
-                        formatMoney(data.currencySymbol, data.moneySaved),
-                    suffix: 'estimated',
-                    icon: Symbols.savings_rounded,
-                    tone: StatTone.money,
-                    onTap: () => onOpen(AppRoutes.savingsDetails),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              QuickLogCard(
-                onTap: () => onOpen(AppRoutes.logging, stronger: true),
+              JarCard(
+                data: data,
+                onTap: () => onOpen(AppRoutes.savingsDetails),
               ),
             ],
           ),
         ),
       ],
     );
-  }
-}
-
-/// Two columns of equal-height cards.
-class _StatsGrid extends StatelessWidget {
-  const _StatsGrid({required this.cards});
-
-  final List<Widget> cards;
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = <Widget>[];
-    for (var index = 0; index < cards.length; index += 2) {
-      rows.add(
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: cards[index]),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: index + 1 < cards.length
-                    ? cards[index + 1]
-                    : const SizedBox.shrink(),
-              ),
-            ],
-          ),
-        ),
-      );
-      if (index + 2 < cards.length) {
-        rows.add(const SizedBox(height: AppSpacing.md));
-      }
-    }
-    return Column(children: rows);
   }
 }

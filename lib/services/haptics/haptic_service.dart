@@ -82,10 +82,7 @@ class HapticService {
   }
 
   /// Two beats, stronger the longer the streak ([strength] from 0 to 1).
-  static Future<void> heartbeat({
-    required bool enabled,
-    double strength = 1,
-  }) {
+  static Future<void> heartbeat({required bool enabled, double strength = 1}) {
     return _play(
       'heartbeat',
       enabled: enabled,

@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/calculations/progress_calculations.dart';
 import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../providers/home_dashboard_provider.dart';
 import 'smoke_free_timer.dart';
 
@@ -31,10 +32,16 @@ class SmokeFreeHeroCard extends StatelessWidget {
         ? 1.0
         : (elapsed.inSeconds / segment.inSeconds).clamp(0.0, 1.0);
     final percent = (progress * 100).round();
+    final countdown = next == null
+        ? null
+        : ProgressCalculations.countdownLabel(
+            next.duration - data.smokeFreeDuration,
+          );
 
     final milestoneText = next == null
         ? 'All milestones reached'
-        : 'Next milestone: ${next.title}';
+        : 'Next milestone: ${next.title}, $countdown';
+    final color = scheme.onPrimaryContainer;
 
     return Semantics(
       button: true,
@@ -52,52 +59,79 @@ class SmokeFreeHeroCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // The same eyebrow the Today and jar cards open with.
                 Row(
                   children: [
+                    Icon(Symbols.eco_rounded, size: 18, color: scheme.primary),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'You are smoke-free for',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: scheme.onPrimaryContainer,
+                        'SMOKE-FREE FOR',
+                        style: AppTypography.eyebrow.copyWith(
+                          color: scheme.primary,
                         ),
                       ),
                     ),
-                    Icon(
-                      Symbols.chevron_right_rounded,
-                      color: scheme.onPrimaryContainer,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SmokeFreeTimer(since: data.smokeFreeSince),
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        milestoneText,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: scheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '$percent%',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: scheme.onPrimaryContainer,
-                      ),
-                    ),
+                    Icon(Symbols.chevron_right_rounded, color: color),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(999),
-                  backgroundColor: scheme.surface.withValues(alpha: 0.55),
-                  color: scheme.primary,
-                  semanticsLabel: milestoneText,
-                  semanticsValue: '$percent',
+                SmokeFreeTimer(since: data.smokeFreeSince),
+                const SizedBox(height: AppSpacing.sm),
+                // The next milestone in a box of its own, on the same grid as
+                // the time tiles, counting down rather than quoting a
+                // percentage.
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.surface.withValues(alpha: 0.55),
+                    borderRadius: AppShapes.largeIncreased,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      children: [
+                        ExcludeSemantics(
+                          child: Row(
+                            children: [
+                              Icon(
+                                Symbols.flag_rounded,
+                                size: 18,
+                                color: color,
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: Text(
+                                  next == null
+                                      ? 'All milestones reached'
+                                      : next.title,
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: color,
+                                  ),
+                                ),
+                              ),
+                              if (countdown != null)
+                                Text(
+                                  countdown,
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: scheme.primary,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.componentGap),
+                        LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 8,
+                          borderRadius: BorderRadius.circular(999),
+                          backgroundColor: scheme.primaryContainer,
+                          color: scheme.primary,
+                          semanticsLabel: milestoneText,
+                          semanticsValue: '$percent',
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),

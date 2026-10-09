@@ -24,9 +24,10 @@ class DailyCheckInRepositoryStub implements DailyCheckInRepository {
 
   @override
   Future<DailyCheckInRecord> saveToday({
-    required int mood,
     required bool smokeFreeToday,
     required int cigarettesSmoked,
+    int? mood,
+    List<String> tags = const [],
     String? note,
   }) async {
     final now = DateTime.now();
@@ -38,6 +39,7 @@ class DailyCheckInRepositoryStub implements DailyCheckInRepository {
       mood: mood,
       smokeFreeToday: smokeFreeToday,
       cigarettesSmoked: cigarettesSmoked,
+      tags: tags,
       note: note,
       createdAt: now,
     );

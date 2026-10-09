@@ -11,6 +11,8 @@ Each version adds one meaningful layer on top of the last.
 
 > **Update, v1.2.0 (October 2026):** the offline rescue is no longer a two-minute timer. It is now hold-to-breathe with a different-tool fallback and a win screen. The home-screen widget, share cards and danger-window nudges (as free "smoking moments") were brought forward from v1.5 and are already built, along with a quick-settings tile. Sections below that describe them as future work are out of date.
 
+> **Update, v1.3.0 (October 2026):** the daily check-in is now "Seal the day", a one-tap evening close; the smoke-free run no longer depends on it. The private smoking log is a short sheet. Milestones and achievements are one list. Sections below that describe a mood check-in form, a check-in based streak or a separate achievements grid are out of date.
+
 ## Version Overview
 
 ```

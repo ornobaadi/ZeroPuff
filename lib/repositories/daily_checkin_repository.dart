@@ -10,10 +10,12 @@ final dailyCheckInRepositoryProvider = Provider<DailyCheckInRepository>((ref) {
 abstract class DailyCheckInRepository {
   Future<DailyCheckInRecord?> getToday();
 
+  /// Seals today, or updates the seal already there.
   Future<DailyCheckInRecord> saveToday({
-    required int mood,
     required bool smokeFreeToday,
     required int cigarettesSmoked,
+    int? mood,
+    List<String> tags = const [],
     String? note,
   });
 
@@ -24,18 +26,20 @@ class DailyCheckInRecord {
   const DailyCheckInRecord({
     required this.checkInId,
     required this.localDate,
-    required this.mood,
     required this.smokeFreeToday,
     required this.cigarettesSmoked,
     required this.createdAt,
+    this.mood,
+    this.tags = const [],
     this.note,
   });
 
   final String checkInId;
   final String localDate;
-  final int mood;
+  final int? mood;
   final bool smokeFreeToday;
   final int cigarettesSmoked;
+  final List<String> tags;
   final String? note;
   final DateTime createdAt;
 }

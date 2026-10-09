@@ -10,5 +10,8 @@ final achievementRepositoryProvider = Provider<AchievementRepository>((ref) {
 abstract class AchievementRepository {
   Future<Set<String>> unlockedKeys();
 
+  /// Unlocked keys with the time each was unlocked, when known.
+  Future<Map<String, DateTime?>> unlockedAt();
+
   Future<Set<String>> unlockAll(Set<String> keys);
 }

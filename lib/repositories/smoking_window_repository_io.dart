@@ -135,9 +135,7 @@ class SmokingWindowRepositoryIo implements SmokingWindowRepository {
     // Sync sees the row is gone and removes it from the account too.
     await _database.writeTxn(() async {
       await _database.localSmokingWindows.deleteByWindowId(windowId);
-      await _database.syncQueueItems.put(
-        _queueItem(windowId, DateTime.now()),
-      );
+      await _database.syncQueueItems.put(_queueItem(windowId, DateTime.now()));
     });
   }
 

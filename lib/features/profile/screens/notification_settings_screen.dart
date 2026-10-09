@@ -130,7 +130,7 @@ class _NotificationSettingsScreenState
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Gentle reminders that adapt to your progress and pause when today is already recorded.',
+                        'Gentle reminders that adapt to your progress and pause once today is sealed.',
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -140,9 +140,9 @@ class _NotificationSettingsScreenState
                         children: [
                           SettingsSwitchTile(
                             icon: Symbols.fact_check_rounded,
-                            title: 'Progress check-in',
+                            title: 'Seal the day',
                             subtitle:
-                                'A personal nudge if today still needs a record.',
+                                'An evening nudge to close the day in one tap.',
                             value: data.dailyCheckInEnabled,
                             onChanged: _saving
                                 ? null
@@ -153,7 +153,7 @@ class _NotificationSettingsScreenState
                           if (data.dailyCheckInEnabled)
                             SettingsTile(
                               icon: Symbols.access_time_rounded,
-                              title: 'Check-in time',
+                              title: 'Reminder time',
                               trailing: checkInTime,
                               onTap: _saving ? null : () => _changeTime(data),
                             ),
@@ -192,9 +192,9 @@ class _NotificationSettingsScreenState
                             ),
                           SettingsSwitchTile(
                             icon: Symbols.nightlight_rounded,
-                            title: 'Streak protection',
+                            title: 'Bedtime backup',
                             subtitle:
-                                'A later evening backup, only if today is blank.',
+                                'A later nudge, only if today is not sealed.',
                             value: data.streakProtectionEnabled,
                             onChanged: _saving
                                 ? null
