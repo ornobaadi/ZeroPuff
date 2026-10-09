@@ -20,14 +20,7 @@ import '../../home/providers/home_dashboard_provider.dart';
 import '../../logging/widgets/slip_form.dart';
 import '../../notifications/reminder_refresh.dart';
 import '../models/seal_question.dart';
-
-const _feelingIcons = <int, IconData>{
-  1: Symbols.thunderstorm_rounded,
-  2: Symbols.waves_rounded,
-  3: Symbols.balance_rounded,
-  4: Symbols.spa_rounded,
-  5: Symbols.wb_sunny_rounded,
-};
+import '../widgets/feeling_icon.dart';
 
 /// Closes the day in one tap.
 ///
@@ -580,7 +573,7 @@ class _FeelingRow extends StatelessWidget {
                             child: SizedBox.square(
                               dimension: 48,
                               child: Icon(
-                                _feelingIcons[feeling.value],
+                                feelingIcon(feeling.value),
                                 color: selected == feeling.value
                                     ? scheme.onPrimaryContainer
                                     : scheme.onSurfaceVariant,

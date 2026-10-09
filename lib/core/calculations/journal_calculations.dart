@@ -1,36 +1,26 @@
+import 'day_history.dart';
+
 enum JournalDayStatus { future, noData, smokeFree, craving, relapse, mixed }
 
 class JournalCalculations {
   const JournalCalculations._();
 
+  /// How a day reads on the calendar: what kind of day it was, and whether
+  /// cravings were logged on it. Days before the quit date have nothing to
+  /// say.
   static JournalDayStatus statusForDay({
-    required DateTime day,
-    required DateTime today,
-    required bool hasCheckIn,
-    required bool smokeFreeCheckIn,
-    required int checkInCigarettes,
-    required int smokingLogCount,
+    required DayKind kind,
     required int cravingCount,
   }) {
-    if (_dateOnly(day).isAfter(_dateOnly(today))) {
-      return JournalDayStatus.future;
-    }
-
-    final hasRelapse = smokingLogCount > 0 || checkInCigarettes > 0;
-    final hasCraving = cravingCount > 0;
-    if (hasRelapse && hasCraving) {
-      return JournalDayStatus.mixed;
-    }
-    if (hasRelapse) {
-      return JournalDayStatus.relapse;
-    }
-    if (hasCraving) {
-      return JournalDayStatus.craving;
-    }
-    if (hasCheckIn && smokeFreeCheckIn) {
-      return JournalDayStatus.smokeFree;
-    }
-    return JournalDayStatus.noData;
+    final hadCravings = cravingCount > 0;
+    return switch (kind) {
+      DayKind.future => JournalDayStatus.future,
+      DayKind.beforeQuit => JournalDayStatus.noData,
+      DayKind.slipped =>
+        hadCravings ? JournalDayStatus.mixed : JournalDayStatus.relapse,
+      DayKind.smokeFree =>
+        hadCravings ? JournalDayStatus.craving : JournalDayStatus.smokeFree,
+    };
   }
 
   static List<DateTime?> monthGrid(DateTime month) {
