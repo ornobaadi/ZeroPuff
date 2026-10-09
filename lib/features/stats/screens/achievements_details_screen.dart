@@ -9,6 +9,7 @@ import '../../../repositories/app_settings_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
 import '../../progress/screens/progress_screen.dart';
 import '../../progress/widgets/badge_image.dart';
+import '../../share/share_card.dart';
 import '../widgets/detail_widgets.dart';
 
 class AchievementsDetailsScreen extends ConsumerWidget {
@@ -63,6 +64,11 @@ class AchievementsDetailsScreen extends ConsumerWidget {
                                 asset: achievement.badgeAsset,
                                 title: achievement.title,
                                 body: achievement.body,
+                                share: ShareCardData(
+                                  headline: achievement.title,
+                                  caption: 'unlocked',
+                                  lines: [achievement.body],
+                                ),
                               );
                             },
                           ),

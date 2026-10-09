@@ -32,6 +32,20 @@ class ShareCardData {
   final List<String> lines;
 }
 
+/// The shape of the shared image.
+enum ShareCardFormat {
+  post('Post', 4 / 5, 300),
+  story('Story', 9 / 16, 230);
+
+  const ShareCardFormat(this.label, this.aspectRatio, this.previewWidth);
+
+  final String label;
+  final double aspectRatio;
+
+  /// How wide the card is drawn in the preview, in logical pixels.
+  final double previewWidth;
+}
+
 /// Shows the card and lets the user send it as an image.
 Future<void> showShareCard(BuildContext context, ShareCardData data) {
   return showModalBottomSheet<void>(
@@ -51,7 +65,11 @@ class _ShareSheet extends StatefulWidget {
 }
 
 class _ShareSheetState extends State<_ShareSheet> {
+  /// The shared image is this many pixels wide whatever the preview size.
+  static const _imageWidth = 1080.0;
+
   final _cardKey = GlobalKey();
+  ShareCardFormat _format = ShareCardFormat.post;
   bool _sharing = false;
 
   Future<void> _share() async {
@@ -60,11 +78,13 @@ class _ShareSheetState extends State<_ShareSheet> {
     try {
       final boundary =
           _cardKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-      final image = await boundary.toImage(pixelRatio: 3);
+      final image = await boundary.toImage(
+        pixelRatio: _imageWidth / boundary.size.width,
+      );
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
       final directory = await getTemporaryDirectory();
-      final file = File('${directory.path}/zeropuff-win.png');
+      final file = File('${directory.path}/zeropuff-${_format.name}.png');
       await file.writeAsBytes(bytes!.buffer.asUint8List());
       await SharePlus.instance.share(
         ShareParams(
@@ -99,11 +119,24 @@ class _ShareSheetState extends State<_ShareSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 320),
+              child: SegmentedButton<ShareCardFormat>(
+                showSelectedIcon: false,
+                segments: [
+                  for (final format in ShareCardFormat.values)
+                    ButtonSegment(value: format, label: Text(format.label)),
+                ],
+                selected: {_format},
+                onSelectionChanged: (selection) =>
+                    setState(() => _format = selection.first),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Center(
+              child: SizedBox(
+                width: _format.previewWidth,
                 child: RepaintBoundary(
                   key: _cardKey,
-                  child: ShareCard(data: widget.data),
+                  child: ShareCard(data: widget.data, format: _format),
                 ),
               ),
             ),
@@ -123,9 +156,14 @@ class _ShareSheetState extends State<_ShareSheet> {
 /// The image itself. It always uses the light brand colors so it looks the
 /// same wherever it is posted.
 class ShareCard extends StatelessWidget {
-  const ShareCard({required this.data, super.key});
+  const ShareCard({
+    required this.data,
+    this.format = ShareCardFormat.post,
+    super.key,
+  });
 
   final ShareCardData data;
+  final ShareCardFormat format;
 
   static const _paper = Color(0xFFFAF6EE);
   static const _ink = Color(0xFF1F2A24);
@@ -134,16 +172,23 @@ class ShareCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const accents = AppAccents.light;
+    final story = format == ShareCardFormat.story;
 
     return AspectRatio(
-      aspectRatio: 4 / 5,
+      aspectRatio: format.aspectRatio,
       child: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: _paper,
-          borderRadius: AppShapes.extraLarge,
+          // A story fills the screen, so it has no corners to round.
+          borderRadius: story ? BorderRadius.zero : AppShapes.extraLarge,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            // Stories keep clear of the app chrome drawn over the top and
+            // bottom of the screen.
+            vertical: story ? AppSpacing.xxl : AppSpacing.lg,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -200,9 +245,9 @@ class ShareCard extends StatelessWidget {
                   ),
                 ),
               const Spacer(),
-              Text(
+              const Text(
                 'One breath at a time.',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: AppTypography.bodyFamily,
                   fontSize: 12,
                   color: _muted,

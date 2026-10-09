@@ -39,6 +39,7 @@ class DailyLoopRepository {
   static const _pledgeDateKey = 'daily.pledge_date';
   static const _goalNameKey = 'daily.savings_goal_name';
   static const _goalTargetKey = 'daily.savings_goal_target';
+  static const _goalCelebratedKey = 'daily.savings_goal_celebrated';
 
   Future<bool> hasPledgedOn(DateTime day) async {
     final store = await SharedPreferences.getInstance();
@@ -72,10 +73,24 @@ class DailyLoopRepository {
     await store.remove(_goalTargetKey);
   }
 
+  Future<bool> hasCelebratedGoal(SavingsGoal goal) async {
+    final store = await SharedPreferences.getInstance();
+    return store.getString(_goalCelebratedKey) == _goalSignature(goal);
+  }
+
+  Future<void> markGoalCelebrated(SavingsGoal goal) async {
+    final store = await SharedPreferences.getInstance();
+    await store.setString(_goalCelebratedKey, _goalSignature(goal));
+  }
+
+  // Changing the goal's name or price makes it a new goal to celebrate.
+  String _goalSignature(SavingsGoal goal) => '${goal.name}|${goal.target}';
+
   /// Removes everything here, for when local data is deleted.
   Future<void> clear() async {
     final store = await SharedPreferences.getInstance();
     await store.remove(_pledgeDateKey);
+    await store.remove(_goalCelebratedKey);
     await clearSavingsGoal();
   }
 

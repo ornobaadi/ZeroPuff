@@ -98,6 +98,7 @@ class OnboardingForm {
       smokeWindowStartMinutes: draft.usualSmokingWindow.startMinutes,
       smokeWindowEndMinutes: draft.usualSmokingWindow.endMinutes,
       triggers: draft.triggers.toSet(),
+      rituals: draft.rituals.toSet(),
       reason: draft.quitReason ?? '',
     );
   }
@@ -219,6 +220,7 @@ class OnboardingForm {
       currencyCode: currency.code,
       currencySymbol: currency.symbol,
       triggers: triggers.toList(),
+      rituals: rituals.toList(),
       quitReason: trimmedReason,
       usualSmokingWindow: smokingWindow,
       currentStep: step,

@@ -3,7 +3,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/calculations/progress_calculations.dart';
 import '../../../core/calculations/today_card_calculations.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -40,6 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   static bool _heartbeatPlayed = false;
 
   String? _shownCelebrationKey;
+  String? _checkedGoalKey;
   String? _lastNotificationRefreshKey;
 
   @override
@@ -69,6 +69,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (widget.enableNotificationRefresh) {
       dashboard.whenData(_queueNotificationRefresh);
       dashboard.whenData(_playHeartbeat);
+      final goal = ref.watch(savingsGoalProvider).value;
+      final saved = dashboard.value?.moneySaved;
+      if (goal != null && saved != null && goal.reachedWith(saved)) {
+        _celebrateGoal(goal, dashboard.value!.currencySymbol);
+      }
     }
 
     return Scaffold(
@@ -139,6 +144,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   ShareCardData _shareCardFor(CelebrationEvent event, HomeDashboardData? data) {
     final isMilestone = event.kind == CelebrationKind.milestone;
+    if (event.key.startsWith('goal:')) {
+      return ShareCardData(
+        headline: event.title.replaceFirst(' is yours', ''),
+        caption: 'paid for by not smoking',
+      );
+    }
     return ShareCardData(
       headline: isMilestone
           ? event.title.replaceFirst(' smoke-free', '')
@@ -173,6 +184,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     HapticService.heartbeat(
       enabled: ref.read(hapticsEnabledControllerProvider),
       strength: data.smokeFreeStreakDays / 30,
+    );
+  }
+
+  /// The savings goal has been reached: celebrate it, once.
+  Future<void> _celebrateGoal(SavingsGoal goal, String currencySymbol) async {
+    final key = 'goal:${goal.name}:${goal.target}';
+    if (_shownCelebrationKey == key || _checkedGoalKey == key) {
+      return;
+    }
+    _checkedGoalKey = key;
+    final repository = ref.read(dailyLoopRepositoryProvider);
+    if (await repository.hasCelebratedGoal(goal)) {
+      return;
+    }
+    await repository.markGoalCelebrated(goal);
+    if (!mounted) {
+      return;
+    }
+    _shownCelebrationKey = key;
+    await _showCelebrationDialog(
+      CelebrationEvent(
+        kind: CelebrationKind.timeAchievement,
+        key: key,
+        title: '${goal.name} is yours',
+        body:
+            'You kept ${formatMoney(currencySymbol, goal.target)} by not smoking. Go and get it.',
+        duration: Duration.zero,
+        icon: Symbols.savings_rounded,
+      ),
     );
   }
 
@@ -240,7 +280,6 @@ class _HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final streakDays = data.smokeFreeStreakDays;
     final today = this.today;
 
     return ListView(
@@ -296,23 +335,6 @@ class _HomeContent extends StatelessWidget {
                     icon: Symbols.savings_rounded,
                     tone: StatTone.money,
                     onTap: () => onOpen(AppRoutes.savingsDetails),
-                  ),
-                  StatCard(
-                    label: 'Time smoke-free',
-                    value: ProgressCalculations.durationLabel(
-                      data.smokeFreeDuration,
-                    ),
-                    suffix: 'so far',
-                    icon: Symbols.timer_rounded,
-                    onTap: () => onOpen(AppRoutes.milestoneDetails),
-                  ),
-                  StatCard(
-                    label: 'Smoke-free streak',
-                    value: '$streakDays',
-                    suffix: streakDays == 1 ? 'day' : 'days',
-                    icon: Symbols.local_fire_department_rounded,
-                    tone: StatTone.streak,
-                    onTap: () => onOpen(AppRoutes.streakDetails),
                   ),
                 ],
               ),

@@ -53,6 +53,7 @@ class OnboardingDraft {
   String currencyCode = 'USD';
   String currencySymbol = r'$';
   List<String> triggers = [];
+  List<String> rituals = [];
   String? quitReason;
   int smokeWindowStartMinutes = 18 * 60;
   int smokeWindowEndMinutes = 23 * 60;

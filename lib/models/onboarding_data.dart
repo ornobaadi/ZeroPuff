@@ -9,6 +9,7 @@ class OnboardingData {
     this.currencyCode = 'USD',
     this.currencySymbol = r'$',
     this.triggers = const [],
+    this.rituals = const [],
     this.quitReason,
     SmokingWindowData? usualSmokingWindow,
     this.currentStep = 0,
@@ -24,6 +25,9 @@ class OnboardingData {
   final String currencyCode;
   final String currencySymbol;
   final List<String> triggers;
+
+  /// Ids of the ritual presets picked so far.
+  final List<String> rituals;
   final String? quitReason;
   final SmokingWindowData usualSmokingWindow;
   final int currentStep;
@@ -37,6 +41,7 @@ class OnboardingData {
     String? currencyCode,
     String? currencySymbol,
     List<String>? triggers,
+    List<String>? rituals,
     String? quitReason,
     SmokingWindowData? usualSmokingWindow,
     int? currentStep,
@@ -50,6 +55,7 @@ class OnboardingData {
       currencyCode: currencyCode ?? this.currencyCode,
       currencySymbol: currencySymbol ?? this.currencySymbol,
       triggers: triggers ?? this.triggers,
+      rituals: rituals ?? this.rituals,
       quitReason: quitReason ?? this.quitReason,
       usualSmokingWindow: usualSmokingWindow ?? this.usualSmokingWindow,
       currentStep: currentStep ?? this.currentStep,

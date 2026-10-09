@@ -85,6 +85,7 @@ flutter:
   assets:
     - .env
     - assets/badges/
+    - assets/ornob-aadi-signature/ornob-aadi-signature-bold-dark.png
 
   fonts:
     - family: PlayfairDisplay

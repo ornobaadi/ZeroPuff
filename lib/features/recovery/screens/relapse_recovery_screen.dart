@@ -14,7 +14,12 @@ import '../../../core/widgets/selectable_tile.dart';
 import '../../../core/widgets/state_view.dart';
 import '../../../models/app_event.dart';
 import '../../../repositories/app_event_repository.dart';
+import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/smoking_log_repository.dart';
+import '../../home/providers/home_dashboard_provider.dart';
+import '../../rescue/models/rescue_tool.dart';
+import '../../rescue/widgets/rescue_reasons.dart';
+import '../../rescue/widgets/rescue_tool_view.dart';
 
 /// Shown right after a cigarette is logged: reassurance, the pattern, and one
 /// small reset action. Non-judgemental by design.
@@ -31,7 +36,27 @@ class RelapseRecoveryScreen extends ConsumerStatefulWidget {
 class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
   late final Future<SmokingLogRecord?> _logFuture;
   String? _selectedAction;
+  String? _trigger;
   bool _started = false;
+
+  /// Names what set the cigarette off and saves it on the log.
+  Future<void> _selectTrigger(SmokingLogRecord log, String trigger) async {
+    setState(() => _trigger = trigger);
+    try {
+      await ref
+          .read(smokingLogRepositoryProvider)
+          .updateLog(
+            logId: log.logId,
+            count: log.count,
+            trigger: trigger,
+            smokedAt: log.smokedAt,
+            note: log.note,
+          );
+      ref.invalidate(recentSmokingLogsProvider);
+    } on Object {
+      // The choice still shows; the log keeps its earlier trigger.
+    }
+  }
 
   @override
   void initState() {
@@ -67,7 +92,7 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
               eventName: 'relapse_recovery_started',
               properties: {
                 'log_id': widget.logId,
-                'trigger': log?.trigger,
+                'trigger': _trigger ?? log?.trigger,
                 'actions': [?_selectedAction],
               },
             ),
@@ -79,6 +104,16 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
       return;
     }
     final router = GoRouter.of(context);
+    final toolId = _toolForAction[_selectedAction];
+    if (toolId != null) {
+      // Do the reset now, guided, rather than only promising to.
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          fullscreenDialog: true,
+          builder: (context) => _ResetToolScreen(toolId: toolId),
+        ),
+      );
+    }
     router.go(AppRoutes.home);
     if (_selectedAction == 'plan_danger_window') {
       router.push(AppRoutes.ritualsSettings);
@@ -130,7 +165,12 @@ class _RelapseRecoveryScreenState extends ConsumerState<RelapseRecoveryScreen> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      _TriggerWrap(trigger: log?.trigger),
+                      _TriggerWrap(
+                        trigger: _trigger ?? log?.trigger,
+                        onSelected: log == null
+                            ? null
+                            : (trigger) => _selectTrigger(log, trigger),
+                      ),
                       const SizedBox(height: AppSpacing.sectionGap),
                       Semantics(
                         header: true,
@@ -212,6 +252,36 @@ class _ResetAction {
   final IconData icon;
   final String title;
   final String subtitle;
+}
+
+/// The reset actions that have a guided tool behind them.
+const _toolForAction = {'drink_water': 'water', 'reset_environment': 'move'};
+
+/// One rescue tool on its own, used as a reset after a cigarette.
+class _ResetToolScreen extends ConsumerWidget {
+  const _ResetToolScreen({required this.toolId});
+
+  final String toolId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    void close() => Navigator.of(context).pop();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Reset')),
+      body: SafeArea(
+        child: RescueToolView(
+          tool: rescueToolById(toolId),
+          quitReason: rescueFallbackReason,
+          hapticsEnabled: ref.watch(hapticsEnabledControllerProvider),
+          onDone: close,
+          onBack: close,
+          onStartDelay: () async => false,
+          backLabel: 'Skip',
+        ),
+      ),
+    );
+  }
 }
 
 const _actions = [
@@ -313,9 +383,12 @@ class _RecoveryHero extends StatelessWidget {
 }
 
 class _TriggerWrap extends StatelessWidget {
-  const _TriggerWrap({required this.trigger});
+  const _TriggerWrap({required this.trigger, required this.onSelected});
 
   final String? trigger;
+
+  /// Null when there is no log to save the choice on.
+  final ValueChanged<String>? onSelected;
 
   static const _fallbackTriggers = [
     'stress',
@@ -328,25 +401,21 @@ class _TriggerWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final chips = {
       if (trigger != null && trigger!.isNotEmpty) trigger!,
       ..._fallbackTriggers,
     };
+    final onSelected = this.onSelected;
 
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
       children: [
         for (final chip in chips)
-          Chip(
-            avatar: chip == trigger
-                ? const Icon(Symbols.check_rounded, size: 18)
-                : null,
+          ChoiceChip(
             label: Text(toBeginningOfSentenceCase(chip) ?? chip),
-            backgroundColor: chip == trigger
-                ? scheme.secondaryContainer
-                : scheme.surfaceContainerLow,
+            selected: chip == trigger,
+            onSelected: onSelected == null ? null : (_) => onSelected(chip),
           ),
       ],
     );

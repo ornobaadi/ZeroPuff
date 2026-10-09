@@ -4197,23 +4197,28 @@ const OnboardingDraftSchema = CollectionSchema(
       name: r'quitReason',
       type: IsarType.string,
     ),
-    r'smokeWindowEndMinutes': PropertySchema(
+    r'rituals': PropertySchema(
       id: 9,
+      name: r'rituals',
+      type: IsarType.stringList,
+    ),
+    r'smokeWindowEndMinutes': PropertySchema(
+      id: 10,
       name: r'smokeWindowEndMinutes',
       type: IsarType.long,
     ),
     r'smokeWindowStartMinutes': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'smokeWindowStartMinutes',
       type: IsarType.long,
     ),
     r'triggers': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'triggers',
       type: IsarType.stringList,
     ),
     r'updatedAt': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
@@ -4248,6 +4253,13 @@ int _onboardingDraftEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  bytesCount += 3 + object.rituals.length * 3;
+  {
+    for (var i = 0; i < object.rituals.length; i++) {
+      final value = object.rituals[i];
+      bytesCount += value.length * 3;
+    }
+  }
   bytesCount += 3 + object.triggers.length * 3;
   {
     for (var i = 0; i < object.triggers.length; i++) {
@@ -4273,10 +4285,11 @@ void _onboardingDraftSerialize(
   writer.writeLong(offsets[6], object.packSize);
   writer.writeDateTime(offsets[7], object.quitDate);
   writer.writeString(offsets[8], object.quitReason);
-  writer.writeLong(offsets[9], object.smokeWindowEndMinutes);
-  writer.writeLong(offsets[10], object.smokeWindowStartMinutes);
-  writer.writeStringList(offsets[11], object.triggers);
-  writer.writeDateTime(offsets[12], object.updatedAt);
+  writer.writeStringList(offsets[9], object.rituals);
+  writer.writeLong(offsets[10], object.smokeWindowEndMinutes);
+  writer.writeLong(offsets[11], object.smokeWindowStartMinutes);
+  writer.writeStringList(offsets[12], object.triggers);
+  writer.writeDateTime(offsets[13], object.updatedAt);
 }
 
 OnboardingDraft _onboardingDraftDeserialize(
@@ -4296,10 +4309,11 @@ OnboardingDraft _onboardingDraftDeserialize(
   object.packSize = reader.readLongOrNull(offsets[6]);
   object.quitDate = reader.readDateTimeOrNull(offsets[7]);
   object.quitReason = reader.readStringOrNull(offsets[8]);
-  object.smokeWindowEndMinutes = reader.readLong(offsets[9]);
-  object.smokeWindowStartMinutes = reader.readLong(offsets[10]);
-  object.triggers = reader.readStringList(offsets[11]) ?? [];
-  object.updatedAt = reader.readDateTime(offsets[12]);
+  object.rituals = reader.readStringList(offsets[9]) ?? [];
+  object.smokeWindowEndMinutes = reader.readLong(offsets[10]);
+  object.smokeWindowStartMinutes = reader.readLong(offsets[11]);
+  object.triggers = reader.readStringList(offsets[12]) ?? [];
+  object.updatedAt = reader.readDateTime(offsets[13]);
   return object;
 }
 
@@ -4329,12 +4343,14 @@ P _onboardingDraftDeserializeProp<P>(
     case 8:
       return (reader.readStringOrNull(offset)) as P;
     case 9:
-      return (reader.readLong(offset)) as P;
+      return (reader.readStringList(offset) ?? []) as P;
     case 10:
       return (reader.readLong(offset)) as P;
     case 11:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readLong(offset)) as P;
     case 12:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 13:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -5313,6 +5329,200 @@ extension OnboardingDraftQueryFilter
   }
 
   QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsElementEqualTo(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'rituals',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'rituals',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'rituals',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'rituals',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsElementStartsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'rituals',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsElementEndsWith(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'rituals',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'rituals',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'rituals',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'rituals', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'rituals', value: ''),
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'rituals', length, true, length, true);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'rituals', 0, true, 0, true);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'rituals', 0, false, 999999, true);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsLengthLessThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'rituals', 0, true, length, include);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsLengthGreaterThan(int length, {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(r'rituals', length, include, 999999, true);
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
+  ritualsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'rituals',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QAfterFilterCondition>
   smokeWindowEndMinutesEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -6107,6 +6317,13 @@ extension OnboardingDraftQueryWhereDistinct
   }
 
   QueryBuilder<OnboardingDraft, OnboardingDraft, QDistinct>
+  distinctByRituals() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'rituals');
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, OnboardingDraft, QDistinct>
   distinctBySmokeWindowEndMinutes() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'smokeWindowEndMinutes');
@@ -6199,6 +6416,13 @@ extension OnboardingDraftQueryProperty
   quitReasonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'quitReason');
+    });
+  }
+
+  QueryBuilder<OnboardingDraft, List<String>, QQueryOperations>
+  ritualsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'rituals');
     });
   }
 

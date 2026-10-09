@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../share/share_card.dart';
 
 import '../../../core/theme/app_accents.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -309,6 +310,7 @@ Future<void> showBadgeDialog(
   required String body,
   String? caption,
   IconData fallbackIcon = Symbols.emoji_events_rounded,
+  ShareCardData? share,
 }) {
   return showDialog<void>(
     context: context,
@@ -360,6 +362,14 @@ Future<void> showBadgeDialog(
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text('Nice'),
               ),
+              if (share != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                TextButton.icon(
+                  onPressed: () => showShareCard(context, share),
+                  icon: const Icon(Symbols.ios_share_rounded),
+                  label: const Text('Share it'),
+                ),
+              ],
             ],
           ),
         ),

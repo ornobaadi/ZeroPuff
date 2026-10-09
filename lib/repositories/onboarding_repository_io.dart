@@ -37,6 +37,7 @@ class OnboardingRepository {
       currencyCode: draft.currencyCode,
       currencySymbol: draft.currencySymbol,
       triggers: draft.triggers,
+      rituals: draft.rituals,
       quitReason: draft.quitReason,
       usualSmokingWindow: SmokingWindowData(
         startMinutes: draft.smokeWindowStartMinutes,
@@ -63,6 +64,7 @@ class OnboardingRepository {
       ..currencyCode = data.currencyCode
       ..currencySymbol = data.currencySymbol
       ..triggers = data.triggers
+      ..rituals = data.rituals
       ..quitReason = data.quitReason
       ..smokeWindowStartMinutes = data.usualSmokingWindow.startMinutes
       ..smokeWindowEndMinutes = data.usualSmokingWindow.endMinutes

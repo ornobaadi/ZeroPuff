@@ -18,6 +18,7 @@ class RescueToolView extends StatelessWidget {
     required this.onDone,
     required this.onBack,
     required this.onStartDelay,
+    this.backLabel = 'Other options',
     super.key,
   });
 
@@ -26,6 +27,7 @@ class RescueToolView extends StatelessWidget {
   final bool hapticsEnabled;
   final VoidCallback onDone;
   final VoidCallback onBack;
+  final String backLabel;
 
   /// Schedules the ten-minute check-back; returns false if it could not.
   final Future<bool> Function() onStartDelay;
@@ -45,7 +47,7 @@ class RescueToolView extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: onBack,
                 icon: const Icon(Symbols.arrow_back_rounded),
-                label: const Text('Other options'),
+                label: Text(backLabel),
               ),
             ),
             const SizedBox(height: AppSpacing.sm),

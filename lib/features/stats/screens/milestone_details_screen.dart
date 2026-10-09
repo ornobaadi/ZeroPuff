@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/calculations/progress_calculations.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/number_formatting.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/stat_card.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
 import '../../progress/widgets/badge_image.dart';
+import '../../share/share_card.dart';
 import '../widgets/detail_widgets.dart';
 
 class MilestoneDetailsScreen extends ConsumerWidget {
@@ -79,6 +81,16 @@ class MilestoneDetailsScreen extends ConsumerWidget {
                         caption:
                             'Unlocked at ${compactDuration(milestone.duration)} smoke-free',
                         fallbackIcon: Symbols.flag_rounded,
+                        share: ShareCardData(
+                          headline: milestone.title,
+                          caption: 'smoke-free',
+                          lines: [
+                            if (data.cigarettesAvoided > 0)
+                              '${formatCount(data.cigarettesAvoided)} cigarettes not smoked',
+                            if (data.moneySaved >= 1)
+                              '${formatMoney(data.currencySymbol, data.moneySaved)} kept',
+                          ],
+                        ),
                       );
                     }
                   : null,

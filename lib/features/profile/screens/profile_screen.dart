@@ -10,6 +10,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/content_width.dart';
+import '../../../core/widgets/creator_footer.dart';
 import '../../../core/widgets/settings_tiles.dart';
 import '../../../repositories/account_repository.dart';
 import '../../../repositories/app_settings_repository.dart';
@@ -34,7 +35,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final user = ref.watch(currentUserProvider);
     final isGuest = user == null;
     final displayName = _displayName(user);
@@ -196,14 +196,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.sectionGap),
-                  Center(
-                    child: Text(
-                      '${AppConstants.appName} ${AppConstants.appVersionLabel}',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
+                  const CreatorFooter(),
                 ],
               ),
             ),
