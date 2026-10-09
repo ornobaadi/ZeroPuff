@@ -21,7 +21,7 @@ class SavingsDetailsScreen extends ConsumerWidget {
     final goal = ref.watch(savingsGoalProvider).value;
 
     return DetailScaffold(
-      title: 'Money won back',
+      title: 'Money kept',
       builder: (context, data) {
         final dailyBaseline = data.packSize <= 0
             ? 0.0
@@ -473,7 +473,7 @@ class _ProjectionCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  'Projected money won back',
+                  'What it adds up to',
                   style: theme.textTheme.titleMedium,
                 ),
               ),

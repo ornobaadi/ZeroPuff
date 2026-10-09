@@ -28,6 +28,17 @@ class AchievementRepositoryIO implements AchievementRepository {
   }
 
   @override
+  Future<Map<String, DateTime?>> unlockedAt() async {
+    final rows = await _isar.achievementStates
+        .filter()
+        .unlockedEqualTo(true)
+        .findAll();
+    return {
+      for (final row in rows) row.achievementKey: row.unlockedAt?.toLocal(),
+    };
+  }
+
+  @override
   Future<Set<String>> unlockAll(Set<String> keys) async {
     if (keys.isEmpty) {
       return const {};

@@ -3,50 +3,38 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/calculations/progress_calculations.dart';
-import '../../features/home/providers/home_dashboard_provider.dart';
+import '../../features/progress/providers/milestone_providers.dart';
 import '../../repositories/achievement_repository.dart';
 
 final milestoneCelebrationProvider = FutureProvider<CelebrationEvent?>((
   ref,
 ) async {
-  final dashboard = ref.watch(homeDashboardProvider).value;
-  if (dashboard == null) {
+  final stats = ref.watch(milestoneStatsProvider);
+  if (stats == null) {
     return null;
   }
-  final cravings = ref.watch(recentCravingsProvider).value ?? const [];
-
-  final milestoneKeys = ProgressCalculations.unlockedMilestoneKeys(
-    dashboard.smokeFreeDuration,
+  final repository = ref.watch(achievementRepositoryProvider);
+  final known = ProgressCalculations.normalizeStoredKeys(
+    await repository.unlockedKeys(),
   );
-  final achievementKeys = ProgressCalculations.unlockedAchievementKeysForStats(
-    smokeFreeDuration: dashboard.smokeFreeDuration,
-    cravingCount: cravings.length,
-    cigarettesAvoided: dashboard.cigarettesAvoided,
-    moneySaved: dashboard.moneySaved,
-  );
-  final newlyUnlocked = await ref
-      .watch(achievementRepositoryProvider)
-      .unlockAll({...milestoneKeys, ...achievementKeys});
-  if (newlyUnlocked.isEmpty) {
+  final fresh = ProgressCalculations.unlockedKeys(stats).difference(known);
+  if (fresh.isEmpty) {
     return null;
   }
+  await repository.unlockAll(fresh);
 
-  final events = <CelebrationEvent>[
-    ...ProgressCalculations.streakMilestones
-        .where(
-          (milestone) => newlyUnlocked.contains(
-            ProgressCalculations.milestoneAchievementKey(milestone.key),
-          ),
-        )
-        .map(CelebrationEvent.milestone),
-    ...ProgressCalculations.achievements
-        .where((achievement) => newlyUnlocked.contains(achievement.key))
-        .map(CelebrationEvent.achievement),
+  final events = [
+    for (final key in fresh)
+      if (ProgressCalculations.byKey(key) case final milestone?)
+        milestone.kind == MilestoneKind.time
+            ? CelebrationEvent.milestone(milestone)
+            : CelebrationEvent.achievement(milestone),
   ];
   if (events.isEmpty) {
     return null;
   }
 
+  // Several can unlock at once; celebrate the biggest.
   events.sort((a, b) => b.duration.compareTo(a.duration));
   return events.first;
 });
@@ -67,7 +55,7 @@ class CelebrationEvent {
   factory CelebrationEvent.milestone(ProgressMilestone milestone) {
     return CelebrationEvent(
       kind: CelebrationKind.milestone,
-      key: ProgressCalculations.milestoneAchievementKey(milestone.key),
+      key: milestone.key,
       title: '${milestone.title} smoke-free',
       body: milestone.body,
       duration: milestone.duration,

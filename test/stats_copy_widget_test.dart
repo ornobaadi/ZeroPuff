@@ -5,6 +5,7 @@ import 'package:zeropuff/features/celebrations/milestone_celebration_controller.
 import 'package:zeropuff/features/home/providers/home_dashboard_provider.dart';
 import 'package:zeropuff/features/home/screens/home_screen.dart';
 import 'package:zeropuff/features/profile/screens/app_info_screen.dart';
+import 'package:zeropuff/features/progress/providers/milestone_providers.dart';
 import 'package:zeropuff/features/progress/screens/progress_screen.dart';
 
 void main() {
@@ -34,7 +35,7 @@ void main() {
     expect(find.text('Need to log?'), findsNothing);
   });
 
-  testWidgets('progress quick stats include life won back', (tester) async {
+  testWidgets('progress quick stats say something about today', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -44,7 +45,7 @@ void main() {
           homeDashboardProvider.overrideWithValue(AsyncData(_dashboardData())),
           recentCheckInsProvider.overrideWith((ref) async => []),
           recentCravingsProvider.overrideWith((ref) async => []),
-          unlockedAchievementsProvider.overrideWith((ref) async => {}),
+          unlockedMilestonesProvider.overrideWith((ref) async => {}),
         ],
         child: const MaterialApp(home: ProgressScreen()),
       ),
@@ -53,9 +54,13 @@ void main() {
     await tester.drag(find.byType(ListView).first, const Offset(0, -700));
     await tester.pumpAndSettle();
 
-    expect(find.text('Time smoke-free'), findsOneWidget);
-    expect(find.text('5 days'), findsOneWidget);
-    expect(find.text('Money won back'), findsOneWidget);
+    expect(find.text('Money kept'), findsOneWidget);
+    expect(find.text('Cravings beaten'), findsOneWidget);
+    expect(find.text('Best run'), findsOneWidget);
+    expect(find.text('Time not smoking'), findsOneWidget);
+    // 72 cigarettes at about six minutes each.
+    expect(find.text('7 h'), findsOneWidget);
+    expect(find.text('Check-ins'), findsNothing);
   });
 
   testWidgets('app info shows the not-medical-advice disclaimer', (

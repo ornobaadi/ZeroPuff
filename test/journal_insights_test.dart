@@ -137,9 +137,7 @@ void main() {
           recentSmokingLogsProvider.overrideWith(
             (ref) async => <SmokingLogRecord>[],
           ),
-          recentCravingsProvider.overrideWith(
-            (ref) async => [craving(now)],
-          ),
+          recentCravingsProvider.overrideWith((ref) async => [craving(now)]),
         ],
         child: MaterialApp(
           theme: AppTheme.light,

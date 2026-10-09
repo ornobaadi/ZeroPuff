@@ -17,7 +17,6 @@ class AppRoutes {
   static const avoidedDetails = '/stats/avoided';
   static const cravingAnalysis = '/stats/cravings';
   static const milestoneDetails = '/stats/milestones';
-  static const achievementsDetails = '/stats/achievements';
   static const setupSettings = '/setup-settings';
   static const notificationSettings = '/notification-settings';
   static const appearanceSettings = '/appearance-settings';

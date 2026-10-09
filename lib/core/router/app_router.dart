@@ -18,7 +18,6 @@ import '../../features/recovery/screens/relapse_recovery_screen.dart';
 import '../../features/rescue/screens/rescue_screen.dart';
 import '../../features/logging/screens/smoking_log_screen.dart';
 import '../../features/shell/app_shell.dart';
-import '../../features/stats/screens/achievements_details_screen.dart';
 import '../../features/stats/screens/avoided_details_screen.dart';
 import '../../features/stats/screens/craving_analysis_screen.dart';
 import '../../features/stats/screens/milestone_details_screen.dart';
@@ -195,12 +194,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.milestoneDetails,
         pageBuilder: (context, state) =>
             _materialPage(state, const MilestoneDetailsScreen()),
-      ),
-      GoRoute(
-        parentNavigatorKey: rootNavigatorKey,
-        path: AppRoutes.achievementsDetails,
-        pageBuilder: (context, state) =>
-            _materialPage(state, const AchievementsDetailsScreen()),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,

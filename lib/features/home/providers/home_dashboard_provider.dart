@@ -214,6 +214,7 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
       todayCheckIn: checkIn,
       todaySealed: checkIn != null,
       moneyToday: moneyToday,
+      cigarettesAvoidedToday: avoidedToday.floor(),
       cigarettesSmokedToday: smoked.today,
     ),
   );
@@ -342,6 +343,7 @@ class HomeDashboardData {
     this.todayCheckIn,
     this.todaySealed = false,
     this.moneyToday = 0,
+    this.cigarettesAvoidedToday = 0,
     this.cigarettesSmokedToday = 0,
     DateTime? smokeFreeSince,
   }) : _smokeFreeSince = smokeFreeSince;
@@ -373,6 +375,7 @@ class HomeDashboardData {
 
   /// Money kept since midnight.
   final double moneyToday;
+  final int cigarettesAvoidedToday;
   final int cigarettesSmokedToday;
 
   int get smokeFreeHours => smokeFreeDuration.inHours.remainder(24);

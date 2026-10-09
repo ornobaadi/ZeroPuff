@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zeropuff/core/theme/app_theme.dart';
 import 'package:zeropuff/features/home/providers/home_dashboard_provider.dart';
 import 'package:zeropuff/features/profile/screens/app_info_screen.dart';
+import 'package:zeropuff/features/progress/providers/milestone_providers.dart';
 import 'package:zeropuff/features/progress/screens/progress_screen.dart';
 
 const _sizes = <String, Size>{
@@ -35,7 +36,7 @@ Widget _progress({required double textScale, Brightness? dark}) {
       homeDashboardProvider.overrideWithValue(AsyncData(_data())),
       recentCheckInsProvider.overrideWith((ref) async => []),
       recentCravingsProvider.overrideWith((ref) async => []),
-      unlockedAchievementsProvider.overrideWith((ref) async => {}),
+      unlockedMilestonesProvider.overrideWith((ref) async => {}),
     ],
     child: MaterialApp(
       theme: AppTheme.light,

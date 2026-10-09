@@ -15,6 +15,7 @@ class StatCard extends StatelessWidget {
     required this.value,
     required this.icon,
     this.suffix,
+    this.delta,
     this.tone = StatTone.primary,
     this.onTap,
     super.key,
@@ -23,6 +24,9 @@ class StatCard extends StatelessWidget {
   final String label;
   final String value;
   final String? suffix;
+
+  /// A short line under the label, such as what was added today.
+  final String? delta;
   final IconData icon;
   final StatTone tone;
   final VoidCallback? onTap;
@@ -43,7 +47,10 @@ class StatCard extends StatelessWidget {
       ),
     };
 
-    final spoken = suffix == null ? '$label: $value' : '$label: $value $suffix';
+    final spoken = [
+      suffix == null ? '$label: $value' : '$label: $value $suffix',
+      ?delta,
+    ].join(', ');
 
     return AppCard(
       onTap: onTap,
@@ -85,6 +92,15 @@ class StatCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
+          if (delta != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              delta!,
+              style: theme.textTheme.labelMedium?.copyWith(color: onContainer),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );
