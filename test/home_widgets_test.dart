@@ -17,8 +17,33 @@ Finder _number(int value, {int minDigits = 1}) => find.byWidgetPredicate(
 );
 
 void main() {
+  group('ClockParts', () {
+    test('leads with minutes in the first hour', () {
+      final parts = ClockParts.of(const Duration(minutes: 12, seconds: 5));
+
+      expect((parts.value, parts.unit), (12, 'minutes'));
+      expect(parts.rest, [(5, 'sec')]);
+    });
+
+    test('leads with hours in the first day', () {
+      final parts = ClockParts.of(const Duration(hours: 1, minutes: 30));
+
+      expect((parts.value, parts.unit), (1, 'hour'));
+      expect(parts.rest, [(30, 'min'), (0, 'sec')]);
+    });
+
+    test('leads with days after that', () {
+      final parts = ClockParts.of(
+        const Duration(days: 40, hours: 3, minutes: 4, seconds: 5),
+      );
+
+      expect((parts.value, parts.unit), (40, 'days'));
+      expect(parts.rest, [(3, 'h'), (4, 'min'), (5, 'sec')]);
+    });
+  });
+
   group('SmokeFreeTimer', () {
-    testWidgets('shows days, hours, minutes and seconds', (tester) async {
+    testWidgets('shows days with the smaller units in a line', (tester) async {
       final since = DateTime.now().subtract(
         const Duration(days: 2, hours: 3, minutes: 4),
       );
@@ -28,6 +53,7 @@ void main() {
       expect(find.text('days'), findsOneWidget);
       expect(_number(3, minDigits: 2), findsOneWidget);
       expect(_number(4, minDigits: 2), findsOneWidget);
+      expect(find.text('h'), findsOneWidget);
     });
 
     testWidgets('uses the singular for one day', (tester) async {
@@ -37,12 +63,22 @@ void main() {
       expect(find.text('day'), findsOneWidget);
     });
 
+    testWidgets('never opens on zero days', (tester) async {
+      final since = DateTime.now().subtract(const Duration(hours: 5));
+      await tester.pumpWidget(_host(SmokeFreeTimer(since: since)));
+
+      expect(_number(5), findsOneWidget);
+      expect(find.text('hours'), findsOneWidget);
+      expect(find.text('days'), findsNothing);
+    });
+
     testWidgets('never shows negative time for a future start', (tester) async {
       final since = DateTime.now().add(const Duration(hours: 5));
       await tester.pumpWidget(_host(SmokeFreeTimer(since: since)));
 
       expect(_number(0), findsOneWidget);
-      expect(_number(0, minDigits: 2), findsNWidgets(3));
+      expect(find.text('minutes'), findsOneWidget);
+      expect(_number(0, minDigits: 2), findsOneWidget);
     });
 
     testWidgets('ticks every second', (tester) async {

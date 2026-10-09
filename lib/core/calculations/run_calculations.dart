@@ -40,7 +40,10 @@ class RunCalculations {
 
   /// What today is doing to the run, in one line. Null while the quit date is
   /// still ahead.
-  static String? todayLine(DayHistory history) {
+  ///
+  /// [sealOffered] is false where the seal is not on screen yet, so the line
+  /// does not point at a button that is not there.
+  static String? todayLine(DayHistory history, {bool sealOffered = true}) {
     if (!history.started) {
       return null;
     }
@@ -50,7 +53,9 @@ class RunCalculations {
     if (history.sealedToday) {
       return 'Today is sealed and already in your run.';
     }
-    return 'Today counts at midnight, or now if you seal it.';
+    return sealOffered
+        ? 'Today counts at midnight, or now if you seal it.'
+        : 'Today counts at midnight. You can seal it early this evening.';
   }
 
   /// A sentence about when runs have tended to end, once that has happened at

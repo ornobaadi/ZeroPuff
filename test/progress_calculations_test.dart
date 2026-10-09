@@ -63,6 +63,21 @@ void main() {
       );
     });
 
+    test('counts down with two units while it is close', () {
+      String label(Duration d) => ProgressCalculations.countdownLabel(d);
+
+      expect(
+        label(const Duration(days: 2, hours: 7, minutes: 9)),
+        'in 2 days 7 h',
+      );
+      expect(label(const Duration(days: 1)), 'in 1 day');
+      expect(label(const Duration(hours: 5, minutes: 12)), 'in 5 h 12 min');
+      expect(label(const Duration(minutes: 12)), 'in 12 min');
+      expect(label(const Duration(seconds: 20)), 'in under a minute');
+      expect(label(const Duration(days: 20, hours: 3)), 'in 20 days');
+      expect(label(Duration.zero), 'now');
+    });
+
     test('says how far off something is', () {
       expect(
         ProgressCalculations.untilLabel(const Duration(days: 2, hours: 4)),

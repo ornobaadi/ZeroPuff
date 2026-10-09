@@ -313,6 +313,27 @@ class ProgressCalculations {
     return 'in $minutes min';
   }
 
+  /// A countdown with two units while it is close: "in 2 days 7 h",
+  /// "in 5 h 12 min", "in 12 min". Further off it rounds like [untilLabel].
+  static String countdownLabel(Duration remaining) {
+    if (remaining <= Duration.zero) {
+      return 'now';
+    }
+    if (remaining.inDays >= 14) {
+      return untilLabel(remaining);
+    }
+    final hours = remaining.inHours.remainder(24);
+    final minutes = remaining.inMinutes.remainder(60);
+    if (remaining.inDays >= 1) {
+      final days = remaining.inDays == 1 ? '1 day' : '${remaining.inDays} days';
+      return hours == 0 ? 'in $days' : 'in $days $hours h';
+    }
+    if (remaining.inHours >= 1) {
+      return minutes == 0 ? 'in $hours h' : 'in $hours h $minutes min';
+    }
+    return remaining.inMinutes < 1 ? 'in under a minute' : 'in $minutes min';
+  }
+
   /// The next time milestone, or null once every one is reached.
   static ProgressMilestone? nextMilestone(Duration smokeFreeDuration) {
     for (final milestone in timeMilestones) {

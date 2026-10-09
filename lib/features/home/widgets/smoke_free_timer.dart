@@ -6,6 +6,49 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/rolling_number.dart';
 
+/// How a stretch of time is laid out on the clock: the largest unit that has
+/// started is the big number, and the smaller ones run in a line under it.
+/// So the first hour reads "12 minutes" rather than "0 days".
+class ClockParts {
+  const ClockParts({
+    required this.value,
+    required this.unit,
+    required this.rest,
+  });
+
+  factory ClockParts.of(Duration elapsed) {
+    final hours = elapsed.inHours.remainder(24);
+    final minutes = elapsed.inMinutes.remainder(60);
+    final seconds = elapsed.inSeconds.remainder(60);
+
+    if (elapsed.inDays >= 1) {
+      return ClockParts(
+        value: elapsed.inDays,
+        unit: elapsed.inDays == 1 ? 'day' : 'days',
+        rest: [(hours, 'h'), (minutes, 'min'), (seconds, 'sec')],
+      );
+    }
+    if (elapsed.inHours >= 1) {
+      return ClockParts(
+        value: hours,
+        unit: hours == 1 ? 'hour' : 'hours',
+        rest: [(minutes, 'min'), (seconds, 'sec')],
+      );
+    }
+    return ClockParts(
+      value: minutes,
+      unit: minutes == 1 ? 'minute' : 'minutes',
+      rest: [(seconds, 'sec')],
+    );
+  }
+
+  final int value;
+  final String unit;
+
+  /// The smaller units, largest first, each with its short label.
+  final List<(int, String)> rest;
+}
+
 /// A live "smoke-free for" clock.
 ///
 /// It owns its own one-second timer, so only this widget rebuilds every second
@@ -58,12 +101,12 @@ class _SmokeFreeTimerState extends State<SmokeFreeTimer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final color = theme.colorScheme.onPrimaryContainer;
 
     final days = _elapsed.inDays;
     final hours = _elapsed.inHours.remainder(24);
     final minutes = _elapsed.inMinutes.remainder(60);
-    final seconds = _elapsed.inSeconds.remainder(60);
+    final parts = ClockParts.of(_elapsed);
 
     return Semantics(
       label:
@@ -83,81 +126,49 @@ class _SmokeFreeTimerState extends State<SmokeFreeTimer> {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.bottomLeft,
                     child: RollingNumber(
-                      value: days,
+                      // A new unit taking over starts its own count.
+                      key: ValueKey(parts.rest.length),
+                      value: parts.value,
                       countUp: true,
-                      style: AppTypography.displayNumber.copyWith(
-                        color: scheme.onPrimaryContainer,
-                      ),
+                      style: AppTypography.displayNumber.copyWith(color: color),
                     ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  days == 1 ? 'day' : 'days',
+                  parts.unit,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontStyle: FontStyle.italic,
-                    color: scheme.onPrimaryContainer,
+                    color: color,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: _TimePill(value: hours, label: 'hours'),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: _TimePill(value: minutes, label: 'min'),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: _TimePill(value: seconds, label: 'sec'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TimePill extends StatelessWidget {
-  const _TimePill({required this.value, required this.label});
-
-  final int value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surface.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.componentGap),
-        child: Column(
-          children: [
-            RollingNumber(
-              value: value,
-              minDigits: 2,
-              style: AppTypography.liveCounter.copyWith(
-                fontSize: 30,
-                color: scheme.onSurface,
-              ),
-            ),
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                for (final (index, (value, unit)) in parts.rest.indexed) ...[
+                  if (index > 0) const SizedBox(width: AppSpacing.componentGap),
+                  RollingNumber(
+                    key: ValueKey(unit),
+                    value: value,
+                    minDigits: 2,
+                    style: AppTypography.liveCounter.copyWith(
+                      fontSize: 24,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    unit,
+                    style: AppTypography.liveCounterLabel.copyWith(
+                      color: color,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),

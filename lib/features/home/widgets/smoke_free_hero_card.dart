@@ -31,10 +31,16 @@ class SmokeFreeHeroCard extends StatelessWidget {
         ? 1.0
         : (elapsed.inSeconds / segment.inSeconds).clamp(0.0, 1.0);
     final percent = (progress * 100).round();
+    final countdown = next == null
+        ? null
+        : ProgressCalculations.countdownLabel(
+            next.duration - data.smokeFreeDuration,
+          );
 
     final milestoneText = next == null
         ? 'All milestones reached'
-        : 'Next milestone: ${next.title}';
+        : 'Next milestone: ${next.title}, $countdown';
+    final color = scheme.onPrimaryContainer;
 
     return Semantics(
       button: true,
@@ -71,23 +77,30 @@ class SmokeFreeHeroCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 SmokeFreeTimer(since: data.smokeFreeSince),
                 const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        milestoneText,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: scheme.onPrimaryContainer,
+                // Counts down to the next milestone rather than quoting a
+                // percentage: something getting closer is easier to feel.
+                ExcludeSemantics(
+                  child: Row(
+                    children: [
+                      Icon(Symbols.flag_rounded, size: 18, color: color),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          next == null ? 'All milestones reached' : next.title,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: color,
+                          ),
                         ),
                       ),
-                    ),
-                    Text(
-                      '$percent%',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: scheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ],
+                      if (countdown != null)
+                        Text(
+                          countdown,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: color,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 LinearProgressIndicator(

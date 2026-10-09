@@ -15,6 +15,7 @@ class WeekChain extends StatelessWidget {
     required this.history,
     required this.onTap,
     this.onSeal,
+    this.sealOffered = true,
     super.key,
   });
 
@@ -25,6 +26,10 @@ class WeekChain extends StatelessWidget {
   /// it.
   final VoidCallback? onSeal;
 
+  /// False during the day on Home, where the morning promise is the one
+  /// thing asked for and the seal waits for the evening.
+  final bool sealOffered;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -33,7 +38,10 @@ class WeekChain extends StatelessWidget {
     final run = history.currentRun;
     final clear = days.where((day) => day.smokeFree && !day.isToday).length;
     final slips = days.where((day) => day.slipped).length;
-    final todayLine = RunCalculations.todayLine(history);
+    final todayLine = RunCalculations.todayLine(
+      history,
+      sealOffered: sealOffered,
+    );
     final onSeal = history.sealedToday ? null : this.onSeal;
 
     return AppCard(

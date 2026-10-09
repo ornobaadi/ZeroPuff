@@ -288,6 +288,7 @@ class _HomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final today = this.today;
     final history = this.history;
+    final evening = DateTime.now().hour >= TodayCardCalculations.sealFromHour;
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -331,10 +332,13 @@ class _HomeContent extends StatelessWidget {
                 WeekChain(
                   history: history,
                   onTap: () => onOpen(AppRoutes.streakDetails),
-                  // In the evening the Today card already offers the seal.
-                  onSeal: today?.kind == TodayCardKind.sealDay
-                      ? null
-                      : () => onOpen(AppRoutes.checkIn),
+                  // One thing asked at a time: the promise by day, the seal
+                  // from the evening. The Today card carries the seal unless
+                  // a smoking moment has taken it over.
+                  sealOffered: evening,
+                  onSeal: evening && today?.kind != TodayCardKind.sealDay
+                      ? () => onOpen(AppRoutes.checkIn)
+                      : null,
                 ),
               ],
               const SizedBox(height: AppSpacing.md),
