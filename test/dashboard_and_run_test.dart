@@ -1,7 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zeropuff/core/calculations/day_history.dart';
 import 'package:zeropuff/core/calculations/run_calculations.dart';
+import 'package:zeropuff/core/theme/app_theme.dart';
 import 'package:zeropuff/features/home/providers/home_dashboard_provider.dart';
+import 'package:zeropuff/features/home/widgets/week_chain.dart';
 import 'package:zeropuff/models/onboarding_data.dart';
 import 'package:zeropuff/repositories/daily_checkin_repository.dart';
 import 'package:zeropuff/repositories/smoking_log_repository.dart';
@@ -111,6 +115,123 @@ void main() {
       expect(RunCalculations.nextTarget(0)?.days, 1);
       expect(RunCalculations.nextTarget(7)?.label, '2-week');
       expect(RunCalculations.nextTarget(400), isNull);
+    });
+  });
+
+  group('Today line', () {
+    DayHistory history({
+      DateTime? now,
+      List<DateTime> slips = const [],
+      List<DateTime> sealed = const [],
+    }) {
+      return DayHistory(
+        quitDate: DateTime(2026, 10, 1, 9),
+        today: now ?? DateTime(2026, 10, 10, 15),
+        slipDays: slips,
+        sealedDays: sealed,
+      );
+    }
+
+    test('says an open day counts by itself at midnight', () {
+      expect(
+        RunCalculations.todayLine(history()),
+        'Today counts at midnight, or now if you seal it.',
+      );
+    });
+
+    test('says a sealed day is already counted', () {
+      expect(
+        RunCalculations.todayLine(history(sealed: [DateTime(2026, 10, 10)])),
+        'Today is sealed and already in your run.',
+      );
+    });
+
+    test('a cigarette today wins over a seal', () {
+      final line = RunCalculations.todayLine(
+        history(
+          slips: [DateTime(2026, 10, 10, 11)],
+          sealed: [DateTime(2026, 10, 10)],
+        ),
+      );
+
+      expect(line, startsWith('A cigarette is logged today.'));
+    });
+
+    test('has nothing to say before the quit date', () {
+      expect(
+        RunCalculations.todayLine(history(now: DateTime(2026, 9, 28))),
+        isNull,
+      );
+    });
+  });
+
+  group('Week chain', () {
+    Future<({int opened, int sealed})> pumpChain(
+      WidgetTester tester, {
+      List<DateTime> sealedDays = const [],
+      bool offerSeal = true,
+      bool tapSeal = false,
+    }) async {
+      var opened = 0;
+      var sealed = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: WeekChain(
+              history: DayHistory(
+                quitDate: DateTime(2026, 10, 1, 9),
+                today: DateTime(2026, 10, 10, 15),
+                sealedDays: sealedDays,
+              ),
+              onTap: () => opened += 1,
+              onSeal: offerSeal ? () => sealed += 1 : null,
+            ),
+          ),
+        ),
+      );
+      if (tapSeal) {
+        await tester.tap(find.text('Seal today'));
+      }
+      await tester.tap(find.text('This week'));
+      return (opened: opened, sealed: sealed);
+    }
+
+    testWidgets('offers the seal on Home while today is open', (tester) async {
+      final taps = await pumpChain(tester, tapSeal: true);
+
+      expect(find.text('9 day run'), findsOneWidget);
+      expect(
+        find.text('Today counts at midnight, or now if you seal it.'),
+        findsOneWidget,
+      );
+      // The seal and the rest of the card are separate targets.
+      expect(taps.sealed, 1);
+      expect(taps.opened, 1);
+      expect(
+        tester.getSize(find.byType(FilledButton)).height,
+        greaterThanOrEqualTo(48),
+      );
+    });
+
+    testWidgets('drops the button once today is sealed', (tester) async {
+      await pumpChain(tester, sealedDays: [DateTime(2026, 10, 10)]);
+
+      expect(find.text('10 day run'), findsOneWidget);
+      expect(find.text('Seal today'), findsNothing);
+      expect(
+        find.text('Today is sealed and already in your run.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('leaves the button out when the Today card offers it', (
+      tester,
+    ) async {
+      await pumpChain(tester, offerSeal: false);
+
+      expect(find.text('Seal today'), findsNothing);
+      expect(find.textContaining('Today counts at midnight'), findsOneWidget);
     });
   });
 

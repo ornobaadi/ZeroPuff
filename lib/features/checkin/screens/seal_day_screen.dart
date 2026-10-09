@@ -232,7 +232,9 @@ class _SealDayScreenState extends ConsumerState<SealDayScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   !sealed
-                      ? 'ZeroPuff filled this in from what you logged. One tap closes the day.'
+                      ? slipped
+                            ? 'ZeroPuff filled this in from what you logged. One tap closes the day.'
+                            : 'ZeroPuff filled this in from what you logged. One tap adds today to your run now, instead of at midnight.'
                       : slipped
                       ? 'Logged honestly. Tomorrow starts clean.'
                       : 'One more smoke-free day in the bank.',

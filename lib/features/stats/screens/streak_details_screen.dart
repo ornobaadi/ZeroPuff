@@ -40,8 +40,19 @@ class StreakDetailsScreen extends ConsumerWidget {
                 slipTimes: logs.map((log) => log.smokedAt).toList(),
               );
 
+        final todayLine = history == null
+            ? null
+            : RunCalculations.todayLine(history);
+
         return [
           _RunHero(run: run, since: history?.runStart, best: history?.bestRun),
+          if (todayLine != null)
+            _Today(
+              line: todayLine,
+              onSeal: data.todaySealed
+                  ? null
+                  : () => context.push(AppRoutes.checkIn),
+            ),
           if (history != null)
             _Chain(
               history: history,
@@ -82,16 +93,10 @@ class StreakDetailsScreen extends ConsumerWidget {
           const InfoCard(
             title: 'How the run works',
             body:
-                'A day counts as smoke-free unless you log a cigarette. Sealing a day in the evening banks it early. Skipping the seal never breaks your run.',
+                'Every day counts as smoke-free unless you log a cigarette, so there is nothing you have to confirm. Today joins your run at midnight. Sealing it adds it straight away. Skipping the seal never breaks your run.',
             icon: Symbols.air_rounded,
           ),
-          if (!data.todaySealed)
-            FilledButton.icon(
-              onPressed: () => context.push(AppRoutes.checkIn),
-              icon: const Icon(Symbols.verified_rounded),
-              label: const Text('Seal today'),
-            )
-          else if (run > 0)
+          if (run > 0)
             OutlinedButton.icon(
               onPressed: () => showShareCard(
                 context,
@@ -195,6 +200,45 @@ class _RunHero extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Where today stands against the run, with the seal while the day is open.
+class _Today extends StatelessWidget {
+  const _Today({required this.line, required this.onSeal});
+
+  final String line;
+  final VoidCallback? onSeal;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final onSeal = this.onSeal;
+
+    return AppCard(
+      style: AppCardStyle.outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Symbols.today_rounded, color: scheme.primary),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(child: Text(line, style: theme.textTheme.bodyLarge)),
+            ],
+          ),
+          if (onSeal != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            FilledButton.icon(
+              onPressed: onSeal,
+              icon: const Icon(Symbols.verified_rounded),
+              label: const Text('Seal today'),
+            ),
+          ],
+        ],
       ),
     );
   }

@@ -118,7 +118,15 @@ class TodayCardView extends StatelessWidget {
           ],
           if (action != null && onAction != null) ...[
             const SizedBox(height: AppSpacing.md),
-            FilledButton.tonal(onPressed: onAction, child: Text(action)),
+            FilledButton(
+              // A plain surface, so the button shows on every card tint.
+              style: FilledButton.styleFrom(
+                backgroundColor: scheme.surfaceContainerLow,
+                foregroundColor: scheme.onSurface,
+              ),
+              onPressed: onAction,
+              child: Text(action),
+            ),
           ],
         ],
       ),

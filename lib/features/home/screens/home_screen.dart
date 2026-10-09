@@ -331,6 +331,10 @@ class _HomeContent extends StatelessWidget {
                 WeekChain(
                   history: history,
                   onTap: () => onOpen(AppRoutes.streakDetails),
+                  // In the evening the Today card already offers the seal.
+                  onSeal: today?.kind == TodayCardKind.sealDay
+                      ? null
+                      : () => onOpen(AppRoutes.checkIn),
                 ),
               ],
               const SizedBox(height: AppSpacing.md),

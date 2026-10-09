@@ -82,7 +82,8 @@ class TodayCardCalculations {
       return const TodayCard(
         kind: TodayCardKind.sealDay,
         title: 'Seal today',
-        body: 'One tap closes the day and banks it. It takes a few seconds.',
+        body:
+            'One tap closes the day. A smoke-free day joins your run now instead of at midnight.',
         actionLabel: 'Seal today',
       );
     }

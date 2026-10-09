@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import 'day_history.dart';
+
 /// A length of smoke-free run worth aiming at.
 class RunTarget {
   const RunTarget(this.days, this.label);
@@ -34,6 +36,21 @@ class RunCalculations {
       }
     }
     return null;
+  }
+
+  /// What today is doing to the run, in one line. Null while the quit date is
+  /// still ahead.
+  static String? todayLine(DayHistory history) {
+    if (!history.started) {
+      return null;
+    }
+    if (history.slippedToday) {
+      return 'A cigarette is logged today. A new run can start tomorrow.';
+    }
+    if (history.sealedToday) {
+      return 'Today is sealed and already in your run.';
+    }
+    return 'Today counts at midnight, or now if you seal it.';
   }
 
   /// A sentence about when runs have tended to end, once that has happened at
