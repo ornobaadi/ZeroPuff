@@ -79,7 +79,7 @@ class _CreatorFooterState extends State<CreatorFooter> {
           const SizedBox(height: AppSpacing.sm),
           Text(
             '${AppConstants.appName.toUpperCase()}  •  '
-            'VERSION ${AppConstants.appBuildLabel.replaceFirst('+', ' (')})',
+            'VERSION ${AppConstants.appVersion}',
             textAlign: TextAlign.center,
             style: label,
           ),

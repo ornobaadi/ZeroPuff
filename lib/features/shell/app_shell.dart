@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/layout/window_size.dart';
-import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/app_dialog.dart';
 import '../../repositories/app_settings_repository.dart';
 import '../../services/haptics/haptic_service.dart';
 import '../../services/sync/sync_service.dart';
@@ -89,45 +89,14 @@ class _CloseAppDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Dialog(
-      insetPadding: const EdgeInsets.all(AppSpacing.pagePadding),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Close ZeroPuff?', style: theme.textTheme.headlineSmall),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Your progress is safe. Close the app only if you are done for now.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('Stay'),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('Close'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return AppDialog(
+      title: 'Close ZeroPuff?',
+      message:
+          'Your progress is safe. Close the app only if you are done for now.',
+      secondaryLabel: 'Stay',
+      onSecondary: () => Navigator.of(context).pop(false),
+      primaryLabel: 'Close',
+      onPrimary: () => Navigator.of(context).pop(true),
     );
   }
 }

@@ -53,7 +53,7 @@ class AppInfoScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Text(
-                          '${AppConstants.appVersionLabel} (${AppConstants.appBuildLabel})',
+                          AppConstants.appVersionLabel,
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: scheme.onPrimaryContainer,
                           ),

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/calculations/craving_analysis_calculations.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_motion.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../notifications/reminder_refresh.dart';
 import '../../share/share_card.dart';
@@ -57,9 +58,9 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
       final profile = await ref
           .read(onboardingRepositoryProvider)
           .loadCompletedProfile();
-      final cravings = await ref.read(cravingRepositoryProvider).recent(
-        limit: 90,
-      );
+      final cravings = await ref
+          .read(cravingRepositoryProvider)
+          .recent(limit: 90);
       final known = rescueReasons.map((reason) => reason.value).toSet();
       final likely = CravingAnalysisCalculations.likelyTriggers(
         cravings: cravings,
@@ -76,7 +77,8 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
         if (!_triggersTouched) {
           _triggers.addAll(likely);
         }
-        _streakBefore = ref.read(homeDashboardProvider).value?.resistanceStreak ?? 0;
+        _streakBefore =
+            ref.read(homeDashboardProvider).value?.resistanceStreak ?? 0;
       });
     } on Object {
       // The rescue works without any of this.
@@ -147,8 +149,7 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
             caption: 'beaten',
             lines: [
               'It came, I breathed, it passed.',
-              if (_streakBefore + 1 >= 2)
-                '${_streakBefore + 1} in a row',
+              if (_streakBefore + 1 >= 2) '${_streakBefore + 1} in a row',
             ],
           ),
         ),
@@ -361,21 +362,14 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
   Future<bool> _confirmLeave() async {
     return await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Leave the rescue?'),
-            content: const Text(
-              'The urge will pass whether or not you smoke. Stay for one more breath if you can.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Leave'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Stay'),
-              ),
-            ],
+          builder: (context) => AppDialog(
+            title: 'Leave the rescue?',
+            message:
+                'The urge will pass whether or not you smoke. Stay for one more breath if you can.',
+            secondaryLabel: 'Leave',
+            onSecondary: () => Navigator.of(context).pop(true),
+            primaryLabel: 'Stay',
+            onPrimary: () => Navigator.of(context).pop(false),
           ),
         ) ??
         false;

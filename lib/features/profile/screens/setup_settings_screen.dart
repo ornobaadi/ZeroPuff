@@ -140,188 +140,212 @@ class _SetupSettingsScreenState extends ConsumerState<SetupSettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Setup details')),
+      // The save button sits under the form in a column. As a bottom bar it
+      // stretched to the full height and left the form no room.
       body: SafeArea(
-        child: profile.when(
-          loading: () => const StateView.loading(),
-          error: (error, _) => StateView.error(
-            error: error,
-            onRetry: () => ref.invalidate(editableProfileProvider),
-          ),
-          data: (data) {
-            if (data != null) {
-              _hydrate(data);
-            }
+        child: Column(
+          children: [
+            Expanded(
+              child: profile.when(
+                loading: () => const StateView.loading(),
+                error: (error, _) => StateView.error(
+                  error: error,
+                  onRetry: () => ref.invalidate(editableProfileProvider),
+                ),
+                data: (data) {
+                  if (data != null) {
+                    _hydrate(data);
+                  }
 
-            return ListView(
-              padding: const EdgeInsets.all(AppSpacing.pagePadding),
-              children: [
-                ContentWidth(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  return ListView(
+                    padding: const EdgeInsets.all(AppSpacing.pagePadding),
                     children: [
-                      Text(
-                        'Changing these numbers recalculates your stats, projections and reminders straight away.',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      _QuitDateCard(date: _quitDate, onTap: _pickQuitDate),
-                      const SizedBox(height: AppSpacing.sectionGap),
-                      Text('Your habit', style: theme.textTheme.titleLarge),
-                      const SizedBox(height: AppSpacing.md),
-                      Text('Currency', style: theme.textTheme.titleMedium),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'This only changes estimates. Your history stays intact.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.sm,
-                        children: [
-                          for (final currency in CurrencyOption.all)
-                            ChoiceChip(
-                              label: Text(
-                                '${currency.symbol} ${currency.code}',
+                      ContentWidth(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Changing these numbers recalculates your stats, projections and reminders straight away.',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: scheme.onSurfaceVariant,
                               ),
-                              tooltip: currency.name,
-                              selected: _currency.code == currency.code,
-                              onSelected: (_) =>
-                                  setState(() => _currency = currency),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      NumberStepper(
-                        label: 'Cigarettes per day',
-                        value: _cigarettesPerDay,
-                        min: 1,
-                        max: 80,
-                        onChanged: (value) =>
-                            setState(() => _cigarettesPerDay = value),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      NumberStepper(
-                        label: 'Pack price',
-                        value: _packPrice,
-                        min: 0,
-                        max: 10000,
-                        prefix: _currency.symbol,
-                        step: _currency.largePriceStep ? 10 : 1,
-                        onChanged: (value) =>
-                            setState(() => _packPrice = value),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      NumberStepper(
-                        label: 'Cigarettes per pack',
-                        value: _packSize,
-                        min: 1,
-                        max: 60,
-                        onChanged: (value) => setState(() => _packSize = value),
-                      ),
-                      const SizedBox(height: AppSpacing.sectionGap),
-                      Text('Your routine', style: theme.textTheme.titleLarge),
-                      const SizedBox(height: AppSpacing.md),
-                      SmokingWindowCard(
-                        startMinutes: _smokeWindowStartMinutes,
-                        endMinutes: _smokeWindowEndMinutes,
-                        onRangeChanged: (start, end) => setState(() {
-                          _smokeWindowStartMinutes = start;
-                          _smokeWindowEndMinutes = end;
-                        }),
-                        onPickStart: () => _pickSmokeWindowTime(
-                          initialMinutes: _smokeWindowStartMinutes,
-                          onPicked: (minutes) => setState(() {
-                            _smokeWindowStartMinutes = minutes;
-                            if (_smokeWindowEndMinutes <= minutes) {
-                              _smokeWindowEndMinutes = (minutes + 60).clamp(
-                                0,
-                                24 * 60,
-                              );
-                            }
-                          }),
-                        ),
-                        onPickEnd: () => _pickSmokeWindowTime(
-                          initialMinutes: _smokeWindowEndMinutes,
-                          onPicked: (minutes) => setState(() {
-                            _smokeWindowEndMinutes = minutes;
-                            if (_smokeWindowStartMinutes >= minutes) {
-                              _smokeWindowStartMinutes = (minutes - 60).clamp(
-                                0,
-                                24 * 60,
-                              );
-                            }
-                          }),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      Text('Triggers', style: theme.textTheme.titleMedium),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Keep at least one selected.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.sm,
-                        children: [
-                          for (final option in kTriggerOptions)
-                            FilterChip(
-                              label: Text(option.label),
-                              selected: _triggers.contains(option.value),
-                              onSelected: (_) => _toggleTrigger(option.value),
+                            const SizedBox(height: AppSpacing.lg),
+                            _QuitDateCard(
+                              date: _quitDate,
+                              onTap: _pickQuitDate,
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.sectionGap),
-                      TextField(
-                        controller: _reasonController,
-                        minLines: 3,
-                        maxLines: 6,
-                        maxLength: 300,
-                        textCapitalization: TextCapitalization.sentences,
-                        decoration: const InputDecoration(
-                          labelText: 'Your reason',
-                          hintText:
-                              'The reason you want future-you to remember.',
-                          alignLabelWithHint: true,
+                            const SizedBox(height: AppSpacing.sectionGap),
+                            Text(
+                              'Your habit',
+                              style: theme.textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              'Currency',
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              'This only changes estimates. Your history stays intact.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: [
+                                for (final currency in CurrencyOption.all)
+                                  ChoiceChip(
+                                    label: Text(
+                                      '${currency.symbol} ${currency.code}',
+                                    ),
+                                    tooltip: currency.name,
+                                    selected: _currency.code == currency.code,
+                                    onSelected: (_) =>
+                                        setState(() => _currency = currency),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            NumberStepper(
+                              label: 'Cigarettes per day',
+                              value: _cigarettesPerDay,
+                              min: 1,
+                              max: 80,
+                              onChanged: (value) =>
+                                  setState(() => _cigarettesPerDay = value),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            NumberStepper(
+                              label: 'Pack price',
+                              value: _packPrice,
+                              min: 0,
+                              max: 10000,
+                              prefix: _currency.symbol,
+                              step: _currency.largePriceStep ? 10 : 1,
+                              onChanged: (value) =>
+                                  setState(() => _packPrice = value),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            NumberStepper(
+                              label: 'Cigarettes per pack',
+                              value: _packSize,
+                              min: 1,
+                              max: 60,
+                              onChanged: (value) =>
+                                  setState(() => _packSize = value),
+                            ),
+                            const SizedBox(height: AppSpacing.sectionGap),
+                            Text(
+                              'Your routine',
+                              style: theme.textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            SmokingWindowCard(
+                              startMinutes: _smokeWindowStartMinutes,
+                              endMinutes: _smokeWindowEndMinutes,
+                              onRangeChanged: (start, end) => setState(() {
+                                _smokeWindowStartMinutes = start;
+                                _smokeWindowEndMinutes = end;
+                              }),
+                              onPickStart: () => _pickSmokeWindowTime(
+                                initialMinutes: _smokeWindowStartMinutes,
+                                onPicked: (minutes) => setState(() {
+                                  _smokeWindowStartMinutes = minutes;
+                                  if (_smokeWindowEndMinutes <= minutes) {
+                                    _smokeWindowEndMinutes = (minutes + 60)
+                                        .clamp(0, 24 * 60);
+                                  }
+                                }),
+                              ),
+                              onPickEnd: () => _pickSmokeWindowTime(
+                                initialMinutes: _smokeWindowEndMinutes,
+                                onPicked: (minutes) => setState(() {
+                                  _smokeWindowEndMinutes = minutes;
+                                  if (_smokeWindowStartMinutes >= minutes) {
+                                    _smokeWindowStartMinutes = (minutes - 60)
+                                        .clamp(0, 24 * 60);
+                                  }
+                                }),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            Text(
+                              'Triggers',
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              'Keep at least one selected.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: [
+                                for (final option in kTriggerOptions)
+                                  FilterChip(
+                                    label: Text(option.label),
+                                    selected: _triggers.contains(option.value),
+                                    onSelected: (_) =>
+                                        _toggleTrigger(option.value),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.sectionGap),
+                            TextField(
+                              controller: _reasonController,
+                              minLines: 3,
+                              maxLines: 6,
+                              maxLength: 300,
+                              textCapitalization: TextCapitalization.sentences,
+                              decoration: const InputDecoration(
+                                labelText: 'Your reason',
+                                hintText:
+                                    'The reason you want future-you to remember.',
+                                alignLabelWithHint: true,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.pagePadding),
-          child: ContentWidth(
-            child: FilledButton.icon(
-              onPressed: profile.hasValue && !_saving
-                  ? () => _save(profile.value)
-                  : null,
-              icon: _saving
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        semanticsLabel: 'Saving',
-                      ),
-                    )
-                  : const Icon(Symbols.check_rounded),
-              label: Text(_saving ? 'Saving' : 'Save changes'),
+                  );
+                },
+              ),
             ),
-          ),
+            ContentWidth(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.pagePadding,
+                  AppSpacing.sm,
+                  AppSpacing.pagePadding,
+                  AppSpacing.md,
+                ),
+                child: FilledButton.icon(
+                  onPressed: profile.hasValue && !_saving
+                      ? () => _save(profile.value)
+                      : null,
+                  icon: _saving
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            semanticsLabel: 'Saving',
+                          ),
+                        )
+                      : const Icon(Symbols.check_rounded),
+                  label: Text(_saving ? 'Saving' : 'Save changes'),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

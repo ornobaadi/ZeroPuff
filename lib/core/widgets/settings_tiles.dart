@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../theme/app_spacing.dart';
 import 'app_card.dart';
+import 'app_dialog.dart';
 
 /// A titled group of settings rows inside one card.
 class SettingsSection extends StatelessWidget {
@@ -187,32 +188,16 @@ Future<bool> showConfirmDialog(
 }) async {
   final result = await showDialog<bool>(
     context: context,
-    builder: (dialogContext) {
-      final scheme = Theme.of(dialogContext).colorScheme;
-      return AlertDialog(
-        icon: icon == null
-            ? null
-            : Icon(icon, color: destructive ? scheme.error : scheme.primary),
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(cancelLabel),
-          ),
-          FilledButton(
-            style: destructive
-                ? FilledButton.styleFrom(
-                    backgroundColor: scheme.error,
-                    foregroundColor: scheme.onError,
-                  )
-                : null,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(confirmLabel),
-          ),
-        ],
-      );
-    },
+    builder: (dialogContext) => AppDialog(
+      icon: icon,
+      title: title,
+      message: message,
+      destructive: destructive,
+      secondaryLabel: cancelLabel,
+      onSecondary: () => Navigator.of(dialogContext).pop(false),
+      primaryLabel: confirmLabel,
+      onPrimary: () => Navigator.of(dialogContext).pop(true),
+    ),
   );
   return result ?? false;
 }

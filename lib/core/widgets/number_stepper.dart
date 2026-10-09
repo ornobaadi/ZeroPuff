@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
+import 'app_dialog.dart';
 
 import '../theme/app_shapes.dart';
 import '../theme/app_spacing.dart';
@@ -199,8 +200,8 @@ class _EditValueDialogState extends State<_EditValueDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.label),
+    return AppDialog(
+      title: widget.label,
       content: TextField(
         controller: _controller,
         autofocus: true,
@@ -214,17 +215,8 @@ class _EditValueDialogState extends State<_EditValueDialog> {
         ),
         onSubmitted: (_) => _submit(),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(minimumSize: const Size(96, 48)),
-          onPressed: _submit,
-          child: const Text('Save'),
-        ),
-      ],
+      primaryLabel: 'Save',
+      onPrimary: _submit,
     );
   }
 }

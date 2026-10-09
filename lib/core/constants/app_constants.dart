@@ -4,8 +4,8 @@ class AppConstants {
   static const appName = 'ZeroPuff';
   static const appTagline = 'Before you smoke, take six breaths.';
   static const creatorUrl = 'https://ornobaadi.vercel.app';
-  static const appVersionLabel = 'v1.2.0';
-  static const appBuildLabel = '1.2.0+6';
+  static const appVersion = '1.2.0';
+  static const appVersionLabel = 'v$appVersion';
   // Public URL of the hosted privacy policy (also entered in Play Console).
   // Leave empty to hide the link until the policy is published.
   static const privacyPolicyUrl =
