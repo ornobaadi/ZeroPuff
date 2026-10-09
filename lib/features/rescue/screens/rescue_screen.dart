@@ -7,6 +7,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../features/home/providers/home_dashboard_provider.dart';
 import '../../notifications/reminder_refresh.dart';
+import '../../share/share_card.dart';
 import '../../../models/app_event.dart';
 import '../../../repositories/app_event_repository.dart';
 import '../../../repositories/app_settings_repository.dart';
@@ -137,6 +138,20 @@ class _RescueScreenState extends ConsumerState<RescueScreen> {
             : dashboard.packPrice / dashboard.packSize,
         streak: _streakBefore + 1,
         onDone: _close,
+        onShare: () => showShareCard(
+          context,
+          ShareCardData(
+            headline: _beatenCount == null
+                ? 'A craving'
+                : 'Craving #$_beatenCount',
+            caption: 'beaten',
+            lines: [
+              'It came, I breathed, it passed.',
+              if (_streakBefore + 1 >= 2)
+                '${_streakBefore + 1} in a row',
+            ],
+          ),
+        ),
       ),
     };
 

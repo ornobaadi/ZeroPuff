@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/bootstrap/app_bootstrap.dart';
 import 'core/constants/app_constants.dart';
 import 'core/router/app_router.dart';
+import 'core/router/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'repositories/app_settings_repository.dart';
 import 'services/notifications/notification_service.dart';
@@ -53,10 +56,13 @@ class ZeroPuffApp extends ConsumerStatefulWidget {
 }
 
 class _ZeroPuffAppState extends ConsumerState<ZeroPuffApp> {
+  static const _launchChannel = MethodChannel('zeropuff/launch');
+
   @override
   void initState() {
     super.initState();
     NotificationService.openRoute.addListener(_openRequestedRoute);
+    _listenForLaunchRoutes();
     // A notification may have started the app before anything was listening.
     WidgetsBinding.instance.addPostFrameCallback((_) => _openRequestedRoute());
   }
@@ -65,6 +71,30 @@ class _ZeroPuffAppState extends ConsumerState<ZeroPuffApp> {
   void dispose() {
     NotificationService.openRoute.removeListener(_openRequestedRoute);
     super.dispose();
+  }
+
+  /// The home-screen widget and quick-settings tile open the app at a route.
+  Future<void> _listenForLaunchRoutes() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+    _launchChannel.setMethodCallHandler((call) async {
+      if (call.method == 'openRoute' && call.arguments is String) {
+        NotificationService.openRoute.value = call.arguments as String;
+      }
+    });
+    try {
+      final route = await _launchChannel.invokeMethod<String>(
+        'takeInitialRoute',
+      );
+      if (route != null) {
+        NotificationService.openRoute.value = route;
+      }
+    } on MissingPluginException {
+      // Not running inside the Android app (tests).
+    } on PlatformException {
+      // Nothing was asked for.
+    }
   }
 
   /// Opens the screen a tapped notification asked for. The router still
@@ -76,7 +106,12 @@ class _ZeroPuffAppState extends ConsumerState<ZeroPuffApp> {
     }
     NotificationService.openRoute.value = null;
     final router = ref.read(appRouterProvider);
-    if (router.state.matchedLocation != route) {
+    if (router.state.matchedLocation == route) {
+      return;
+    }
+    if (route == AppRoutes.home) {
+      router.go(route);
+    } else {
       router.push(route);
     }
   }

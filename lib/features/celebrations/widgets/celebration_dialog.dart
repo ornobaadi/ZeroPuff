@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_accents.dart';
 import '../../../core/theme/app_motion.dart';
@@ -9,9 +10,12 @@ import '../milestone_celebration_controller.dart';
 /// win, and a single way to dismiss it. Motion is skipped when the system asks
 /// for reduced animation.
 class CelebrationDialog extends StatefulWidget {
-  const CelebrationDialog({required this.event, super.key});
+  const CelebrationDialog({required this.event, this.onShare, super.key});
 
   final CelebrationEvent event;
+
+  /// Offers to share the win when set.
+  final VoidCallback? onShare;
 
   @override
   State<CelebrationDialog> createState() => _CelebrationDialogState();
@@ -128,6 +132,14 @@ class _CelebrationDialogState extends State<CelebrationDialog>
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text('Celebrate this win'),
               ),
+              if (widget.onShare != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                TextButton.icon(
+                  onPressed: widget.onShare,
+                  icon: const Icon(Symbols.ios_share_rounded),
+                  label: const Text('Share it'),
+                ),
+              ],
             ],
           ),
         ),

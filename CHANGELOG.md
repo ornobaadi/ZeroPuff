@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.2.0 (build 6)
+
+A new rescue you can feel, and reasons to open the app every day.
+
+### New
+- Rescue rebuilt: tapping "I'm craving" opens straight into breathing. Hold the orb to breathe in, let go to breathe out, with vibration that rises and fades with each breath.
+- Pocket mode: breathing paced by vibration alone on a dark screen.
+- If the urge is still strong, pick a different tool: grounding, a ten-minute delay with a check-back, water, moving, or your reason.
+- A win screen after each craving you get through, showing how far the urge dropped and what you kept.
+- Smoking moments: name the times you used to smoke (coffee, breaks, the drive home) and get a heads-up ten minutes before each.
+- Tapping a notification opens the screen it is about.
+- A Today card on Home that changes with the day, including a one-tap daily promise.
+- Savings goal: name what the money is for and watch a jar fill towards it.
+- Home-screen widget and a quick-settings tile, both one tap from the rescue.
+- Share a milestone or a beaten craving as an image.
+- Onboarding lets you try one breath before anything else is asked.
+
+### Changed
+- Daily check-in ends on a short summary instead of a brief message.
+- The app records how strong each urge was before and after a rescue.
+
+### Requires
+- Supabase migration `0007_craving_rescue_fields.sql`.
+
 ## 1.1.1 (build 5)
 
 A calmer, more polished look.

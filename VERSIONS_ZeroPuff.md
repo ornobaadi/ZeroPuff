@@ -9,6 +9,8 @@ Each version adds one meaningful layer on top of the last.
 
 ---
 
+> **Update, v1.2.0 (October 2026):** the offline rescue is no longer a two-minute timer. It is now hold-to-breathe with a different-tool fallback and a win screen. The home-screen widget, share cards and danger-window nudges (as free "smoking moments") were brought forward from v1.5 and are already built, along with a quick-settings tile. Sections below that describe them as future work are out of date.
+
 ## Version Overview
 
 ```

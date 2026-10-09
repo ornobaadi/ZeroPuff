@@ -3,8 +3,8 @@ class AppConstants {
 
   static const appName = 'ZeroPuff';
   static const appTagline = 'Before you smoke, take six breaths.';
-  static const appVersionLabel = 'v1.1.1';
-  static const appBuildLabel = '1.1.1+5';
+  static const appVersionLabel = 'v1.2.0';
+  static const appBuildLabel = '1.2.0+6';
   // Public URL of the hosted privacy policy (also entered in Play Console).
   // Leave empty to hide the link until the policy is published.
   static const privacyPolicyUrl =

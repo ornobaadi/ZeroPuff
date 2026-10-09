@@ -14,9 +14,11 @@ import '../../../core/widgets/stat_card.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/daily_loop_repository.dart';
 import '../../../services/haptics/haptic_service.dart';
+import '../../../services/widget/home_widget_service.dart';
 import '../../celebrations/milestone_celebration_controller.dart';
 import '../../celebrations/widgets/celebration_dialog.dart';
 import '../../notifications/reminder_refresh.dart';
+import '../../share/share_card.dart';
 import '../providers/home_dashboard_provider.dart';
 import '../providers/today_card_provider.dart';
 import '../widgets/home_action_cards.dart';
@@ -115,10 +117,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _showCelebrationDialog(CelebrationEvent event) async {
-    HapticService.success(enabled: ref.read(hapticsEnabledControllerProvider));
+    // Longer milestones land harder.
+    final weight = event.kind != CelebrationKind.milestone
+        ? MilestoneWeight.small
+        : event.duration >= const Duration(days: 7)
+        ? MilestoneWeight.large
+        : MilestoneWeight.medium;
+    HapticService.milestone(
+      enabled: ref.read(hapticsEnabledControllerProvider),
+      weight: weight,
+    );
+    final data = ref.read(homeDashboardProvider).value;
     await showDialog<void>(
       context: context,
-      builder: (context) => CelebrationDialog(event: event),
+      builder: (context) => CelebrationDialog(
+        event: event,
+        onShare: () => showShareCard(context, _shareCardFor(event, data)),
+      ),
+    );
+  }
+
+  ShareCardData _shareCardFor(CelebrationEvent event, HomeDashboardData? data) {
+    final isMilestone = event.kind == CelebrationKind.milestone;
+    return ShareCardData(
+      headline: isMilestone
+          ? event.title.replaceFirst(' smoke-free', '')
+          : event.title,
+      caption: isMilestone ? 'smoke-free' : 'unlocked',
+      lines: [
+        if (data != null && data.cigarettesAvoided > 0)
+          '${formatCount(data.cigarettesAvoided)} cigarettes not smoked',
+        if (data != null && data.moneySaved >= 1)
+          '${formatMoney(data.currencySymbol, data.moneySaved)} kept',
+      ],
     );
   }
 
@@ -178,6 +209,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _rescheduleNotifications(data);
+        HomeWidgetService.update(
+          smokeFreeSince: data.smokeFreeSince,
+          dailySpend: data.packSize <= 0
+              ? 0
+              : data.cigarettesPerDay / data.packSize * data.packPrice,
+          currencySymbol: data.currencySymbol,
+        );
       }
     });
   }
