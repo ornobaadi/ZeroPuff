@@ -2,12 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_shapes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/rolling_number.dart';
 
 /// How a stretch of time is laid out on the clock: the largest unit that has
-/// started is the big number, and the smaller ones run in a line under it.
+/// started is the big number, and each smaller one gets a tile under it.
 /// So the first hour reads "12 minutes" rather than "0 days".
 class ClockParts {
   const ClockParts({
@@ -25,7 +26,7 @@ class ClockParts {
       return ClockParts(
         value: elapsed.inDays,
         unit: elapsed.inDays == 1 ? 'day' : 'days',
-        rest: [(hours, 'h'), (minutes, 'min'), (seconds, 'sec')],
+        rest: [(hours, 'hours'), (minutes, 'min'), (seconds, 'sec')],
       );
     }
     if (elapsed.inHours >= 1) {
@@ -144,31 +145,62 @@ class _SmokeFreeTimerState extends State<SmokeFreeTimer> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: AppSpacing.md),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
               children: [
                 for (final (index, (value, unit)) in parts.rest.indexed) ...[
-                  if (index > 0) const SizedBox(width: AppSpacing.componentGap),
-                  RollingNumber(
-                    key: ValueKey(unit),
-                    value: value,
-                    minDigits: 2,
-                    style: AppTypography.liveCounter.copyWith(
-                      fontSize: 24,
-                      color: color,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    unit,
-                    style: AppTypography.liveCounterLabel.copyWith(
-                      color: color,
+                  if (index > 0) const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _TimeTile(
+                      key: ValueKey(unit),
+                      value: value,
+                      label: unit,
                     ),
                   ),
                 ],
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One smaller unit of the clock in its own box, so the digits stay on a
+/// grid while they roll.
+class _TimeTile extends StatelessWidget {
+  const _TimeTile({required this.value, required this.label, super.key});
+
+  final int value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surface.withValues(alpha: 0.55),
+        borderRadius: AppShapes.largeIncreased,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.componentGap),
+        child: Column(
+          children: [
+            RollingNumber(
+              value: value,
+              minDigits: 2,
+              style: AppTypography.liveCounter.copyWith(
+                color: scheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              label.toUpperCase(),
+              style: AppTypography.liveCounterLabel.copyWith(
+                color: scheme.onPrimaryContainer,
+              ),
             ),
           ],
         ),

@@ -38,12 +38,12 @@ void main() {
       );
 
       expect((parts.value, parts.unit), (40, 'days'));
-      expect(parts.rest, [(3, 'h'), (4, 'min'), (5, 'sec')]);
+      expect(parts.rest, [(3, 'hours'), (4, 'min'), (5, 'sec')]);
     });
   });
 
   group('SmokeFreeTimer', () {
-    testWidgets('shows days with the smaller units in a line', (tester) async {
+    testWidgets('shows days with a tile for each smaller unit', (tester) async {
       final since = DateTime.now().subtract(
         const Duration(days: 2, hours: 3, minutes: 4),
       );
@@ -53,7 +53,7 @@ void main() {
       expect(find.text('days'), findsOneWidget);
       expect(_number(3, minDigits: 2), findsOneWidget);
       expect(_number(4, minDigits: 2), findsOneWidget);
-      expect(find.text('h'), findsOneWidget);
+      expect(find.text('HOURS'), findsOneWidget);
     });
 
     testWidgets('uses the singular for one day', (tester) async {
