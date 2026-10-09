@@ -1,9 +1,14 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+import '../../services/haptics/haptic_service.dart';
 import '../theme/app_accents.dart';
+import '../theme/app_motion.dart';
 
-/// A jar filled to [fill] (0 to 1). With [coinDrop] set, a coin is drawn that
-/// distance (0 to 1) along its fall into the jar.
+/// A jar with coins piled in it. [fill] (0 to 1) is how full the pile is.
+/// With [coinDrop] set, one more coin is drawn that distance (0 to 1) along
+/// its fall into the jar.
 class SavingsJar extends StatelessWidget {
   const SavingsJar({required this.fill, this.coinDrop, super.key});
 
@@ -19,9 +24,116 @@ class SavingsJar extends StatelessWidget {
       painter: _SavingsJarPainter(
         fill: fill.clamp(0.0, 1.0),
         coinDrop: coinDrop,
-        jar: accents.money,
-        contents: accents.moneyContainer,
+        glass: accents.money,
+        coin: accents.money,
+        coinEdge: accents.moneyContainer,
       ),
+    );
+  }
+}
+
+/// A [SavingsJar] that plays coins dropping in.
+///
+/// On first build it drops [drops] coins while the pile grows from
+/// [fillBefore] to [fill]. Changing [playCount] drops them again, which is
+/// how a tap on the jar replays it.
+class CoinDropJar extends StatefulWidget {
+  const CoinDropJar({
+    required this.fill,
+    required this.hapticsEnabled,
+    this.fillBefore,
+    this.drops = 0,
+    this.playCount = 0,
+    super.key,
+  });
+
+  final double fill;
+  final double? fillBefore;
+  final int drops;
+  final int playCount;
+  final bool hapticsEnabled;
+
+  @override
+  State<CoinDropJar> createState() => _CoinDropJarState();
+}
+
+class _CoinDropJarState extends State<CoinDropJar>
+    with SingleTickerProviderStateMixin {
+  static const _perCoin = Duration(milliseconds: 420);
+
+  late final AnimationController _controller;
+  int _coins = 0;
+  int _landed = 0;
+  double? _from;
+  bool _started = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this)..addListener(_onTick);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_started) {
+      _started = true;
+      _play(widget.drops, from: widget.fillBefore);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant CoinDropJar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.playCount != oldWidget.playCount) {
+      _play(math.max(widget.drops, 1));
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _play(int coins, {double? from}) {
+    _coins = coins;
+    _landed = 0;
+    _from = from;
+    if (coins <= 0 || AppMotion.reduced(context)) {
+      _controller.value = 1;
+      return;
+    }
+    _controller
+      ..duration = _perCoin * coins
+      ..forward(from: 0);
+  }
+
+  /// One clink as each coin lands.
+  void _onTick() {
+    if (_coins <= 0) {
+      return;
+    }
+    final landed = (_controller.value * _coins).floor().clamp(0, _coins);
+    if (landed > _landed) {
+      _landed = landed;
+      HapticService.coin(enabled: widget.hapticsEnabled);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = _controller.value;
+        final falling = _coins > 0 && t < 1;
+        final from = _from ?? widget.fill;
+        return SavingsJar(
+          fill: falling ? from + (widget.fill - from) * t : widget.fill,
+          coinDrop: falling ? Curves.easeIn.transform((t * _coins) % 1) : null,
+        );
+      },
     );
   }
 }
@@ -30,74 +142,125 @@ class _SavingsJarPainter extends CustomPainter {
   const _SavingsJarPainter({
     required this.fill,
     required this.coinDrop,
-    required this.jar,
-    required this.contents,
+    required this.glass,
+    required this.coin,
+    required this.coinEdge,
   });
 
   final double fill;
   final double? coinDrop;
-  final Color jar;
-  final Color contents;
+  final Color glass;
+  final Color coin;
+  final Color coinEdge;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const jarWidth = 96.0;
-    const coinRadius = 13.0;
-    // Leave room above the jar for the coin to fall through.
-    final jarHeight = (size.height - (coinDrop == null ? 8 : 50)).clamp(
-      40.0,
-      110.0,
-    );
-    final jarRect = Rect.fromLTWH(
+    if (size.isEmpty) {
+      return;
+    }
+    // Room above the jar for a coin to fall through.
+    final headroom = size.height * 0.22;
+    final jarHeight = size.height - headroom - 3;
+    final jarWidth = math.min(size.width - 6, jarHeight * 0.92);
+    final jar = Rect.fromLTWH(
       (size.width - jarWidth) / 2,
-      size.height - jarHeight - 4,
+      headroom,
       jarWidth,
       jarHeight,
     );
-    final jarShape = RRect.fromRectAndCorners(
-      jarRect,
-      topLeft: const Radius.circular(10),
-      topRight: const Radius.circular(10),
-      bottomLeft: const Radius.circular(26),
-      bottomRight: const Radius.circular(26),
+    final stroke = math.max(2.5, jarWidth * 0.035);
+    final body = RRect.fromRectAndCorners(
+      jar,
+      topLeft: Radius.circular(jarWidth * 0.1),
+      topRight: Radius.circular(jarWidth * 0.1),
+      bottomLeft: Radius.circular(jarWidth * 0.26),
+      bottomRight: Radius.circular(jarWidth * 0.26),
     );
-    final level = jarHeight * fill;
 
+    // Coins sit in staggered rows, like a pile seen from the side.
+    final radius = jarWidth / 9.5;
+    final inner = jar.deflate(stroke + 2);
+    final slots = <Offset>[];
+    final rowStep = radius * 1.3;
+    var row = 0;
+    while (true) {
+      final y = inner.bottom - radius - row * rowStep;
+      if (y - radius < inner.top + radius * 0.6) {
+        break;
+      }
+      final count = row.isEven ? 4 : 3;
+      final span = inner.width - radius * 2;
+      for (var index = 0; index < count; index++) {
+        final t = count == 1 ? 0.5 : index / (count - 1);
+        final inset = row.isEven ? 0.0 : span / 6;
+        // A small fixed wobble keeps the pile from looking printed.
+        final wobble = math.sin(row * 3.1 + index * 1.7) * radius * 0.12;
+        slots.add(
+          Offset(
+            inner.left + radius + inset + (span - inset * 2) * t + wobble,
+            y,
+          ),
+        );
+      }
+      row += 1;
+    }
+
+    final resting = fill <= 0
+        ? 0
+        : (fill * slots.length).round().clamp(1, slots.length);
     canvas.save();
-    canvas.clipRRect(jarShape);
-    canvas.drawRect(
-      Rect.fromLTWH(jarRect.left, jarRect.bottom - level, jarWidth, level),
-      Paint()..color = contents,
-    );
+    canvas.clipRRect(body);
+    for (var index = 0; index < resting; index++) {
+      _paintCoin(canvas, slots[index], radius);
+    }
     canvas.restore();
 
     final drop = coinDrop;
-    if (drop != null) {
-      final restY = (jarRect.bottom - level - coinRadius + 4).clamp(
-        jarRect.top + coinRadius,
-        jarRect.bottom - coinRadius - 4,
-      );
-      final center = Offset(
-        size.width / 2,
-        coinRadius + (restY - coinRadius) * drop.clamp(0.0, 1.0),
-      );
-      canvas.drawCircle(center, coinRadius, Paint()..color = jar);
-      canvas.drawCircle(
-        center,
-        coinRadius - 5,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = contents,
+    if (drop != null && slots.isNotEmpty) {
+      final target = slots[math.min(resting, slots.length - 1)];
+      final start = Offset(target.dx, radius + 1);
+      _paintCoin(
+        canvas,
+        Offset.lerp(start, target, drop.clamp(0.0, 1.0))!,
+        radius,
       );
     }
 
     canvas.drawRRect(
-      jarShape,
+      body,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 4
-        ..color = jar,
+        ..strokeWidth = stroke
+        ..color = glass,
+    );
+    // The rim, a little wider than the body.
+    canvas.drawLine(
+      Offset(jar.left - stroke, jar.top),
+      Offset(jar.right + stroke, jar.top),
+      Paint()
+        ..strokeWidth = stroke * 1.6
+        ..strokeCap = StrokeCap.round
+        ..color = glass,
+    );
+  }
+
+  void _paintCoin(Canvas canvas, Offset center, double radius) {
+    canvas.drawCircle(center, radius, Paint()..color = coin);
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(1.2, radius * 0.16)
+        ..color = coinEdge,
+    );
+    canvas.drawCircle(
+      center,
+      radius * 0.5,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(1, radius * 0.12)
+        ..color = coinEdge,
     );
   }
 
@@ -105,7 +268,8 @@ class _SavingsJarPainter extends CustomPainter {
   bool shouldRepaint(covariant _SavingsJarPainter oldDelegate) {
     return oldDelegate.fill != fill ||
         oldDelegate.coinDrop != coinDrop ||
-        oldDelegate.jar != jar ||
-        oldDelegate.contents != contents;
+        oldDelegate.glass != glass ||
+        oldDelegate.coin != coin ||
+        oldDelegate.coinEdge != coinEdge;
   }
 }

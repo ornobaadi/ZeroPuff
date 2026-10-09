@@ -2,24 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/calculations/run_calculations.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/savings_jar.dart';
 import '../../../core/widgets/stat_card.dart';
+import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/daily_loop_repository.dart';
 import '../widgets/detail_widgets.dart';
 import '../../../core/utils/number_formatting.dart';
-
-const _targets = [10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0];
-
-double? _nextSavingsTarget(double saved) {
-  for (final target in _targets) {
-    if (saved < target) {
-      return target;
-    }
-  }
-  return null;
-}
 
 class SavingsDetailsScreen extends ConsumerWidget {
   const SavingsDetailsScreen({super.key});
@@ -37,24 +29,28 @@ class SavingsDetailsScreen extends ConsumerWidget {
         final packsSkipped = data.packSize <= 0
             ? 0.0
             : data.cigarettesAvoided / data.packSize;
-        final nextTarget = _nextSavingsTarget(data.moneySaved);
+        final nextTarget = SavingsTargets.next(
+          saved: data.moneySaved,
+          packPrice: data.packPrice,
+        );
         final targetProgress = nextTarget == null
             ? 1.0
-            : (data.moneySaved / nextTarget).clamp(0.0, 1.0);
+            : (data.moneySaved / nextTarget.amount).clamp(0.0, 1.0);
         final daysToTarget = nextTarget == null || dailyBaseline <= 0
             ? null
-            : ((nextTarget - data.moneySaved) / dailyBaseline).ceil().clamp(
-                1,
-                9999,
-              );
+            : ((nextTarget.amount - data.moneySaved) / dailyBaseline)
+                  .ceil()
+                  .clamp(1, 9999);
+        // The jar is full at the goal, or at the next round target.
+        final jarTarget = goal?.target ?? nextTarget?.amount;
         final symbol = data.currencySymbol;
 
         return [
-          DetailHero(
-            value: formatMoney(symbol, data.moneySaved),
-            label: 'won back from cigarettes',
-            icon: Symbols.savings_rounded,
-            tone: StatTone.money,
+          _JarHero(
+            amount: formatMoney(symbol, data.moneySaved),
+            fill: jarTarget == null || jarTarget <= 0
+                ? 0
+                : (data.moneySaved / jarTarget).clamp(0.0, 1.0),
           ),
           EvenRow(
             children: [
@@ -72,7 +68,8 @@ class SavingsDetailsScreen extends ConsumerWidget {
           if (goal == null)
             _TargetCard(
               currencySymbol: symbol,
-              target: nextTarget,
+              target: nextTarget?.amount,
+              packs: nextTarget?.packs,
               progress: targetProgress,
               daysToTarget: daysToTarget,
             ),
@@ -87,7 +84,7 @@ class SavingsDetailsScreen extends ConsumerWidget {
           const InfoCard(
             title: 'How it is calculated',
             body:
-                'We estimate cigarettes avoided from your old daily pace, then divide by pack size and multiply by your pack price.',
+                'Cigarettes not smoked since your quit date at your old daily pace, less any you logged, priced from your pack. A slip costs what you smoked, not everything before it.',
             icon: Symbols.calculate_rounded,
           ),
         ];
@@ -318,16 +315,82 @@ class _GoalSheetState extends State<_GoalSheet> {
   }
 }
 
+/// The money as a jar of coins. Tapping it drops a few in again.
+class _JarHero extends ConsumerStatefulWidget {
+  const _JarHero({required this.amount, required this.fill});
+
+  final String amount;
+  final double fill;
+
+  @override
+  ConsumerState<_JarHero> createState() => _JarHeroState();
+}
+
+class _JarHeroState extends ConsumerState<_JarHero> {
+  int _plays = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = ToneColors.of(context, StatTone.money);
+
+    return Semantics(
+      label: '${widget.amount} kept from cigarettes',
+      button: true,
+      hint: 'Drops the coins in again',
+      excludeSemantics: true,
+      onTap: () => setState(() => _plays += 1),
+      child: AppCard(
+        color: colors.container,
+        onTap: () => setState(() => _plays += 1),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 180,
+              child: CoinDropJar(
+                fill: widget.fill,
+                drops: 3,
+                playCount: _plays,
+                hapticsEnabled: ref.watch(hapticsEnabledControllerProvider),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                widget.amount,
+                style: AppTypography.displayNumber.copyWith(
+                  color: colors.onContainer,
+                ),
+              ),
+            ),
+            Text(
+              'kept from cigarettes',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colors.onContainer,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _TargetCard extends StatelessWidget {
   const _TargetCard({
     required this.currencySymbol,
     required this.target,
+    required this.packs,
     required this.progress,
     required this.daysToTarget,
   });
 
   final String currencySymbol;
   final double? target;
+
+  /// How many packs' worth [target] is.
+  final int? packs;
   final double progress;
   final int? daysToTarget;
 
@@ -336,9 +399,12 @@ class _TargetCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = ToneColors.of(context, StatTone.money);
     final target = this.target;
+    final packs = this.packs;
     final title = target == null
         ? 'Every money target reached'
-        : 'Next money win: ${formatMoney(currencySymbol, target)}';
+        : packs == null
+        ? 'Next money win: ${formatMoney(currencySymbol, target)}'
+        : 'Next: ${formatMoney(currencySymbol, target)}, $packs ${packs == 1 ? 'pack' : 'packs'} not bought';
     final note = target == null
         ? 'You have crossed every money target we track for now.'
         : daysToTarget == null

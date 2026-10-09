@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -130,10 +131,38 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
   final cigarettesPerDay = data.cigarettesPerDay ?? 0;
   final packSize = data.packSize ?? 20;
   final packPrice = data.packPrice ?? 0;
-  final cigarettesAvoided = ProgressCalculations.cigarettesAvoided(
-    smokeFreeDuration: smokeFreeDuration,
-    cigarettesPerDay: cigarettesPerDay,
+  // Counted from the quit date, less what was actually smoked. A slip costs
+  // the cigarettes smoked, not everything kept before it.
+  final sinceQuit = now.isBefore(baselineQuitDate)
+      ? Duration.zero
+      : now.difference(baselineQuitDate);
+  final smoked = _cigarettesSmoked(
+    since: baselineQuitDate,
+    now: now,
+    checkIns: checkIns,
+    smokingLogs: smokingLogs,
   );
+  final cigarettesAvoided = math.max(
+    0,
+    ProgressCalculations.cigarettesAvoided(
+          smokeFreeDuration: sinceQuit,
+          cigarettesPerDay: cigarettesPerDay,
+        ) -
+        smoked.total,
+  );
+  final startOfToday = StreakCalculations.dateOnly(now);
+  final todayFrom = baselineQuitDate.isAfter(startOfToday)
+      ? baselineQuitDate
+      : startOfToday;
+  final todayElapsed = now.isBefore(todayFrom)
+      ? Duration.zero
+      : now.difference(todayFrom);
+  final avoidedToday = math.max(
+    0.0,
+    todayElapsed.inSeconds / Duration.secondsPerDay * cigarettesPerDay -
+        smoked.today,
+  );
+  final moneyToday = packSize <= 0 ? 0.0 : avoidedToday / packSize * packPrice;
   final moneySaved = ProgressCalculations.moneySaved(
     cigarettesAvoided: cigarettesAvoided,
     packPrice: packPrice,
@@ -184,6 +213,8 @@ final homeDashboardProvider = Provider<AsyncValue<HomeDashboardData>>((ref) {
       lastSmokeAt: loggedSmokeAt,
       todayCheckIn: checkIn,
       todaySealed: checkIn != null,
+      moneyToday: moneyToday,
+      cigarettesSmokedToday: smoked.today,
     ),
   );
 });
@@ -223,6 +254,43 @@ DayHistory buildDayHistory({
       ...checkIns.where((record) => !record.smokeFreeToday).map(day).nonNulls,
     ],
     sealedDays: checkIns.map(day).nonNulls,
+  );
+}
+
+/// Cigarettes smoked since the quit date, and today. A day's count is the
+/// larger of what was logged and what its seal says, so nothing is doubled.
+({int total, int today}) _cigarettesSmoked({
+  required DateTime since,
+  required DateTime now,
+  required List<DailyCheckInRecord> checkIns,
+  required List<SmokingLogRecord> smokingLogs,
+}) {
+  final quitDay = StreakCalculations.dateOnly(since);
+  final byDay = <DateTime, int>{};
+  for (final log in smokingLogs) {
+    if (log.smokedAt.isBefore(since)) {
+      continue;
+    }
+    byDay.update(
+      StreakCalculations.dateOnly(log.smokedAt),
+      (count) => count + log.count,
+      ifAbsent: () => log.count,
+    );
+  }
+  for (final record in checkIns) {
+    final day = StreakCalculations.parseLocalDateKey(record.localDate);
+    if (day == null || day.isBefore(quitDay)) {
+      continue;
+    }
+    byDay.update(
+      day,
+      (count) => math.max(count, record.cigarettesSmoked),
+      ifAbsent: () => record.cigarettesSmoked,
+    );
+  }
+  return (
+    total: byDay.values.fold(0, (sum, count) => sum + count),
+    today: byDay[StreakCalculations.dateOnly(now)] ?? 0,
   );
 }
 
@@ -273,6 +341,8 @@ class HomeDashboardData {
     this.lastSmokeAt,
     this.todayCheckIn,
     this.todaySealed = false,
+    this.moneyToday = 0,
+    this.cigarettesSmokedToday = 0,
     DateTime? smokeFreeSince,
   }) : _smokeFreeSince = smokeFreeSince;
 
@@ -300,6 +370,10 @@ class HomeDashboardData {
 
   /// Today has been closed with a seal.
   final bool todaySealed;
+
+  /// Money kept since midnight.
+  final double moneyToday;
+  final int cigarettesSmokedToday;
 
   int get smokeFreeHours => smokeFreeDuration.inHours.remainder(24);
   int get smokeFreeMinutes => smokeFreeDuration.inMinutes.remainder(60);

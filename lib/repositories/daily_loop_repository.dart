@@ -40,6 +40,7 @@ class DailyLoopRepository {
   static const _goalNameKey = 'daily.savings_goal_name';
   static const _goalTargetKey = 'daily.savings_goal_target';
   static const _goalCelebratedKey = 'daily.savings_goal_celebrated';
+  static const _jarSeenKey = 'daily.jar_seen_money';
 
   Future<bool> hasPledgedOn(DateTime day) async {
     final store = await SharedPreferences.getInstance();
@@ -86,10 +87,23 @@ class DailyLoopRepository {
   // Changing the goal's name or price makes it a new goal to celebrate.
   String _goalSignature(SavingsGoal goal) => '${goal.name}|${goal.target}';
 
+  /// The money the jar held the last time it was shown, so the coins earned
+  /// since then can be dropped in.
+  Future<double?> jarSeenMoney() async {
+    final store = await SharedPreferences.getInstance();
+    return store.getDouble(_jarSeenKey);
+  }
+
+  Future<void> setJarSeenMoney(double money) async {
+    final store = await SharedPreferences.getInstance();
+    await store.setDouble(_jarSeenKey, money);
+  }
+
   /// Removes everything here, for when local data is deleted.
   Future<void> clear() async {
     final store = await SharedPreferences.getInstance();
     await store.remove(_pledgeDateKey);
+    await store.remove(_jarSeenKey);
     await store.remove(_goalCelebratedKey);
     await clearSavingsGoal();
   }

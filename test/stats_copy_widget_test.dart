@@ -8,7 +8,7 @@ import 'package:zeropuff/features/profile/screens/app_info_screen.dart';
 import 'package:zeropuff/features/progress/screens/progress_screen.dart';
 
 void main() {
-  testWidgets('home stats grid shows cigarettes and money only', (
+  testWidgets('home shows the money jar in place of a stats grid', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 1200));
@@ -27,10 +27,11 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Not smoked'), findsOneWidget);
-    expect(find.text('Money won back'), findsOneWidget);
+    expect(find.text('MONEY KEPT'), findsOneWidget);
+    expect(find.text('72 cigarettes not smoked'), findsOneWidget);
+    expect(find.text('I slipped'), findsOneWidget);
     expect(find.text('Time smoke-free'), findsNothing);
-    expect(find.text('Smoke-free streak'), findsNothing);
+    expect(find.text('Need to log?'), findsNothing);
   });
 
   testWidgets('progress quick stats include life won back', (tester) async {

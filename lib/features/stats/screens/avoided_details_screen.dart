@@ -22,7 +22,7 @@ class AvoidedDetailsScreen extends ConsumerWidget {
         const InfoCard(
           title: 'What this means',
           body:
-              'This is an estimate based on your old daily baseline and how long you have been smoke-free.',
+              'An estimate: what you would have smoked since your quit date at your old daily pace, less any cigarettes you logged.',
           icon: Symbols.insights_rounded,
           tone: StatTone.streak,
         ),

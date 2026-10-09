@@ -157,6 +157,11 @@ class JournalMonthNotifier extends Notifier<DateTime> {
   void moveBy(int monthOffset) {
     state = DateTime(state.year, state.month + monthOffset);
   }
+
+  /// Shows the month [day] falls in.
+  void show(DateTime day) {
+    state = DateTime(day.year, day.month);
+  }
 }
 
 class SelectedJournalDayNotifier extends Notifier<DateTime> {

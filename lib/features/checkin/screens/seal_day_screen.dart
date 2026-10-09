@@ -10,6 +10,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/number_formatting.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/content_width.dart';
+import '../../../core/widgets/savings_jar.dart';
 import '../../../core/widgets/state_view.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/daily_checkin_repository.dart';
@@ -196,17 +197,9 @@ class _SealDayScreenState extends ConsumerState<SealDayScreen> {
         .where((ritual) => ritual.startMinutes <= nowMinutes)
         .length;
 
-    double? keptToday;
-    if (dashboard != null && !slipped && dashboard.packSize > 0) {
-      final since = dashboard.smokeFreeSince.isAfter(today)
-          ? dashboard.smokeFreeSince
-          : today;
-      final dailySpend =
-          dashboard.cigarettesPerDay / dashboard.packSize * dashboard.packPrice;
-      final kept =
-          dailySpend * now.difference(since).inMinutes / Duration.minutesPerDay;
-      keptToday = kept >= 0.5 ? kept : null;
-    }
+    final keptToday = dashboard == null || slipped || dashboard.moneyToday < 0.5
+        ? null
+        : dashboard.moneyToday;
 
     final sealed = _seal != null;
     final Widget body;
@@ -254,6 +247,36 @@ class _SealDayScreenState extends ConsumerState<SealDayScreen> {
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
+                // The day's money dropping into the jar, on the visit it is
+                // sealed.
+                if (sealed &&
+                    _justSealed &&
+                    keptToday != null &&
+                    dashboard != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 56,
+                        height: 72,
+                        child: CoinDropJar(
+                          fill: 0.45,
+                          drops: 1,
+                          hapticsEnabled: ref.watch(
+                            hapticsEnabledControllerProvider,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          '${formatMoney(dashboard.currencySymbol, keptToday)} went into the jar today',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.lg),
                 _DayRecap(
                   beaten: beaten,
