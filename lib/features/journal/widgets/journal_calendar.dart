@@ -358,11 +358,19 @@ class JournalLegend extends StatelessWidget {
       ],
     };
 
-    return Wrap(
-      spacing: AppSpacing.md,
-      runSpacing: AppSpacing.sm,
-      alignment: WrapAlignment.center,
-      children: items,
+    // One line, scaled down on narrow screens, so a single item is never
+    // left on a row of its own.
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final (index, item) in items.indexed) ...[
+            if (index > 0) const SizedBox(width: AppSpacing.md),
+            item,
+          ],
+        ],
+      ),
     );
   }
 }

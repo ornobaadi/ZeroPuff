@@ -44,7 +44,7 @@ class NotificationService {
     }
     tzdata.initializeTimeZones();
 
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const android = AndroidInitializationSettings('ic_stat_zeropuff');
     const ios = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,

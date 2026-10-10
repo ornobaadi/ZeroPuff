@@ -9,6 +9,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/number_formatting.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/savings_jar.dart';
+import '../../../models/craving_rescue_data.dart';
 import '../../../repositories/app_settings_repository.dart';
 import '../../../repositories/daily_loop_repository.dart';
 import '../providers/home_dashboard_provider.dart';
@@ -32,6 +33,10 @@ class _JarCardState extends ConsumerState<JarCard> {
   /// What the jar held the last time it was seen. Null until it is read.
   double? _seen;
   bool _seenLoaded = false;
+
+  /// Goes up each time a craving is beaten while Home is open, so that coin
+  /// is seen landing here too.
+  int _plays = 0;
 
   @override
   void initState() {
@@ -61,6 +66,13 @@ class _JarCardState extends ConsumerState<JarCard> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final accents = AppAccents.of(context);
+    ref.listen(recentCravingsProvider, (previous, next) {
+      int beaten(AsyncValue<List<CravingRescueData>>? value) =>
+          value?.value?.where((craving) => craving.resisted).length ?? 0;
+      if (previous?.value != null && beaten(next) > beaten(previous)) {
+        setState(() => _plays += 1);
+      }
+    });
     final data = widget.data;
     final symbol = data.currencySymbol;
     final goal = ref.watch(savingsGoalProvider).value;
@@ -114,8 +126,8 @@ class _JarCardState extends ConsumerState<JarCard> {
             child: _seenLoaded
                 ? CoinDropJar(
                     fill: level(data.moneySaved),
-                    fillBefore: seen == null ? null : level(seen),
-                    drops: drops,
+                    drops: _plays == 0 ? drops : 1,
+                    playCount: _plays,
                     hapticsEnabled: ref.watch(hapticsEnabledControllerProvider),
                   )
                 : SavingsJar(fill: level(data.moneySaved)),

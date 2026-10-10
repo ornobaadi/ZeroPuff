@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/widgets/brand_logo.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/content_width.dart';
 import '../../../core/widgets/serif_headline.dart';
@@ -26,22 +27,9 @@ class WelcomeStep extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: scheme.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Icon(
-                    Symbols.air_rounded,
-                    size: 72,
-                    color: scheme.onPrimaryContainer,
-                    semanticLabel: 'ZeroPuff',
-                  ),
-                ),
-              ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+              child: Center(child: BrandLogo.mark(width: 144)),
             ),
             const SizedBox(height: AppSpacing.xl),
             SerifHeadline(
