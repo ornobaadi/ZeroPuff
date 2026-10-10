@@ -177,6 +177,7 @@ class _CelebrationDialogState extends State<CelebrationDialog>
                           onPointerUp: (_) => _release(),
                           onPointerCancel: (_) => _release(),
                           child: SizedBox.square(
+                            key: const ValueKey('claim-badge'),
                             dimension: 260,
                             child: AnimatedBuilder(
                               animation: Listenable.merge([_hold, _burst]),

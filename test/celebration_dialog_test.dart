@@ -44,10 +44,11 @@ void main() {
 
     expect(find.text('Hold to claim it'), findsOneWidget);
     expect(find.text('1 week smoke-free'), findsNothing);
-    expect(find.text('Keep going'), findsNothing);
+    // Present for layout, but not shown or tappable until claimed.
+    expect(find.text('Keep going').hitTestable(), findsNothing);
 
     final hold = await tester.startGesture(
-      tester.getCenter(find.byType(CustomPaint).last),
+      tester.getCenter(find.byKey(const ValueKey('claim-badge'))),
     );
     await tester.pump();
     for (var step = 0; step < 14; step++) {
@@ -59,7 +60,7 @@ void main() {
     expect(calls.claims(), 1);
     expect(calls.ticks(), 3);
     expect(find.text('1 week smoke-free'), findsOneWidget);
-    expect(find.text('Keep going'), findsOneWidget);
+    expect(find.text('Keep going').hitTestable(), findsOneWidget);
     expect(find.text('Share it'), findsOneWidget);
   });
 
@@ -67,7 +68,7 @@ void main() {
     final calls = await pump(tester);
 
     final hold = await tester.startGesture(
-      tester.getCenter(find.byType(CustomPaint).last),
+      tester.getCenter(find.byKey(const ValueKey('claim-badge'))),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -81,11 +82,11 @@ void main() {
   testWidgets('with reduced motion a press claims it at once', (tester) async {
     final calls = await pump(tester, reduceMotion: true);
 
-    await tester.tap(find.byType(CustomPaint).last);
+    await tester.tap(find.byKey(const ValueKey('claim-badge')));
     await tester.pumpAndSettle();
 
     expect(calls.claims(), 1);
-    expect(find.text('Keep going'), findsOneWidget);
+    expect(find.text('Keep going').hitTestable(), findsOneWidget);
   });
 
   testWidgets('dropped coins land and stay in the jar', (tester) async {
