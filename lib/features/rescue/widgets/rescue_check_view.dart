@@ -3,7 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_accents.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/widgets/app_card.dart';
+import '../../../core/theme/app_shapes.dart';
 import '../../../core/widgets/content_width.dart';
 import '../models/rescue_flow.dart';
 import 'rescue_reasons.dart';
@@ -60,8 +60,8 @@ class RescueCheckView extends StatelessWidget {
                 icon: Symbols.check_circle_rounded,
                 title: 'It passed',
                 subtitle: 'The urge is gone or close to it.',
-                background: scheme.primaryContainer,
-                foreground: scheme.onPrimaryContainer,
+                background: scheme.primary,
+                foreground: scheme.onPrimary,
                 onTap: () => onAnswer(UrgeNow.gone),
               ),
               const SizedBox(height: AppSpacing.componentGap),
@@ -158,34 +158,53 @@ class _AnswerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AppCard(
-      color: background,
+    // Shaped and sized like the app's buttons, with an arrow, so these read
+    // as answers to tap rather than as cards to read.
+    return Semantics(
+      button: true,
+      label: '$title. $subtitle',
+      excludeSemantics: true,
       onTap: onTap,
-      semanticLabel: '$title. $subtitle',
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
-        children: [
-          Icon(icon, color: foreground),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: background,
+        shape: const RoundedRectangleBorder(borderRadius: AppShapes.button),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.componentGap,
+            ),
+            child: Row(
               children: [
-                Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: foreground,
+                Icon(icon, color: foreground),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: foreground,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: foreground,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(color: foreground),
-                ),
+                const SizedBox(width: AppSpacing.sm),
+                Icon(Symbols.arrow_forward_rounded, color: foreground),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

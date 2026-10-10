@@ -11,6 +11,7 @@ The day closes in one tap, and a missed evening no longer costs you.
 - Logging a slip is a short sheet from Home (how many, what set it off, when). If slips keep landing at the same time of day, the app offers to add it as a smoking moment.
 - The smoke-free card on Home leads with the largest unit (minutes in the first hour, hours on the first day, then days) and counts down to the next milestone.
 - Seal today from Home in the evening and from the top of the run page, with a line that says today counts at midnight either way.
+- Milestones are claimed, not just announced: hold the badge to fill a ring, and it snaps free with a burst of shards.
 - A coin jar on Home that fills towards your goal, with coins earned since your last visit dropping in when you open the app.
 - The last seven days as a chain on Home, and a rebuilt run page with five weeks of days, your best run, the next target and when past runs have ended.
 - Journal: every day since you quit is filled in; view the month by days, cravings or mood; each day reads as a short story; a month card shows your hardest weekday and time of day, top trigger and what helps.
@@ -23,6 +24,9 @@ The day closes in one tap, and a missed evening no longer costs you.
 - The version shown in the app no longer includes the build number.
 
 ### Fixed
+- Coins dropped into the jar land and stay, and beating a craving drops one into the Home jar.
+- The answers after a rescue look like buttons.
+- The journal legend no longer wraps one item onto its own line.
 - Setup details opened blank.
 - Dialog buttons were uneven, with one stranded in a corner.
 

@@ -349,7 +349,7 @@ class _JarHeroState extends ConsumerState<_JarHero> {
               height: 180,
               child: CoinDropJar(
                 fill: widget.fill,
-                drops: 3,
+                drops: 5,
                 playCount: _plays,
                 hapticsEnabled: ref.watch(hapticsEnabledControllerProvider),
               ),

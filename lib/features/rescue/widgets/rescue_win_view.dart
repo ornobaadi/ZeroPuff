@@ -110,7 +110,8 @@ class _RescueWinViewState extends State<RescueWinView>
                     animation: _drop,
                     builder: (context, _) => SavingsJar(
                       fill: 0.38,
-                      coinDrop: Curves.easeIn.transform(_drop.value),
+                      dropCount: 1,
+                      dropProgress: _drop.value,
                     ),
                   ),
                 ),
@@ -169,7 +170,7 @@ class _RescueWinViewState extends State<RescueWinView>
                   icon: Symbols.savings_rounded,
                   color: accents.money,
                   text:
-                      '${formatMoney(widget.currencySymbol, money)} stayed in your pocket',
+                      '${formatMoney(widget.currencySymbol, money)} stays in your jar, for the cigarette you did not smoke',
                 ),
                 const SizedBox(height: AppSpacing.componentGap),
               ],

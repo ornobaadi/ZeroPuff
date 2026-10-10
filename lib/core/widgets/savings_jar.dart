@@ -7,13 +7,21 @@ import '../theme/app_accents.dart';
 import '../theme/app_motion.dart';
 
 /// A jar with coins piled in it. [fill] (0 to 1) is how full the pile is.
-/// With [coinDrop] set, one more coin is drawn that distance (0 to 1) along
-/// its fall into the jar.
+///
+/// With [dropCount] set, the top [dropCount] coins of the pile are shown
+/// falling in one after another as [dropProgress] goes from 0 to 1. Each one
+/// lands in its own place and stays, so the pile ends exactly at [fill].
 class SavingsJar extends StatelessWidget {
-  const SavingsJar({required this.fill, this.coinDrop, super.key});
+  const SavingsJar({
+    required this.fill,
+    this.dropCount = 0,
+    this.dropProgress = 1,
+    super.key,
+  });
 
   final double fill;
-  final double? coinDrop;
+  final int dropCount;
+  final double dropProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +31,8 @@ class SavingsJar extends StatelessWidget {
       size: Size.infinite,
       painter: _SavingsJarPainter(
         fill: fill.clamp(0.0, 1.0),
-        coinDrop: coinDrop,
+        dropCount: dropCount,
+        dropProgress: dropProgress.clamp(0.0, 1.0),
         glass: accents.money,
         coin: accents.money,
         coinEdge: accents.moneyContainer,
@@ -34,21 +43,19 @@ class SavingsJar extends StatelessWidget {
 
 /// A [SavingsJar] that plays coins dropping in.
 ///
-/// On first build it drops [drops] coins while the pile grows from
-/// [fillBefore] to [fill]. Changing [playCount] drops them again, which is
-/// how a tap on the jar replays it.
+/// On first build the top [drops] coins of the pile fall in and stay.
+/// Changing [playCount] drops them again, which is how a tap on the jar
+/// replays it.
 class CoinDropJar extends StatefulWidget {
   const CoinDropJar({
     required this.fill,
     required this.hapticsEnabled,
-    this.fillBefore,
     this.drops = 0,
     this.playCount = 0,
     super.key,
   });
 
   final double fill;
-  final double? fillBefore;
   final int drops;
   final int playCount;
   final bool hapticsEnabled;
@@ -64,7 +71,6 @@ class _CoinDropJarState extends State<CoinDropJar>
   late final AnimationController _controller;
   int _coins = 0;
   int _landed = 0;
-  double? _from;
   bool _started = false;
 
   @override
@@ -78,7 +84,7 @@ class _CoinDropJarState extends State<CoinDropJar>
     super.didChangeDependencies();
     if (!_started) {
       _started = true;
-      _play(widget.drops, from: widget.fillBefore);
+      _play(widget.drops);
     }
   }
 
@@ -96,10 +102,9 @@ class _CoinDropJarState extends State<CoinDropJar>
     super.dispose();
   }
 
-  void _play(int coins, {double? from}) {
+  void _play(int coins) {
     _coins = coins;
     _landed = 0;
-    _from = from;
     if (coins <= 0 || AppMotion.reduced(context)) {
       _controller.value = 1;
       return;
@@ -126,12 +131,10 @@ class _CoinDropJarState extends State<CoinDropJar>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        final t = _controller.value;
-        final falling = _coins > 0 && t < 1;
-        final from = _from ?? widget.fill;
         return SavingsJar(
-          fill: falling ? from + (widget.fill - from) * t : widget.fill,
-          coinDrop: falling ? Curves.easeIn.transform((t * _coins) % 1) : null,
+          fill: widget.fill,
+          dropCount: _coins,
+          dropProgress: _controller.value,
         );
       },
     );
@@ -141,14 +144,16 @@ class _CoinDropJarState extends State<CoinDropJar>
 class _SavingsJarPainter extends CustomPainter {
   const _SavingsJarPainter({
     required this.fill,
-    required this.coinDrop,
+    required this.dropCount,
+    required this.dropProgress,
     required this.glass,
     required this.coin,
     required this.coinEdge,
   });
 
   final double fill;
-  final double? coinDrop;
+  final int dropCount;
+  final double dropProgress;
   final Color glass;
   final Color coin;
   final Color coinEdge;
@@ -205,9 +210,15 @@ class _SavingsJarPainter extends CustomPainter {
       row += 1;
     }
 
-    final resting = fill <= 0
-        ? 0
-        : (fill * slots.length).round().clamp(1, slots.length);
+    // A jar that is being dropped into holds at least the coins dropping.
+    final dropping = math.min(dropCount, slots.length);
+    final pile = math.max(
+      dropping,
+      fill <= 0 ? 0 : (fill * slots.length).round().clamp(1, slots.length),
+    );
+    // Coins already down: the pile under the drop, plus each one landed.
+    final landed = (dropProgress * dropping).floor().clamp(0, dropping);
+    final resting = pile - dropping + landed;
     canvas.save();
     canvas.clipRRect(body);
     for (var index = 0; index < resting; index++) {
@@ -215,15 +226,11 @@ class _SavingsJarPainter extends CustomPainter {
     }
     canvas.restore();
 
-    final drop = coinDrop;
-    if (drop != null && slots.isNotEmpty) {
-      final target = slots[math.min(resting, slots.length - 1)];
+    if (landed < dropping) {
+      final target = slots[resting];
       final start = Offset(target.dx, radius + 1);
-      _paintCoin(
-        canvas,
-        Offset.lerp(start, target, drop.clamp(0.0, 1.0))!,
-        radius,
-      );
+      final along = Curves.easeIn.transform((dropProgress * dropping) % 1);
+      _paintCoin(canvas, Offset.lerp(start, target, along)!, radius);
     }
 
     canvas.drawRRect(
@@ -267,7 +274,8 @@ class _SavingsJarPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _SavingsJarPainter oldDelegate) {
     return oldDelegate.fill != fill ||
-        oldDelegate.coinDrop != coinDrop ||
+        oldDelegate.dropCount != dropCount ||
+        oldDelegate.dropProgress != dropProgress ||
         oldDelegate.glass != glass ||
         oldDelegate.coin != coin ||
         oldDelegate.coinEdge != coinEdge;

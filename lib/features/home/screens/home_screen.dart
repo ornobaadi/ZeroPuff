@@ -81,7 +81,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const BrandLogo.lockup(height: 28),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ExcludeSemantics(child: BrandLogo.mark(width: 34)),
+            SizedBox(width: AppSpacing.componentGap),
+            Text('ZeroPuff'),
+          ],
+        ),
         actions: [
           dashboard.maybeWhen(
             data: (data) => StreakChip(
@@ -128,15 +135,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         : event.duration >= const Duration(days: 7)
         ? MilestoneWeight.large
         : MilestoneWeight.medium;
-    HapticService.milestone(
-      enabled: ref.read(hapticsEnabledControllerProvider),
-      weight: weight,
-    );
+    final haptics = ref.read(hapticsEnabledControllerProvider);
     final data = ref.read(homeDashboardProvider).value;
     await showDialog<void>(
       context: context,
       builder: (context) => CelebrationDialog(
         event: event,
+        // Felt building while the badge is held, then landing as it is
+        // claimed.
+        onHoldTick: () => HapticService.tick(enabled: haptics),
+        onClaimed: () =>
+            HapticService.milestone(enabled: haptics, weight: weight),
         onShare: () => showShareCard(context, _shareCardFor(event, data)),
       ),
     );
