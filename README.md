@@ -4,7 +4,7 @@ A calm, private habit and streak tracker for quitting smoking, built with Flutte
 
 ZeroPuff is not a medical app and does not provide medical advice.
 
-**Current version:** 1.3.0 (build 7). See [CHANGELOG.md](CHANGELOG.md).
+**Current version:** 1.3.0 (build 8). See [CHANGELOG.md](CHANGELOG.md).
 
 ## Features
 

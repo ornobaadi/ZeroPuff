@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.3.0 (build 7)
+## 1.3.0 (build 8)
 
 The day closes in one tap, and a missed evening no longer costs you.
 
