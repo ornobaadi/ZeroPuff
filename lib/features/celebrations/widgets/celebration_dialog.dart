@@ -10,7 +10,7 @@ import '../../../core/theme/app_typography.dart';
 import '../milestone_celebration_controller.dart';
 
 /// How long the badge has to be held before it is claimed.
-const _holdTime = Duration(milliseconds: 1300);
+const _holdTime = Duration(milliseconds: 700);
 
 /// The celebratory moment in the app, and something the user does rather than
 /// reads. The badge arrives locked; holding it fills a ring, the same gesture
